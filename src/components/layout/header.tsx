@@ -5,13 +5,25 @@ import { User } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Define the user type based on your API response
+interface UserData {
+  id: number;
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
 interface HeaderProps {
   onLoginClick: () => void;
   onRegisterClick: () => void;
 }
 
 export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
-  const [user, setUser] = useState(null);
+  // Properly type the user state
+  const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -19,9 +31,9 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
       fetch(`${API_BASE_URL}/api/v1/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data))
-      .catch(() => localStorage.removeItem('token'));
+        .then(res => res.ok ? res.json() : null)
+        .then((data: UserData | null) => setUser(data))
+        .catch(() => localStorage.removeItem('token'));
     }
   }, []);
 
