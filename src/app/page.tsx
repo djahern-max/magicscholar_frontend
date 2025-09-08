@@ -1,3 +1,5 @@
+'use client';
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -6,7 +8,7 @@ export default function Home() {
           MagicScholar
         </h1>
         <p className="text-gray-600">
-          Frontend is building successfully!
+          Frontend is working! Ready to add the full interface.
         </p>
       </div>
     </div>
