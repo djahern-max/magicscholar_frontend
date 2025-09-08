@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MapPin, Users, Globe, Heart, Share2, ExternalLink, Eye } from 'lucide-react';
 
 interface Institution {
@@ -10,10 +10,10 @@ interface Institution {
   city: string;
   state: string;
   website?: string;
-  control_type: string;
-  size_category?: string;
+  control_type: 'PUBLIC' | 'PRIVATE_NONPROFIT' | 'PRIVATE_FOR_PROFIT' | string;
+  size_category?: 'VERY_SMALL' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'VERY_LARGE' | string;
   primary_image_url?: string;
-  primary_image_quality_score?: number;
+  primary_image_quality_score?: number | null;
 }
 
 interface InstitutionCardProps {
@@ -26,23 +26,30 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
 
   const getSizeLabel = (size?: string) => {
     const sizeMap = {
-      'VERY_SMALL': 'Under 1,000',
-      'SMALL': '1,000-2,999',
-      'MEDIUM': '3,000-9,999',
-      'LARGE': '10,000-19,999',
-      'VERY_LARGE': '20,000+'
-    };
-    return size ? sizeMap[size as keyof typeof sizeMap] || size : '';
+      VERY_SMALL: 'Under 1,000',
+      SMALL: '1,000-2,999',
+      MEDIUM: '3,000-9,999',
+      LARGE: '10,000-19,999',
+      VERY_LARGE: '20,000+',
+    } as const;
+    return size ? (sizeMap[size as keyof typeof sizeMap] || size) : '';
   };
 
   const getControlTypeLabel = (type: string) => {
     const typeMap = {
-      'PUBLIC': 'Public',
-      'PRIVATE_NONPROFIT': 'Private',
-      'PRIVATE_FOR_PROFIT': 'For-Profit'
-    };
-    return typeMap[type as keyof typeof typeMap] || type;
+      PUBLIC: 'Public',
+      PRIVATE_NONPROFIT: 'Private',
+      PRIVATE_FOR_PROFIT: 'For-Profit',
+    } as const;
+    return (typeMap[type as keyof typeof typeMap] || type);
   };
+
+  // Ensure website has protocol so <a> works even if data is "school.edu"
+  const websiteUrl = useMemo(() => {
+    const w = institution.website?.trim();
+    if (!w) return undefined;
+    return /^https?:\/\//i.test(w) ? w : `https://${w}`;
+  }, [institution.website]);
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
@@ -53,9 +60,7 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
             <img
               src={institution.primary_image_url}
               alt={institution.name}
-              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageLoaded(false)}
             />
@@ -75,23 +80,28 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
         )}
 
         {/* Quality Score Badge */}
-        {institution.primary_image_quality_score && (
+        {institution.primary_image_quality_score != null && (
           <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-            {institution.primary_image_quality_score}%
+            {Math.round(institution.primary_image_quality_score)}%
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button
+            type="button"
+            aria-pressed={isLiked}
+            aria-label={isLiked ? 'Unlike' : 'Like'}
             onClick={() => setIsLiked(!isLiked)}
-            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-              isLiked ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'
-            }`}
+            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${isLiked ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'}`}
           >
             <Heart size={16} className={isLiked ? 'fill-current' : ''} />
           </button>
-          <button className="p-2 rounded-full bg-white/80 text-gray-600 hover:bg-white backdrop-blur-sm transition-colors">
+          <button
+            type="button"
+            aria-label="Share"
+            className="p-2 rounded-full bg-white/80 text-gray-600 hover:bg-white backdrop-blur-sm transition-colors"
+          >
             <Share2 size={16} />
           </button>
         </div>
@@ -122,12 +132,12 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
           </div>
         )}
 
-        {institution.website && (
-          
-            href={institution.website}
+        {websiteUrl && (
+          <a
+            href={websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors group/link"
+            className="group/link flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
           >
             <Globe size={16} className="mr-2" />
             <span className="group-hover/link:underline">Visit Website</span>
@@ -140,7 +150,7 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
       <div className="px-6 pb-4 pt-2 border-t border-gray-50 bg-gray-50/50">
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>IPEDS ID: {institution.ipeds_id}</span>
-          {institution.primary_image_quality_score && (
+          {institution.primary_image_quality_score != null && (
             <div className="flex items-center">
               <Eye size={12} className="mr-1" />
               <span>High Quality</span>
