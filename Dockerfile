@@ -1,6 +1,5 @@
 # Simple Next.js Dockerfile
 FROM node:22-alpine
-
 WORKDIR /app
 
 # Copy package files
@@ -27,12 +26,13 @@ RUN npm run build
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Change ownership
+# Change ownership - including the standalone server
 RUN chown -R nextjs:nodejs /app
+
 USER nextjs
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+# Use the standalone server instead of npm start
+CMD ["node", ".next/standalone/server.js"]
