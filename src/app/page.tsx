@@ -30,20 +30,37 @@ export default function Home() {
   const [currentOffset, setCurrentOffset] = useState(12); // ADD THIS
   const [hasMoreData, setHasMoreData] = useState(true); // ADD THIS
 
+
   useEffect(() => {
     const fetchInstitutions = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=0`);
-        if (response.ok) {
-          const data = await response.json();
-          setInstitutions(data);
-          setTotalInstitutions(data.length);
-          setHasMoreData(data.length === 12); // ADD THIS
+        // Fetch both featured institutions and total count
+        const [institutionsResponse, statsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=0`),
+          fetch(`${API_BASE_URL}/api/v1/admin/enhanced_images/processing-stats`)
+        ]);
+
+        if (institutionsResponse.ok) {
+          const institutionsData = await institutionsResponse.json();
+          setInstitutions(institutionsData);
+          setHasMoreData(institutionsData.length === 12);
         } else {
-          console.error('Failed to fetch institutions:', response.statusText);
+          console.error('Failed to fetch institutions:', institutionsResponse.statusText);
         }
+
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setTotalInstitutions(statsData.total_institutions); // This should be 6,132
+        } else {
+          console.error('Failed to fetch stats:', statsResponse.statusText);
+          // Fallback to a default number if stats endpoint fails
+          setTotalInstitutions(6132);
+        }
+
       } catch (error) {
-        console.error('Error fetching institutions:', error);
+        console.error('Error fetching data:', error);
+        // Fallback to a default number if there's an error
+        setTotalInstitutions(6132);
       } finally {
         setLoading(false);
       }
@@ -114,13 +131,13 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-gray-900">MagicScholar</h1>
             <div className="text-sm text-gray-600">
-              {totalInstitutions.toLocaleString()}+ Universities
+              {totalInstitutions.toLocaleString()}+ Opportunities
             </div>
           </div>
 
           <div className="text-center">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Discover Universities
+              Find Your Perfect School
             </h2>
             <p className="text-lg text-gray-600 mb-6">
               Explore leading institutions and find your perfect match
