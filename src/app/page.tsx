@@ -25,16 +25,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false); // ADD THIS
   const [totalInstitutions, setTotalInstitutions] = useState(0);
+  const [currentOffset, setCurrentOffset] = useState(12); // ADD THIS
+  const [hasMoreData, setHasMoreData] = useState(true); // ADD THIS
 
   useEffect(() => {
     const fetchInstitutions = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12`);
+        const response = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=0`);
         if (response.ok) {
           const data = await response.json();
           setInstitutions(data);
           setTotalInstitutions(data.length);
+          setHasMoreData(data.length === 12); // ADD THIS
         } else {
           console.error('Failed to fetch institutions:', response.statusText);
         }
@@ -47,6 +51,34 @@ export default function Home() {
 
     fetchInstitutions();
   }, []);
+
+  // ADD THIS FUNCTION
+  const loadMoreUniversities = async () => {
+    if (loadingMore || !hasMoreData) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=${currentOffset}`);
+
+      if (response.ok) {
+        const newData = await response.json();
+
+        if (newData.length > 0) {
+          setInstitutions(prev => [...prev, ...newData]);
+          setCurrentOffset(prev => prev + newData.length);
+          setHasMoreData(newData.length === 12);
+        } else {
+          setHasMoreData(false);
+        }
+      } else {
+        console.error('Failed to fetch more institutions:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching more institutions:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleSearch = () => {
     // TODO: Implement search functionality
@@ -219,12 +251,33 @@ export default function Home() {
           </div>
         )}
 
-        {/* Load More Button */}
-        {!loading && institutions.length > 0 && (
+        {/* Load More Button - UPDATED WITH CLICK HANDLER */}
+        {!loading && institutions.length > 0 && hasMoreData && (
           <div className="text-center mt-12">
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Load More Universities
+            <button
+              onClick={loadMoreUniversities}
+              disabled={loadingMore}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loadingMore ? (
+                <>
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Loading...
+                </>
+              ) : (
+                'Load More Universities'
+              )}
             </button>
+            <p className="text-sm text-gray-600 mt-2">
+              Showing {institutions.length} universities
+            </p>
+          </div>
+        )}
+
+        {/* Show when no more data */}
+        {!loading && institutions.length > 0 && !hasMoreData && (
+          <div className="text-center mt-12">
+            <p className="text-gray-600">You've seen all available universities!</p>
           </div>
         )}
       </main>
