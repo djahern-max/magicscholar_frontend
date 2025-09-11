@@ -264,8 +264,7 @@ export default function InstitutionDetail() {
                 ) : financialData ? (
                     <FinancialDataDisplay
                         data={financialData}
-                        compact={false}
-                        showCostSummary={true}
+
                         className="mb-6"
                     />
                 ) : null}
