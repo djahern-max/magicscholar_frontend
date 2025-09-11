@@ -151,40 +151,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header with Magical Emoji Elements */}
-      <header className="bg-white shadow-sm border-b relative overflow-hidden">
-        {/* Magical background elements - floating emojis */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Floating magical emojis */}
-          <div className="absolute top-4 left-8 text-2xl animate-pulse opacity-20">
-            ✨
-          </div>
-          <div className="absolute top-8 right-12 text-xl animate-bounce opacity-15">
-            ⭐
-          </div>
-          <div className="absolute bottom-4 left-1/4 text-xl animate-pulse delay-300 opacity-20">
-            🌟
-          </div>
-          <div className="absolute top-6 left-1/3 text-lg animate-bounce delay-500 opacity-15">
-            ✨
-          </div>
-          <div className="absolute bottom-6 right-1/4 text-xl animate-pulse delay-700 opacity-20">
-            ⭐
-          </div>
-          <div className="absolute top-10 right-1/3 text-lg animate-bounce delay-1000 opacity-15">
-            💫
-          </div>
-          <div className="absolute bottom-8 left-1/6 text-xl animate-pulse delay-1200 opacity-20">
-            🔮
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 py-6 relative z-10">
+      {/* Clean Mobile-Optimized Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
-            {/* Enhanced Logo with Magic Emojis */}
+            {/* Logo with Magic Emojis */}
             <div className="flex items-center space-x-3">
               <div
-                className="text-3xl"
+                className="text-2xl sm:text-3xl"
                 style={{
                   textShadow: '0 0 3px #60a5fa, 0 0 6px #60a5fa',
                   filter: 'drop-shadow(0 0 2px #60a5fa)'
@@ -192,41 +166,26 @@ export default function Home() {
               >
                 🪄 🎓
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 MagicScholar
               </h1>
-            </div>
-
-            {/* Enhanced Opportunities Counter */}
-            <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-full border border-blue-100">
-              <span className="text-xl">✨</span>
-              <span className="text-sm font-medium text-gray-700">
-                {totalInstitutions > 0 ? `${totalInstitutions.toLocaleString()}+ Opportunities` : '...'}
-              </span>
             </div>
           </div>
 
           <div className="text-center">
-            {/* Enhanced Main Heading */}
-            <div className="relative inline-block">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                {isDisplayingSearchResults ? 'Search Results' : 'Find Your Perfect School'}
-              </h2>
-              {!isDisplayingSearchResults && (
-                <div className="absolute -top-2 -right-8 text-2xl animate-spin opacity-80" style={{ animationDuration: '3s' }}>
-                  🌟
-                </div>
-              )}
-            </div>
+            {/* Gradient Main Heading */}
+            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              {isDisplayingSearchResults ? 'Search Results' : 'Find Your Perfect School'}
+            </h2>
 
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-base sm:text-lg text-gray-600 mb-6">
               {isDisplayingSearchResults
                 ? `Found ${searchResults.length} results for "${searchQuery}"`
                 : 'Explore leading institutions and find your perfect match'
               }
             </p>
 
-            {/* Enhanced Search Bar */}
+            {/* Mobile-Optimized Search Bar */}
             <div className="max-w-lg mx-auto">
               <div className="relative">
                 <div className="flex rounded-xl border-2 border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all duration-200 bg-white shadow-lg">
@@ -237,12 +196,13 @@ export default function Home() {
                       placeholder="Search for universities..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleSearch();
                         }
                       }}
-                      className="w-full pl-12 pr-4 py-4 border-none focus:ring-0 focus:outline-none text-gray-700 placeholder-gray-500"
+                      className="w-full pl-12 pr-12 py-4 border-none focus:ring-0 focus:outline-none text-gray-700 placeholder-gray-500"
+                      disabled={isSearching}
                     />
                     {/* Clear button when searching */}
                     {showSearchResults && (
@@ -253,24 +213,13 @@ export default function Home() {
                         ✕
                       </button>
                     )}
-                  </div>
-                  <button
-                    onClick={handleSearch}
-                    disabled={isSearching}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 flex items-center space-x-2 font-medium"
-                  >
-                    {isSearching ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Searching...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-lg">🔍</span>
-                        <span>Search</span>
-                      </>
+                    {/* Loading indicator */}
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 </div>
 
                 {/* Magical glow effect */}
@@ -285,7 +234,6 @@ export default function Home() {
                   onClick={clearSearch}
                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                 >
-                  <span className="text-lg">✨</span>
                   <span>← Back to Browse</span>
                 </button>
               </div>
@@ -300,9 +248,6 @@ export default function Home() {
           <div className="text-center py-12">
             <div className="relative">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl animate-pulse">
-                ✨
-              </div>
             </div>
             <p className="mt-4 text-gray-600">Loading universities...</p>
           </div>
@@ -320,10 +265,9 @@ export default function Home() {
                 </p>
                 <button
                   onClick={clearSearch}
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium mx-auto"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  <span className="text-lg">✨</span>
-                  <span>Browse All Universities</span>
+                  Browse All Universities
                 </button>
               </div>
             )}
@@ -351,10 +295,7 @@ export default function Home() {
                       Loading...
                     </>
                   ) : (
-                    <>
-                      <span className="text-lg">⚡</span>
-                      Load More Universities
-                    </>
+                    'Load More Universities'
                   )}
                 </button>
                 <p className="text-sm text-gray-600 mt-2">
@@ -366,9 +307,6 @@ export default function Home() {
             {/* No More Data Message */}
             {!isDisplayingSearchResults && !hasMoreData && institutions.length > 0 && (
               <div className="text-center py-8">
-                <div className="mb-4 text-4xl">
-                  🎉
-                </div>
                 <p className="text-gray-600">
                   You've seen all {institutions.length} featured universities!
                 </p>
