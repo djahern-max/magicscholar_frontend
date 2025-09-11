@@ -178,12 +178,6 @@ export default function Home() {
               {isDisplayingSearchResults ? 'Search Results' : 'Find Your Perfect School'}
             </h2>
 
-            <p className="text-base sm:text-lg text-gray-600 mb-6">
-              {isDisplayingSearchResults
-                ? `Found ${searchResults.length} results for "${searchQuery}"`
-                : 'Explore leading institutions and find your perfect match'
-              }
-            </p>
 
             {/* Mobile-Optimized Search Bar */}
             <div className="max-w-lg mx-auto">
@@ -193,7 +187,7 @@ export default function Home() {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="Search for universities..."
+                      placeholder="Search for schools..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => {
