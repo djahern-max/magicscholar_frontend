@@ -1,4 +1,4 @@
-// src/components/financial/financial-data.tsx
+// Replace your existing FinancialDataDisplay component with this:
 import React from 'react';
 import {
     DollarSign,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 interface FinancialData {
+    id?: number;
     ipeds_id: number;
     academic_year: string;
     data_source: string;
@@ -29,6 +30,12 @@ interface FinancialData {
     data_completeness_score: number;
     validation_issues?: string;
     validation_status: string;
+    total_cost_in_state?: number;
+    total_cost_out_state?: number;
+    has_comprehensive_data?: boolean;
+    cost_breakdown?: any;
+    created_at?: string;
+    updated_at?: string;
 }
 
 interface FinancialDataProps {
@@ -217,7 +224,9 @@ export default function FinancialDataDisplay({
                         <div className="text-center">
                             <div className="text-sm text-blue-700 mb-1">In-State Student</div>
                             <div className="text-2xl font-bold text-blue-900">
+                                {/* Use the pre-calculated total from API if available, otherwise calculate */}
                                 {formatCurrency(
+                                    data.total_cost_in_state ||
                                     (data.tuition_fees_in_state || 0) +
                                     (data.room_board_on_campus || 0) +
                                     (data.books_supplies || 0) +
@@ -229,7 +238,9 @@ export default function FinancialDataDisplay({
                         <div className="text-center">
                             <div className="text-sm text-purple-700 mb-1">Out-of-State Student</div>
                             <div className="text-2xl font-bold text-purple-900">
+                                {/* Use the pre-calculated total from API if available, otherwise calculate */}
                                 {formatCurrency(
+                                    data.total_cost_out_state ||
                                     (data.tuition_fees_out_state || 0) +
                                     (data.room_board_on_campus || 0) +
                                     (data.books_supplies || 0) +
