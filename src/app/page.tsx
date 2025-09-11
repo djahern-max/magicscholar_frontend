@@ -168,7 +168,7 @@ export default function Home() {
     setSearchTotal(0);
   };
 
-  // Handle quick search
+  // Handle quick search - removed per user request
   const handleQuickSearch = (schoolName: string) => {
     setSearchQuery(schoolName);
     handleSearch(schoolName);
