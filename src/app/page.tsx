@@ -310,26 +310,7 @@ export default function Home() {
 
       {/* Results Section */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Results Header */}
-        <div className="flex justify-between items-center mb-6">
 
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center px-3 py-2 border rounded-md text-sm transition-colors ${showFilters || Object.values(filters).some(f => f)
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {Object.values(filters).some(f => f) && (
-              <span className="ml-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                Active
-              </span>
-            )}
-          </button>
-        </div>
 
         {/* Loading or Search State */}
         {isSearching ? (
