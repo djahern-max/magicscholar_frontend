@@ -307,100 +307,18 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Advanced Filters */}
-      {showFilters && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {/* State Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                <select
-                  value={filters.state}
-                  onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All States</option>
-                  <option value="CA">California</option>
-                  <option value="NY">New York</option>
-                  <option value="TX">Texas</option>
-                  <option value="FL">Florida</option>
-                  {/* Add more states as needed */}
-                </select>
-              </div>
-
-              {/* Control Type Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                  value={filters.control_type}
-                  onChange={(e) => setFilters({ ...filters, control_type: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Types</option>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                  <option value="private_nonprofit">Private Non-Profit</option>
-                </select>
-              </div>
-
-              {/* Size Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
-                <select
-                  value={filters.size_category}
-                  onChange={(e) => setFilters({ ...filters, size_category: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Sizes</option>
-                  <option value="very_small">Very Small (&lt;1,000)</option>
-                  <option value="small">Small (1,000-2,999)</option>
-                  <option value="medium">Medium (3,000-9,999)</option>
-                  <option value="large">Large (10,000-19,999)</option>
-                  <option value="very_large">Very Large (20,000+)</option>
-                </select>
-              </div>
-
-              {/* Filter Actions */}
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={applyFilters}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Results Section */}
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Results Header */}
         <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-600">
-            {showSearchResults ? (
-              <>
-                Showing {searchResults.length} of {searchTotal} results
-                {searchQuery && <> for "<span className="font-medium">{searchQuery}</span>"</>}
-              </>
-            ) : (
-              <>Showing {institutions.length} of {totalInstitutions.toLocaleString()} schools</>
-            )}
-          </div>
+
 
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`inline-flex items-center px-3 py-2 border rounded-md text-sm transition-colors ${showFilters || Object.values(filters).some(f => f)
-                ? 'bg-blue-50 border-blue-200 text-blue-700'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              ? 'bg-blue-50 border-blue-200 text-blue-700'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
           >
             <Filter className="w-4 h-4 mr-2" />
