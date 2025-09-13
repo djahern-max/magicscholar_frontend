@@ -38,6 +38,9 @@ const nextConfig = {
     env: {
         CUSTOM_KEY: process.env.CUSTOM_KEY,
     },
+
+    // Remove swcMinify as it's deprecated in Next.js 15
+    // SWC is now enabled by default
 }
 
 module.exports = nextConfig
