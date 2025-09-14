@@ -16,7 +16,6 @@ export default function ClientLayout({
   };
 
   const handleRegisterClick = () => {
-    // For now, just open the login modal - you can implement a separate register modal later
     setIsLoginModalOpen(true);
   };
 
@@ -25,10 +24,7 @@ export default function ClientLayout({
   };
 
   const handleSwitchToRegister = () => {
-    // This is called when user clicks "Sign up" in the login modal
-    // You can implement register functionality here
     console.log('Switch to register clicked');
-    // For now, just close the modal
     setIsLoginModalOpen(false);
   };
 
