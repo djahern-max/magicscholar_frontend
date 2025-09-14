@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Search, Bell, Settings, LogOut, ChevronDown, Menu, X } from 'lucide-react';
+import { User, Bell, Settings, LogOut, ChevronDown, Menu, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -23,7 +23,6 @@ interface HeaderProps {
 
 export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
   const [user, setUser] = useState<UserData | null>(null);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -63,25 +62,15 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
             </div>
           </div>
 
-          {/* Search Bar (Desktop) */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
-            <div className="relative w-full">
-              <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors ${isSearchFocused ? 'text-blue-500' : 'text-gray-400'
-                }`}>
-                <Search className="h-5 w-5" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search for anything"
-                className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm placeholder-gray-500 transition-all duration-200 ${isSearchFocused
-                    ? 'border-blue-500 ring-2 ring-blue-100 bg-white'
-                    : 'border-gray-300 bg-gray-50 hover:bg-white hover:border-gray-400'
-                  }`}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-              />
-            </div>
-          </div>
+          {/* Navigation Links (Desktop) */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <a href="/" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              Schools
+            </a>
+            <a href="/scholarships" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              Scholarships
+            </a>
+          </nav>
 
           {/* Right side - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
@@ -164,17 +153,15 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search for anything"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-500 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white"
-            />
+        {/* Mobile Navigation Links */}
+        <div className="md:hidden pb-3 border-t border-gray-200">
+          <div className="px-4 py-3 space-y-2">
+            <a href="/" className="block text-gray-700 hover:text-blue-600 font-medium">
+              Schools
+            </a>
+            <a href="/scholarships" className="block text-gray-700 hover:text-blue-600 font-medium">
+              Scholarships
+            </a>
           </div>
         </div>
       </div>
@@ -201,6 +188,12 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
                 <a href="/dashboard" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
                   <Settings className="h-5 w-5" />
                   <span>Dashboard</span>
+                </a>
+                <a href="/" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
+                  <span>Schools</span>
+                </a>
+                <a href="/scholarships" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
+                  <span>Scholarships</span>
                 </a>
                 <button
                   onClick={handleLogout}
