@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next'
+import ClientLayout from './client-layout'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'MagicScholar', // Clean, short title
+  title: 'MagicScholar',
   description: 'Find your perfect college and scholarships',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   openGraph: {
@@ -33,7 +34,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ClientLayout>{children}</ClientLayout>
+      </body>
     </html>
   )
 }

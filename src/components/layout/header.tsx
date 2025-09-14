@@ -66,19 +66,17 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           {/* Search Bar (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-lg mx-8">
             <div className="relative w-full">
-              <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors ${
-                isSearchFocused ? 'text-blue-500' : 'text-gray-400'
-              }`}>
+              <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors ${isSearchFocused ? 'text-blue-500' : 'text-gray-400'
+                }`}>
                 <Search className="h-5 w-5" />
               </div>
               <input
                 type="text"
                 placeholder="Search for anything"
-                className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm placeholder-gray-500 transition-all duration-200 ${
-                  isSearchFocused 
-                    ? 'border-blue-500 ring-2 ring-blue-100 bg-white' 
+                className={`block w-full pl-10 pr-3 py-2 border rounded-lg text-sm placeholder-gray-500 transition-all duration-200 ${isSearchFocused
+                    ? 'border-blue-500 ring-2 ring-blue-100 bg-white'
                     : 'border-gray-300 bg-gray-50 hover:bg-white hover:border-gray-400'
-                }`}
+                  }`}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
               />
@@ -214,6 +212,12 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
               </>
             ) : (
               <div className="space-y-3">
+                <a href="/" className="block text-gray-700 hover:text-blue-600 font-medium">
+                  Schools
+                </a>
+                <a href="/scholarships" className="block text-gray-700 hover:text-blue-600 font-medium">
+                  Scholarships
+                </a>
                 <button
                   onClick={() => {
                     onLoginClick();
