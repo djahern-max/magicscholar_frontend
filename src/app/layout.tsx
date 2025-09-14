@@ -1,42 +1,52 @@
-import type { Metadata, Viewport } from 'next'
-import ClientLayout from './client-layout'
-import './globals.css'
+'use client';
 
-export const metadata: Metadata = {
-  title: 'MagicScholar',
-  description: 'Find your perfect college and scholarships',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  openGraph: {
-    title: 'MagicScholar',
-    description: 'Find your perfect college and scholarships',
-    url: '/',
-    siteName: 'MagicScholar',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'MagicScholar',
-    description: 'Find your perfect college and scholarships',
-  },
-}
+import { useState } from 'react'
+import Header from '@/components/layout/header'
+import LoginModal from '@/components/ui/login-modal'
 
-export const viewport: Viewport = {
-  themeColor: '#1f2937',
-  width: 'device-width',
-  initialScale: 1,
-}
-
-export default function RootLayout({
+export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const handleLoginClick = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleRegisterClick = () => {
+    // For now, just open the login modal - you can implement a separate register modal later
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleSwitchToRegister = () => {
+    // This is called when user clicks "Sign up" in the login modal
+    // You can implement register functionality here
+    console.log('Switch to register clicked');
+    // For now, just close the modal
+    setIsLoginModalOpen(false);
+  };
+
   return (
-    <html lang="en">
-      <body>
-        <ClientLayout>{children}</ClientLayout>
-      </body>
-    </html>
+    <>
+      <Header
+        onLoginClick={handleLoginClick}
+        onRegisterClick={handleRegisterClick}
+      />
+      <main>{children}</main>
+
+      {isLoginModalOpen && (
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={handleCloseModal}
+          onSwitchToRegister={handleSwitchToRegister}
+        />
+      )}
+    </>
   )
 }
