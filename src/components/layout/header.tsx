@@ -86,8 +86,8 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
             {/* Logo */}
             <div className="flex items-center">
               <a href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity">
-                <span className="text-blue-600">magic</span>
-                <span className="text-gray-900">scholar</span>
+                <span className="text-blue-600">magicScholar</span>
+
               </a>
             </div>
 
