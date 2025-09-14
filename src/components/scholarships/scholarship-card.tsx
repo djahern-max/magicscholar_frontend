@@ -1,5 +1,5 @@
 // src/components/scholarships/scholarship-card.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { DollarSign, Calendar, Clock, ExternalLink, Award, Users, GraduationCap } from 'lucide-react';
 
@@ -34,6 +34,68 @@ interface ScholarshipCardProps {
 }
 
 export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
+    // NEW: State to handle image loading errors
+    const [imageError, setImageError] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // NEW: Function to get the display image with proper fallback logic
+    const getDisplayImageUrls = (scholarship: Scholarship): string[] => {
+        const urls: string[] = [];
+
+        // Priority 1: Primary image
+        if (scholarship.primary_image_url) {
+            urls.push(scholarship.primary_image_url);
+        }
+
+        // Priority 2: Logo image  
+        if (scholarship.logo_image_url) {
+            urls.push(scholarship.logo_image_url);
+        }
+
+        // Priority 3: Category-based fallbacks
+        const baseUrl = "https://magicscholar-images.nyc3.digitaloceanspaces.com/fallbacks/";
+
+        switch (scholarship.scholarship_type?.toLowerCase()) {
+            case 'stem':
+                urls.push(`${baseUrl}stem_scholarship.jpg`);
+                break;
+            case 'arts':
+            case 'arts_humanities':
+                urls.push(`${baseUrl}arts_scholarship.jpg`);
+                break;
+            case 'athletic':
+                urls.push(`${baseUrl}athletic_scholarship.jpg`);
+                break;
+            case 'diversity':
+            case 'diversity_inclusion':
+                urls.push(`${baseUrl}diversity_scholarship.jpg`);
+                break;
+            case 'need_based':
+                urls.push(`${baseUrl}need_based_scholarship.jpg`);
+                break;
+            default:
+                urls.push(`${baseUrl}general_scholarship.jpg`);
+        }
+
+        return urls;
+    };
+
+    // NEW: Handle image loading errors by trying the next URL
+    const handleImageError = () => {
+        const imageUrls = getDisplayImageUrls(scholarship);
+        if (currentImageIndex < imageUrls.length - 1) {
+            setCurrentImageIndex(currentImageIndex + 1);
+        } else {
+            setImageError(true);
+        }
+    };
+
+    // NEW: Get the current image to display
+    const getCurrentImageUrl = (): string | null => {
+        const imageUrls = getDisplayImageUrls(scholarship);
+        return imageUrls[currentImageIndex] || null;
+    };
+
     const getScholarshipTypeDisplay = (type: string) => {
         const types: { [key: string]: string } = {
             'academic_merit': 'Academic Merit',
@@ -93,22 +155,28 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
     };
 
     const difficulty = getDifficultyDisplay(scholarship.difficulty_level);
+    const currentImageUrl = getCurrentImageUrl();
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
-            {/* Scholarship Image */}
+            {/* UPDATED: Scholarship Image with proper fallback logic */}
             <div className="relative h-48 bg-gray-200">
-                {scholarship.primary_image_url || scholarship.logo_image_url ? (
+                {currentImageUrl && !imageError ? (
                     <img
-                        src={scholarship.primary_image_url || scholarship.logo_image_url}
-                        alt={scholarship.title}
+                        src={currentImageUrl}
+                        alt={`${scholarship.title} scholarship`}
                         className="w-full h-full object-cover"
+                        onError={handleImageError}
+                        loading="lazy"
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
                         <div className="text-center">
                             <Award className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-                            <span className="text-gray-500 text-sm">No Image</span>
+                            <span className="text-gray-500 text-sm font-medium">
+                                {getScholarshipTypeDisplay(scholarship.scholarship_type)}
+                            </span>
+                            <div className="text-xs text-gray-400 mt-1">Scholarship</div>
                         </div>
                     </div>
                 )}
@@ -119,9 +187,18 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
                         {difficulty.label}
                     </span>
                 </div>
+
+                {/* NEW: Image quality indicator for development */}
+                {process.env.NODE_ENV === 'development' && scholarship.primary_image_quality_score && (
+                    <div className="absolute top-3 left-3">
+                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-black bg-opacity-50 text-white">
+                            Q: {scholarship.primary_image_quality_score}
+                        </span>
+                    </div>
+                )}
             </div>
 
-            {/* Scholarship Details */}
+            {/* Scholarship Details - UNCHANGED */}
             <div className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {scholarship.title}
@@ -236,8 +313,11 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
 
                 {/* Debug Info in Development */}
                 {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-2 text-xs text-gray-500">
-                        ID: {scholarship.id} | Quality: {scholarship.primary_image_quality_score || 'N/A'}
+                    <div className="mt-2 text-xs text-gray-500 border-t pt-2">
+                        <div>ID: {scholarship.id}</div>
+                        <div>Quality: {scholarship.primary_image_quality_score || 'N/A'}</div>
+                        <div>Image Index: {currentImageIndex}</div>
+                        <div>Current URL: {currentImageUrl ? 'Yes' : 'None'}</div>
                     </div>
                 )}
             </div>
