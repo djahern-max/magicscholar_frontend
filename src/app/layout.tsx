@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Header from '@/components/layout/header'
 import LoginModal from '@/components/ui/login-modal'
 
@@ -12,22 +11,22 @@ export default function ClientLayout({
 }) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  const handleLoginClick = () => {
+  const handleLoginClick = useCallback(() => {
     setIsLoginModalOpen(true);
-  };
+  }, []);
 
-  const handleRegisterClick = () => {
+  const handleRegisterClick = useCallback(() => {
     setIsLoginModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsLoginModalOpen(false);
-  };
+  }, []);
 
-  const handleSwitchToRegister = () => {
+  const handleSwitchToRegister = useCallback(() => {
     console.log('Switch to register clicked');
     setIsLoginModalOpen(false);
-  };
+  }, []);
 
   return (
     <>

@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Bell, Settings, LogOut, ChevronDown, Menu, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Define the user type based on your API response
 interface UserData {
   id: number;
   email: string;
@@ -36,18 +35,29 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
         .then((data: UserData | null) => setUser(data))
         .catch(() => localStorage.removeItem('token'));
     }
-  }, []);
+  }, []); // Empty dependency array - only run once
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
     window.location.reload();
-  };
+  }, []);
 
-  // Get user initials for avatar
-  const getUserInitials = (user: UserData) => {
+  const getUserInitials = useCallback((user: UserData) => {
     return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
-  };
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const toggleProfileMenu = useCallback(() => {
+    setIsProfileMenuOpen(prev => !prev);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(false);
+  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -56,9 +66,9 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <a href="/" className="text-2xl font-bold text-gray-900">
                 <span className="text-blue-600">magic</span>scholar
-              </h1>
+              </a>
             </div>
           </div>
 
@@ -76,15 +86,13 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                {/* Notifications */}
                 <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
                   <Bell className="h-5 w-5" />
                 </button>
 
-                {/* Profile Dropdown */}
                 <div className="relative">
                   <button
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                    onClick={toggleProfileMenu}
                     className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
@@ -93,7 +101,6 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
                     <ChevronDown className="h-4 w-4 text-gray-400" />
                   </button>
 
-                  {/* Profile Dropdown Menu */}
                   {isProfileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
@@ -141,7 +148,7 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={toggleMobileMenu}
               className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100"
             >
               {isMobileMenuOpen ? (
@@ -152,24 +159,19 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
             </button>
           </div>
         </div>
-
-        {/* Mobile Navigation Links */}
-        <div className="md:hidden pb-3 border-t border-gray-200">
-          <div className="px-4 py-3 space-y-2">
-            <a href="/" className="block text-gray-700 hover:text-blue-600 font-medium">
-              Schools
-            </a>
-            <a href="/scholarships" className="block text-gray-700 hover:text-blue-600 font-medium">
-              Scholarships
-            </a>
-          </div>
-        </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white">
           <div className="px-4 py-3 space-y-3">
+            <a href="/" onClick={closeMobileMenu} className="block text-gray-700 hover:text-blue-600 font-medium">
+              Schools
+            </a>
+            <a href="/scholarships" onClick={closeMobileMenu} className="block text-gray-700 hover:text-blue-600 font-medium">
+              Scholarships
+            </a>
+
             {user ? (
               <>
                 <div className="flex items-center space-x-3 pb-3 border-b border-gray-200">
@@ -181,19 +183,13 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                 </div>
-                <a href="/dashboard/profile" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
+                <a href="/dashboard/profile" onClick={closeMobileMenu} className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
                   <User className="h-5 w-5" />
                   <span>Profile</span>
                 </a>
-                <a href="/dashboard" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
+                <a href="/dashboard" onClick={closeMobileMenu} className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
                   <Settings className="h-5 w-5" />
                   <span>Dashboard</span>
-                </a>
-                <a href="/" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
-                  <span>Schools</span>
-                </a>
-                <a href="/scholarships" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
-                  <span>Scholarships</span>
                 </a>
                 <button
                   onClick={handleLogout}
@@ -205,16 +201,10 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
               </>
             ) : (
               <div className="space-y-3">
-                <a href="/" className="block text-gray-700 hover:text-blue-600 font-medium">
-                  Schools
-                </a>
-                <a href="/scholarships" className="block text-gray-700 hover:text-blue-600 font-medium">
-                  Scholarships
-                </a>
                 <button
                   onClick={() => {
                     onLoginClick();
-                    setIsMobileMenuOpen(false);
+                    closeMobileMenu();
                   }}
                   className="block w-full text-left text-gray-600 hover:text-gray-900 font-medium"
                 >
@@ -223,7 +213,7 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
                 <button
                   onClick={() => {
                     onRegisterClick();
-                    setIsMobileMenuOpen(false);
+                    closeMobileMenu();
                   }}
                   className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
                 >
