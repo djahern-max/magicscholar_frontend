@@ -10,15 +10,13 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   const handleLoginClick = () => {
-    setIsRegisterMode(false);
     setIsLoginModalOpen(true);
   };
 
   const handleRegisterClick = () => {
-    setIsRegisterMode(true);
+    // For now, just open the login modal - you can implement a separate register modal later
     setIsLoginModalOpen(true);
   };
 
@@ -26,19 +24,27 @@ export default function ClientLayout({
     setIsLoginModalOpen(false);
   };
 
+  const handleSwitchToRegister = () => {
+    // This is called when user clicks "Sign up" in the login modal
+    // You can implement register functionality here
+    console.log('Switch to register clicked');
+    // For now, just close the modal
+    setIsLoginModalOpen(false);
+  };
+
   return (
     <>
-      <Header 
+      <Header
         onLoginClick={handleLoginClick}
         onRegisterClick={handleRegisterClick}
       />
       <main>{children}</main>
-      
+
       {isLoginModalOpen && (
         <LoginModal
           isOpen={isLoginModalOpen}
           onClose={handleCloseModal}
-          isRegisterMode={isRegisterMode}
+          onSwitchToRegister={handleSwitchToRegister}
         />
       )}
     </>
