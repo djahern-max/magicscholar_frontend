@@ -90,14 +90,12 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
                 className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
               >
                 <span className="text-2xl">🪄</span>
-                {/* Group the word so it's one piece */}
-                <span className="flex items-baseline leading-none">
+                <span>
                   <span className="text-blue-600">magic</span>
                   <span className="text-gray-900">Scholar</span>
                 </span>
               </a>
             </div>
-
             {/* Navigation */}
             <div className="hidden md:flex items-center">
               <a
