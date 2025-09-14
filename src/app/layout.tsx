@@ -1,48 +1,41 @@
-'use client';
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
 
-import { useState, useCallback } from 'react'
-import Header from '@/components/layout/header'
-import LoginModal from '@/components/ui/login-modal'
+export const metadata: Metadata = {
+  title: 'MagicScholar',
+  description: 'Find your perfect college and scholarships',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  openGraph: {
+    title: 'MagicScholar',
+    description: 'Find your perfect college and scholarships',
+    url: '/',
+    siteName: 'MagicScholar',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MagicScholar',
+    description: 'Find your perfect college and scholarships',
+  },
+}
 
-export default function ClientLayout({
+export const viewport: Viewport = {
+  themeColor: '#1f2937',
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
-  const handleLoginClick = useCallback(() => {
-    setIsLoginModalOpen(true);
-  }, []);
-
-  const handleRegisterClick = useCallback(() => {
-    setIsLoginModalOpen(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setIsLoginModalOpen(false);
-  }, []);
-
-  const handleSwitchToRegister = useCallback(() => {
-    console.log('Switch to register clicked');
-    setIsLoginModalOpen(false);
-  }, []);
-
   return (
-    <>
-      <Header
-        onLoginClick={handleLoginClick}
-        onRegisterClick={handleRegisterClick}
-      />
-      <main>{children}</main>
-
-      {isLoginModalOpen && (
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={handleCloseModal}
-          onSwitchToRegister={handleSwitchToRegister}
-        />
-      )}
-    </>
+    <html lang="en">
+      <body className="min-h-screen bg-gray-50">
+        {children}
+      </body>
+    </html>
   )
 }
