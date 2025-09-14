@@ -34,11 +34,11 @@ interface ScholarshipCardProps {
 }
 
 export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
-    // NEW: State to handle image loading errors
+    // State to handle image loading errors
     const [imageError, setImageError] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // NEW: Function to get the display image with proper fallback logic
+    // Function to get the display image with proper fallback logic
     const getDisplayImageUrls = (scholarship: Scholarship): string[] => {
         const urls: string[] = [];
 
@@ -80,7 +80,7 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
         return urls;
     };
 
-    // NEW: Handle image loading errors by trying the next URL
+    // Handle image loading errors by trying the next URL
     const handleImageError = () => {
         const imageUrls = getDisplayImageUrls(scholarship);
         if (currentImageIndex < imageUrls.length - 1) {
@@ -90,7 +90,7 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
         }
     };
 
-    // NEW: Get the current image to display
+    // Get the current image to display
     const getCurrentImageUrl = (): string | null => {
         const imageUrls = getDisplayImageUrls(scholarship);
         return imageUrls[currentImageIndex] || null;
@@ -130,16 +130,16 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
 
     const formatAmount = () => {
         if (scholarship.amount_exact) {
-            return `$${scholarship.amount_exact.toLocaleString()}`;
+            return `${scholarship.amount_exact.toLocaleString()}`;
         }
         if (scholarship.amount_min && scholarship.amount_max) {
-            return `$${scholarship.amount_min.toLocaleString()} - $${scholarship.amount_max.toLocaleString()}`;
+            return `${scholarship.amount_min.toLocaleString()} - ${scholarship.amount_max.toLocaleString()}`;
         }
         if (scholarship.amount_min) {
-            return `$${scholarship.amount_min.toLocaleString()}+`;
+            return `${scholarship.amount_min.toLocaleString()}+`;
         }
         if (scholarship.amount_max) {
-            return `Up to $${scholarship.amount_max.toLocaleString()}`;
+            return `Up to ${scholarship.amount_max.toLocaleString()}`;
         }
         return 'Amount varies';
     };
@@ -159,19 +159,19 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
-            {/* UPDATED: Scholarship Image with proper fallback logic */}
-            <div className="relative h-48 bg-gray-200">
+            {/* IMPROVED: Scholarship Image with better styling */}
+            <div className="relative h-48 bg-white overflow-hidden flex items-center justify-center">
                 {currentImageUrl && !imageError ? (
                     <img
                         src={currentImageUrl}
                         alt={`${scholarship.title} scholarship`}
-                        className="w-full h-full object-cover"
+                        className="max-w-full max-h-full object-contain"
                         onError={handleImageError}
                         loading="lazy"
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-                        <div className="text-center">
+                        <div className="text-center p-4">
                             <Award className="w-12 h-12 text-blue-400 mx-auto mb-2" />
                             <span className="text-gray-500 text-sm font-medium">
                                 {getScholarshipTypeDisplay(scholarship.scholarship_type)}
@@ -181,24 +181,27 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
                     </div>
                 )}
 
+                {/* Gradient overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+
                 {/* Difficulty Badge */}
-                <div className="absolute top-3 right-3">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${difficulty.color}`}>
+                <div className="absolute top-3 right-3 z-10">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${difficulty.color} backdrop-blur-sm shadow-sm`}>
                         {difficulty.label}
                     </span>
                 </div>
 
-                {/* NEW: Image quality indicator for development */}
+                {/* Image quality indicator for development */}
                 {process.env.NODE_ENV === 'development' && scholarship.primary_image_quality_score && (
-                    <div className="absolute top-3 left-3">
-                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-black bg-opacity-50 text-white">
+                    <div className="absolute top-3 left-3 z-10">
+                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-black bg-opacity-70 text-white backdrop-blur-sm">
                             Q: {scholarship.primary_image_quality_score}
                         </span>
                     </div>
                 )}
             </div>
 
-            {/* Scholarship Details - UNCHANGED */}
+            {/* Scholarship Details */}
             <div className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {scholarship.title}
@@ -209,7 +212,7 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    {/* Award Amount */}
+                    {/* Award Amount - FIXED: Only DollarSign icon, no extra $ in text */}
                     <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-green-500" />
                         <span className="font-medium text-green-600">{formatAmount()}</span>

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X, Filter, DollarSign, Award, Calendar } from 'lucide-react';
+import { Search, X, DollarSign, Award, Calendar } from 'lucide-react';
 import ScholarshipCard from '@/components/scholarships/scholarship-card';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -46,9 +46,6 @@ export default function ScholarshipsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
-    const [difficultyFilter, setDifficultyFilter] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -64,10 +61,6 @@ export default function ScholarshipsPage() {
             if (searchTerm) {
                 params.append('search_query', searchTerm);
             }
-            if (typeFilter) {
-                params.append('scholarship_type', typeFilter);
-            }
-            // Note: Add difficulty filter once backend supports it
 
             const response = await fetch(`${API_BASE_URL}/api/v1/scholarships/?${params}`);
 
@@ -87,7 +80,7 @@ export default function ScholarshipsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, typeFilter]);
+    }, [page, searchTerm]);
 
     useEffect(() => {
         fetchScholarships();
@@ -103,31 +96,6 @@ export default function ScholarshipsPage() {
         setSearchTerm('');
         setPage(1);
     };
-
-    const clearFilters = () => {
-        setTypeFilter('');
-        setDifficultyFilter('');
-        setPage(1);
-    };
-
-    const scholarshipTypes = [
-        { value: 'academic_merit', label: 'Academic Merit' },
-        { value: 'need_based', label: 'Need-Based' },
-        { value: 'stem', label: 'STEM' },
-        { value: 'diversity', label: 'Diversity & Inclusion' },
-        { value: 'leadership', label: 'Leadership' },
-        { value: 'athletic', label: 'Athletic' },
-        { value: 'arts', label: 'Arts & Humanities' },
-        { value: 'community_service', label: 'Community Service' },
-        { value: 'first_generation', label: 'First Generation' }
-    ];
-
-    const difficultyLevels = [
-        { value: 'easy', label: 'Easy' },
-        { value: 'moderate', label: 'Moderate' },
-        { value: 'hard', label: 'Hard' },
-        { value: 'very_hard', label: 'Very Hard' }
-    ];
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -166,82 +134,9 @@ export default function ScholarshipsPage() {
                                 )}
                             </div>
                         </form>
-
-                        {/* Filter Toggle */}
-                        <div className="mt-4">
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                            >
-                                <Filter className="w-4 h-4 mr-2" />
-                                Filters
-                                {(typeFilter || difficultyFilter) && (
-                                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Active
-                                    </span>
-                                )}
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Filters Panel */}
-            {showFilters && (
-                <div className="bg-white border-b shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Scholarship Type Filter */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Scholarship Type
-                                </label>
-                                <select
-                                    value={typeFilter}
-                                    onChange={(e) => setTypeFilter(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">All Types</option>
-                                    {scholarshipTypes.map((type) => (
-                                        <option key={type.value} value={type.value}>
-                                            {type.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Difficulty Filter */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Application Difficulty
-                                </label>
-                                <select
-                                    value={difficultyFilter}
-                                    onChange={(e) => setDifficultyFilter(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">All Levels</option>
-                                    {difficultyLevels.map((level) => (
-                                        <option key={level.value} value={level.value}>
-                                            {level.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Clear Filters */}
-                            <div className="flex items-end">
-                                <button
-                                    onClick={clearFilters}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                >
-                                    Clear Filters
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -261,7 +156,7 @@ export default function ScholarshipsPage() {
                         <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No scholarships found</h3>
                         <p className="text-gray-600">
-                            Try adjusting your search terms or filters to find more scholarships.
+                            Try adjusting your search terms to find more scholarships.
                         </p>
                     </div>
                 ) : (
@@ -273,7 +168,7 @@ export default function ScholarshipsPage() {
                                 {searchTerm && ` for "${searchTerm}"`}
                             </p>
 
-                            {/* Quick Stats */}
+                            {/* Quick Stats - FIXED: No double dollar signs */}
                             <div className="hidden md:flex items-center space-x-6 text-sm text-gray-500">
                                 <div className="flex items-center">
                                     <DollarSign className="w-4 h-4 mr-1" />
