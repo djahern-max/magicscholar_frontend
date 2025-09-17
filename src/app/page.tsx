@@ -1,9 +1,7 @@
-// src/app/page.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X, Filter, MapPin, Users } from 'lucide-react';
-import InstitutionCard from '@/components/institutions/institution-card';
+import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -12,7 +10,6 @@ interface Institution {
   name: string;
   city: string;
   state: string;
-  website?: string;
   control_type: string;
   size_category: string;
   primary_image_url?: string;
@@ -24,20 +21,14 @@ interface Institution {
   has_high_quality_image: boolean;
   is_premium_customer: boolean;
   ipeds_id?: string;
-}
-
-interface SearchFilters {
-  state: string;
-  control_type: string;
-  size_category: string;
-  min_tuition: string;
-  max_tuition: string;
+  website?: string;
 }
 
 export default function Home() {
   // Core state
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [totalInstitutions, setTotalInstitutions] = useState(0);
 
   // Search state
@@ -45,239 +36,232 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<Institution[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [searchTotal, setSearchTotal] = useState(0);
-
-  // Filter state
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<SearchFilters>({
-    state: '',
-    control_type: '',
-    size_category: '',
-    min_tuition: '',
-    max_tuition: ''
-  });
 
   // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
-  const [currentOffset, setCurrentOffset] = useState(0);
-  const [searchPage, setSearchPage] = useState(1);
 
-  // Debounced search
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  // Debug function to test API endpoints
+  const debugAPI = async () => {
+    console.log('=== DEBUG API ENDPOINTS ===');
 
-  // Fetch initial data
+    try {
+      // Test health endpoint
+      const healthResponse = await fetch(`${API_BASE_URL}/health`);
+      console.log('Health check:', healthResponse.ok ? 'OK' : 'Failed');
+
+      // Test featured endpoint
+      const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=5`);
+      const featuredData = await featuredResponse.json();
+      console.log('Featured institutions:', featuredData);
+
+      // Test list endpoint
+      const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=5`);
+      const listData = await listResponse.json();
+      console.log('List institutions:', listData);
+
+    } catch (error) {
+      console.error('API Debug Error:', error);
+    }
+  };
+
+  // Fetch initial data with better error handling
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [institutionsResponse, statsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=0`),
-          fetch(`${API_BASE_URL}/api/v1/admin/images/stats`)
-        ]);
+        console.log('Fetching initial data...');
 
-        if (institutionsResponse.ok) {
-          const data = await institutionsResponse.json();
-          setInstitutions(data);
-          setCurrentOffset(12);
-          setHasMoreData(data.length === 12);
-        } else {
-          console.error('Failed to fetch institutions:', institutionsResponse.statusText);
+        // Try multiple endpoints to find working one
+        let institutionsData = [];
+
+        // First try featured endpoint
+        try {
+          const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12`);
+          if (featuredResponse.ok) {
+            institutionsData = await featuredResponse.json();
+            console.log('Featured data loaded:', institutionsData.length);
+          }
+        } catch (e) {
+          console.log('Featured endpoint failed, trying list endpoint...');
         }
 
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setTotalInstitutions(statsData.total_institutions || 6132);
-        } else {
-          setTotalInstitutions(6132);
+        // If featured failed, try list endpoint
+        if (institutionsData.length === 0) {
+          try {
+            const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=12`);
+            if (listResponse.ok) {
+              const listData = await listResponse.json();
+              institutionsData = listData.institutions || listData;
+              console.log('List data loaded:', institutionsData.length);
+            }
+          } catch (e) {
+            console.log('List endpoint also failed');
+          }
         }
+
+        if (institutionsData.length > 0) {
+          setInstitutions(institutionsData);
+          setHasMoreData(institutionsData.length === 12);
+          setError(null);
+        } else {
+          setError('No institutions found. Check if the database has data.');
+        }
+
+        // Try to get total count
+        try {
+          const statsResponse = await fetch(`${API_BASE_URL}/api/v1/admin/images/stats`);
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            setTotalInstitutions(statsData.total_institutions || 0);
+          }
+        } catch (e) {
+          console.log('Stats endpoint failed');
+        }
+
       } catch (error) {
         console.error('Error fetching data:', error);
-        setTotalInstitutions(6132);
+        setError(`Failed to load institutions: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+    debugAPI(); // Run debug on load
   }, []);
 
-  // Debounced search function
-  const debouncedSearch = useCallback((query: string) => {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      if (query.trim()) {
-        handleSearch(query);
-      } else {
-        clearSearch();
-      }
-    }, 500);
-
-    setSearchTimeout(timeout);
-  }, [searchTimeout]);
-
-  // Handle search input change
-  const handleSearchInputChange = (value: string) => {
-    setSearchQuery(value);
-    debouncedSearch(value);
-  };
-
-  // Search functionality
-  const handleSearch = async (query?: string, page: number = 1, useFilters: boolean = false) => {
-    const searchTerm = query || searchQuery;
-    if (!searchTerm.trim() && !useFilters) {
+  // Search functionality with better error handling
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
       setShowSearchResults(false);
       return;
     }
 
     setIsSearching(true);
     try {
-      // Build search URL with parameters
-      const searchParams = new URLSearchParams();
-
-      if (searchTerm.trim()) {
-        searchParams.append('query', searchTerm);
-      }
-
-      searchParams.append('page', page.toString());
-      searchParams.append('per_page', '12');
-
-      // Add filters if they exist
-      if (filters.state) searchParams.append('state', filters.state);
-      if (filters.control_type) searchParams.append('control_type', filters.control_type);
-      if (filters.size_category) searchParams.append('size_category', filters.size_category);
+      console.log('Searching for:', query);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/institutions/search?${searchParams.toString()}`
+        `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(query)}&per_page=20`
       );
 
       if (response.ok) {
         const results = await response.json();
+        console.log('Search results:', results);
 
-        if (page === 1) {
-          setSearchResults(results.institutions || results);
-          setSearchTotal(results.total || results.length);
-          setSearchPage(1);
-        } else {
-          setSearchResults(prev => [...prev, ...(results.institutions || results)]);
-        }
-
+        const institutionsArray = results.institutions || results;
+        setSearchResults(Array.isArray(institutionsArray) ? institutionsArray : []);
         setShowSearchResults(true);
-        setHasMoreData((results.institutions || results).length === 12);
       } else {
-        console.error('Search failed:', response.statusText);
+        console.error('Search failed:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
         setSearchResults([]);
-        setSearchTotal(0);
         setShowSearchResults(true);
       }
     } catch (error) {
       console.error('Error searching:', error);
       setSearchResults([]);
-      setSearchTotal(0);
       setShowSearchResults(true);
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Load more search results
-  const loadMoreSearchResults = async () => {
-    if (loadingMore || !hasMoreData) return;
+  // Debounced search
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-    setLoadingMore(true);
-    const nextPage = searchPage + 1;
-    await handleSearch(searchQuery, nextPage, true);
-    setSearchPage(nextPage);
-    setLoadingMore(false);
-  };
-
-  // Load more institutions (for non-search view)
-  const loadMoreUniversities = async () => {
-    if (loadingMore || !hasMoreData) return;
-
-    setLoadingMore(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12&offset=${currentOffset}`);
-
-      if (response.ok) {
-        const newData = await response.json();
-
-        if (newData.length > 0) {
-          setInstitutions(prev => [...prev, ...newData]);
-          setCurrentOffset(prev => prev + newData.length);
-          setHasMoreData(newData.length === 12);
-        } else {
-          setHasMoreData(false);
-        }
-      } else {
-        console.error('Failed to fetch more institutions:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error fetching more institutions:', error);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  // Apply filters
-  const applyFilters = () => {
-    setSearchPage(1);
-    handleSearch(searchQuery, 1, true);
-    setShowFilters(false);
-  };
-
-  // Clear filters
-  const clearFilters = () => {
-    setFilters({
-      state: '',
-      control_type: '',
-      size_category: '',
-      min_tuition: '',
-      max_tuition: ''
-    });
-  };
-
-  // Clear search
-  const clearSearch = () => {
-    setSearchQuery('');
-    setSearchResults([]);
-    setShowSearchResults(false);
-    setSearchTotal(0);
-    setSearchPage(1);
+  const debouncedSearch = useCallback((query: string) => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
+
+    const timeout = setTimeout(() => {
+      handleSearch(query);
+    }, 300);
+
+    setSearchTimeout(timeout);
+  }, [searchTimeout]);
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      debouncedSearch(value);
+    } else {
+      setShowSearchResults(false);
+    }
   };
 
-  // Get current institutions to display
-  const currentInstitutions = showSearchResults ? searchResults : institutions;
-  const currentTotal = showSearchResults ? searchTotal : totalInstitutions;
-  const loadMoreFunction = showSearchResults ? loadMoreSearchResults : loadMoreUniversities;
+  const clearSearch = () => {
+    setSearchQuery('');
+    setShowSearchResults(false);
+    setSearchResults([]);
+  };
 
-  if (loading) {
+  // Show "all institutions" button handler
+  const showAllInstitutions = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=50`);
+      if (response.ok) {
+        const data = await response.json();
+        const institutionsArray = data.institutions || data;
+        setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
+        setShowSearchResults(false);
+      }
+    } catch (error) {
+      console.error('Error loading all institutions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getControlTypeDisplay = (controlType: string) => {
+    const types = {
+      'public': 'Public',
+      'private': 'Private',
+      'private_nonprofit': 'Private Non-Profit',
+      'private_for_profit': 'Private For-Profit'
+    };
+    return types[controlType as keyof typeof types] || controlType;
+  };
+
+  const getSizeCategoryDisplay = (sizeCategory: string) => {
+    const sizes = {
+      'very_small': 'Very Small (<1,000)',
+      'small': 'Small (1,000-2,999)',
+      'medium': 'Medium (3,000-9,999)',
+      'large': 'Large (10,000-19,999)',
+      'very_large': 'Very Large (20,000+)'
+    };
+    return sizes[sizeCategory as keyof typeof sizes] || sizeCategory;
+  };
+
+  if (loading && institutions.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading institutions...</p>
         </div>
       </div>
     );
   }
 
+  const displayInstitutions = showSearchResults ? searchResults : institutions;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Compact Hero Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Find Your Perfect School
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <span className="text-blue-600">magic</span> Scholar
             </h1>
-            <p className="text-gray-600">
-              Discover and compare {totalInstitutions.toLocaleString()}+ colleges and universities
+            <p className="text-xl text-gray-600">Find Your Perfect School</p>
+            <p className="text-gray-500 mt-2">
+              Discover and compare {totalInstitutions.toLocaleString() || '6,000+'} colleges and universities
             </p>
           </div>
 
@@ -292,14 +276,14 @@ export default function Home() {
                 value={searchQuery}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
                 placeholder="Search by school name, city, or state..."
-                className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
               />
               {searchQuery && (
                 <button
                   onClick={clearSearch}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  <span className="text-gray-400 hover:text-gray-600 text-xl">×</span>
                 </button>
               )}
             </div>
@@ -307,161 +291,143 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Advanced Filters */}
-      {showFilters && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {/* State Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                <select
-                  value={filters.state}
-                  onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All States</option>
-                  <option value="CA">California</option>
-                  <option value="NY">New York</option>
-                  <option value="TX">Texas</option>
-                  <option value="FL">Florida</option>
-                  {/* Add more states as needed */}
-                </select>
-              </div>
-
-              {/* Control Type Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                  value={filters.control_type}
-                  onChange={(e) => setFilters({ ...filters, control_type: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Types</option>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                  <option value="private_nonprofit">Private Non-Profit</option>
-                </select>
-              </div>
-
-              {/* Size Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
-                <select
-                  value={filters.size_category}
-                  onChange={(e) => setFilters({ ...filters, size_category: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Sizes</option>
-                  <option value="very_small">Very Small (&lt;1,000)</option>
-                  <option value="small">Small (1,000-2,999)</option>
-                  <option value="medium">Medium (3,000-9,999)</option>
-                  <option value="large">Large (10,000-19,999)</option>
-                  <option value="very_large">Very Large (20,000+)</option>
-                </select>
-              </div>
-
-              {/* Filter Actions */}
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={applyFilters}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-red-600 hover:text-red-800 underline"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       )}
 
-      {/* Results Section */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Results Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-600">
-            {showSearchResults ? (
-              <>
-                Showing {searchResults.length} of {searchTotal} results
-                {searchQuery && <> for "<span className="font-medium">{searchQuery}</span>"</>}
-              </>
-            ) : (
-              <>Showing {institutions.length} of {totalInstitutions.toLocaleString()} schools</>
-            )}
-          </div>
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center px-3 py-2 border rounded-md text-sm transition-colors ${showFilters || Object.values(filters).some(f => f)
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {Object.values(filters).some(f => f) && (
-              <span className="ml-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                Active
+      {/* Search Status */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <p className="text-gray-600">
+            {isSearching ? (
+              <span className="flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Searching...
               </span>
+            ) : showSearchResults ? (
+              `Showing ${searchResults.length} results for "${searchQuery}"`
+            ) : (
+              `Showing ${institutions.length} featured institutions`
             )}
-          </button>
-        </div>
+          </p>
 
-        {/* Loading or Search State */}
-        {isSearching ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Searching...</p>
-          </div>
-        ) : currentInstitutions.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No institutions found</h3>
-            <p className="text-gray-500 mb-4">
-              Try adjusting your search terms or filters to find more results.
-            </p>
+          {showSearchResults && (
             <button
               onClick={clearSearch}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              Show All Institutions
+              Clear Search
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="max-w-6xl mx-auto px-4 pb-8">
+        {displayInstitutions.length === 0 && !loading ? (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No institutions found</h3>
+            <p className="text-gray-600 mb-6">
+              {showSearchResults
+                ? "Try adjusting your search terms or filters to find more results."
+                : "We couldn't load any institutions. This might be a database issue."
+              }
+            </p>
+            <div className="space-x-4">
+              <button
+                onClick={showAllInstitutions}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Show All Institutions
+              </button>
+              <button
+                onClick={debugAPI}
+                className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Debug API
+              </button>
+            </div>
           </div>
         ) : (
-          <>
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentInstitutions.map((institution) => (
-                <InstitutionCard key={institution.id} institution={institution} />
-              ))}
-            </div>
-
-            {/* Load More Button */}
-            {hasMoreData && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={loadMoreFunction}
-                  disabled={loadingMore}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loadingMore ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Loading...
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayInstitutions.map((institution) => (
+              <div key={institution.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                {/* Institution Image */}
+                <div className="h-48 bg-gray-200 relative">
+                  {institution.display_image_url || institution.primary_image_url ? (
+                    <img
+                      src={institution.display_image_url || institution.primary_image_url}
+                      alt={institution.display_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   ) : (
-                    `Load More Institutions`
+                    <div className="w-full h-full flex items-center justify-center">
+                      <GraduationCap className="w-16 h-16 text-gray-400" />
+                    </div>
                   )}
-                </button>
+                </div>
+
+                {/* Institution Info */}
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    {institution.display_name || institution.name}
+                  </h3>
+
+                  <div className="flex items-center text-gray-600 mb-3">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    <span className="text-sm">{institution.city}, {institution.state}</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Users className="w-4 h-4 mr-2" />
+                      <span>{getSizeCategoryDisplay(institution.size_category)}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      <span>{getControlTypeDisplay(institution.control_type)}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                    <a
+                      href={`/institution/${institution.id}`}
+                      className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    >
+                      View Details
+                    </a>
+                    {institution.website && (
+                      <a
+                        href={institution.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
     </div>
