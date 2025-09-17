@@ -124,9 +124,14 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2">
+            <a
+              href="/"
+              className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
+            >
               <span className="text-2xl">🪄</span>
-              <p className="text-blue-600">magic</p><p className="text-gray-900">Scholar</p>
+              <span className="inline-flex whitespace-nowrap leading-none tracking-tight">
+                <span className="text-blue-600">magic</span><span className="text-gray-900">Scholar</span>
+              </span>
             </a>
           </div>
 
