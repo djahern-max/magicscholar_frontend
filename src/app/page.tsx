@@ -74,9 +74,9 @@ export default function Home() {
         // Try multiple endpoints to find working one
         let institutionsData = [];
 
-        // First try featured endpoint
+        // First try featured endpoint with 99 institutions (divisible by 3)
         try {
-          const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=12`);
+          const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=99`);
           if (featuredResponse.ok) {
             institutionsData = await featuredResponse.json();
             console.log('Featured data loaded:', institutionsData.length);
@@ -85,10 +85,10 @@ export default function Home() {
           console.log('Featured endpoint failed, trying list endpoint...');
         }
 
-        // If featured failed, try list endpoint
+        // If featured failed, try list endpoint with higher limit
         if (institutionsData.length === 0) {
           try {
-            const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=12`);
+            const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
             if (listResponse.ok) {
               const listData = await listResponse.json();
               institutionsData = listData.institutions || listData;
@@ -101,7 +101,7 @@ export default function Home() {
 
         if (institutionsData.length > 0) {
           setInstitutions(institutionsData);
-          setHasMoreData(institutionsData.length === 12);
+          setHasMoreData(institutionsData.length === 99);
           setError(null);
         } else {
           setError('No institutions found. Check if the database has data.');
@@ -202,7 +202,7 @@ export default function Home() {
   const showAllInstitutions = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=50`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
       if (response.ok) {
         const data = await response.json();
         const institutionsArray = data.institutions || data;
@@ -215,6 +215,36 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  // Load more institutions function (loads 48 more - divisible by 3)
+  const loadMoreInstitutions = async () => {
+    setLoadingMore(true);
+    try {
+      const offset = institutions.length;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/institutions/?per_page=48&offset=${offset}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const newInstitutions = data.institutions || data;
+
+        if (newInstitutions.length > 0) {
+          setInstitutions(prev => [...prev, ...newInstitutions]);
+          setHasMoreData(newInstitutions.length === 48);
+        } else {
+          console.log('No more institutions found');
+          setHasMoreData(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading more institutions:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
 
   const getControlTypeDisplay = (controlType: string) => {
     const types = {
@@ -363,71 +393,94 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayInstitutions.map((institution) => (
-              <div key={institution.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                {/* Institution Image */}
-                <div className="h-48 bg-gray-200 relative">
-                  {institution.display_image_url || institution.primary_image_url ? (
-                    <img
-                      src={institution.display_image_url || institution.primary_image_url}
-                      alt={institution.display_name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <GraduationCap className="w-16 h-16 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Institution Info */}
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {institution.display_name || institution.name}
-                  </h3>
-
-                  <div className="flex items-center text-gray-600 mb-3">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    <span className="text-sm">{institution.city}, {institution.state}</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="w-4 h-4 mr-2" />
-                      <span>{getSizeCategoryDisplay(institution.size_category)}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <GraduationCap className="w-4 h-4 mr-2" />
-                      <span>{getControlTypeDisplay(institution.control_type)}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                    <a
-                      href={`/institution/${institution.id}`}
-                      className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                    >
-                      View Details
-                    </a>
-                    {institution.website && (
-                      <a
-                        href={institution.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+          <>
+            {/* Institution Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayInstitutions.map((institution) => (
+                <div key={institution.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  {/* Institution Image */}
+                  <div className="h-48 bg-gray-200 relative">
+                    {institution.display_image_url || institution.primary_image_url ? (
+                      <img
+                        src={institution.display_image_url || institution.primary_image_url}
+                        alt={institution.display_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <GraduationCap className="w-16 h-16 text-gray-400" />
+                      </div>
                     )}
                   </div>
+
+                  {/* Institution Info */}
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {institution.display_name || institution.name}
+                    </h3>
+
+                    <div className="flex items-center text-gray-600 mb-3">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      <span className="text-sm">{institution.city}, {institution.state}</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>{getSizeCategoryDisplay(institution.size_category)}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        <span>{getControlTypeDisplay(institution.control_type)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                      <a
+                        href={`/institution/${institution.id}`}
+                        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                      >
+                        View Details
+                      </a>
+                      {institution.website && (
+                        <a
+                          href={institution.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Load More Button - Now outside the grid */}
+            {!showSearchResults && hasMoreData && (
+              <div className="text-center mt-8">
+                <button
+                  onClick={loadMoreInstitutions}
+                  disabled={loadingMore}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {loadingMore ? (
+                    <span className="flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Loading More...
+                    </span>
+                  ) : (
+                    'Load More Institutions'
+                  )}
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>
