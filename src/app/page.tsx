@@ -40,6 +40,7 @@ export default function Home() {
   // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
+  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('featured'); // Track which endpoint we're using
 
   // Debug function to test API endpoints
   const debugAPI = async () => {
@@ -71,27 +72,41 @@ export default function Home() {
       try {
         console.log('Fetching initial data...');
 
-        // Try multiple endpoints to find working one
         let institutionsData = [];
+        let endpointUsed: 'featured' | 'list' = 'list';
 
-        // First try featured endpoint with 99 institutions (divisible by 3)
+        // Try featured endpoint first, but fall back to list endpoint
         try {
           const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=99`);
           if (featuredResponse.ok) {
             institutionsData = await featuredResponse.json();
             console.log('Featured data loaded:', institutionsData.length);
+
+            // Only use featured if it actually returns data and supports pagination
+            if (institutionsData.length > 0) {
+              // Check if featured endpoint supports offset for pagination
+              const testPaginationResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=1&offset=1`);
+              if (testPaginationResponse.ok) {
+                endpointUsed = 'featured';
+                console.log('Using featured endpoint with pagination support');
+              } else {
+                console.log('Featured endpoint does not support pagination, switching to list endpoint');
+                throw new Error('Featured endpoint does not support pagination');
+              }
+            }
           }
         } catch (e) {
-          console.log('Featured endpoint failed, trying list endpoint...');
+          console.log('Featured endpoint failed or does not support pagination, using list endpoint...');
         }
 
-        // If featured failed, try list endpoint with higher limit
-        if (institutionsData.length === 0) {
+        // Use list endpoint if featured failed or doesn't support pagination
+        if (institutionsData.length === 0 || endpointUsed === 'list') {
           try {
             const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
             if (listResponse.ok) {
               const listData = await listResponse.json();
               institutionsData = listData.institutions || listData;
+              endpointUsed = 'list';
               console.log('List data loaded:', institutionsData.length);
             }
           } catch (e) {
@@ -101,7 +116,8 @@ export default function Home() {
 
         if (institutionsData.length > 0) {
           setInstitutions(institutionsData);
-          setHasMoreData(institutionsData.length === 99);
+          setCurrentEndpoint(endpointUsed);
+          setHasMoreData(institutionsData.length === 99); // Assume more data if we got exactly 99
           setError(null);
         } else {
           setError('No institutions found. Check if the database has data.');
@@ -207,6 +223,8 @@ export default function Home() {
         const data = await response.json();
         const institutionsArray = data.institutions || data;
         setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
+        setCurrentEndpoint('list'); // Make sure we track the endpoint
+        setHasMoreData(institutionsArray.length === 99);
         setShowSearchResults(false);
       }
     } catch (error) {
@@ -216,35 +234,48 @@ export default function Home() {
     }
   };
 
-  // Load more institutions function (loads 48 more - divisible by 3)
+  // Fixed load more institutions function
   const loadMoreInstitutions = async () => {
     setLoadingMore(true);
     try {
       const offset = institutions.length;
+      console.log(`Loading more institutions. Current count: ${offset}, Using endpoint: ${currentEndpoint}`);
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/institutions/?per_page=48&offset=${offset}`
-      );
+      // Use the same endpoint that was used initially
+      let response;
+      if (currentEndpoint === 'featured') {
+        response = await fetch(
+          `${API_BASE_URL}/api/v1/institutions/featured?limit=48&offset=${offset}`
+        );
+      } else {
+        response = await fetch(
+          `${API_BASE_URL}/api/v1/institutions/?per_page=48&offset=${offset}`
+        );
+      }
 
       if (response.ok) {
         const data = await response.json();
         const newInstitutions = data.institutions || data;
 
-        if (newInstitutions.length > 0) {
+        if (Array.isArray(newInstitutions) && newInstitutions.length > 0) {
+          console.log(`Loaded ${newInstitutions.length} more institutions`);
           setInstitutions(prev => [...prev, ...newInstitutions]);
           setHasMoreData(newInstitutions.length === 48);
         } else {
           console.log('No more institutions found');
           setHasMoreData(false);
         }
+      } else {
+        console.error('Failed to load more institutions:', response.status, response.statusText);
+        setHasMoreData(false);
       }
     } catch (error) {
       console.error('Error loading more institutions:', error);
+      setHasMoreData(false);
     } finally {
       setLoadingMore(false);
     }
   };
-
 
   const getControlTypeDisplay = (controlType: string) => {
     const types = {
@@ -287,7 +318,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              <span className="text-blue-600">magic</span> Scholar
+              🪄 <span className="text-blue-600">magic</span>Scholar
             </h1>
             <p className="text-xl text-gray-600">Find Your Perfect School</p>
             <p className="text-gray-500 mt-2">
@@ -348,7 +379,7 @@ export default function Home() {
             ) : showSearchResults ? (
               `Showing ${searchResults.length} results for "${searchQuery}"`
             ) : (
-              `Showing ${institutions.length} featured institutions`
+              `Showing ${institutions.length} ${currentEndpoint === 'featured' ? 'featured' : ''} institutions`
             )}
           </p>
 
@@ -461,7 +492,7 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Load More Button - Now outside the grid */}
+            {/* Load More Button - Only show for non-search results */}
             {!showSearchResults && hasMoreData && (
               <div className="text-center mt-8">
                 <button
@@ -478,6 +509,9 @@ export default function Home() {
                     'Load More Institutions'
                   )}
                 </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Currently showing {institutions.length} institutions
+                </p>
               </div>
             )}
           </>
