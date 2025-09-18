@@ -2,16 +2,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
     MapPin,
     ExternalLink,
     Users,
     GraduationCap,
     AlertCircle,
-    CheckCircle
+    CheckCircle,
+    ArrowLeft
 } from 'lucide-react';
 import FinancialDataDisplay from '@/components/financial/financial-data';
+import TuitionDisplay from '@/components/tuition/TuitionDisplay';
+import { tuitionService } from '@/lib/tuitionService';
+import { TuitionData } from '@/types/tuition';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -26,6 +30,9 @@ interface Institution {
     ipeds_id?: string;
     display_name: string;
     full_address: string;
+    primary_image_url?: string;
+    primary_image_quality_score?: number;
+    display_image_url?: string;
 }
 
 interface FacultyMetrics {
@@ -46,6 +53,7 @@ interface FacultyMetrics {
     };
 }
 
+// Keep your existing FinancialData interface for legacy support
 interface FinancialData {
     ipeds_id: number;
     academic_year: string;
@@ -69,14 +77,43 @@ interface FinancialData {
 
 export default function InstitutionDetail() {
     const params = useParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [institution, setInstitution] = useState<Institution | null>(null);
     const [facultyMetrics, setFacultyMetrics] = useState<FacultyMetrics | null>(null);
     const [financialData, setFinancialData] = useState<FinancialData | null>(null);
+    const [tuitionData, setTuitionData] = useState<TuitionData | null>(null);
     const [loading, setLoading] = useState(true);
     const [facultyLoading, setFacultyLoading] = useState(true);
     const [financialLoading, setFinancialLoading] = useState(true);
+    const [tuitionLoading, setTuitionLoading] = useState(true);
     const [facultyError, setFacultyError] = useState<string | null>(null);
     const [financialError, setFinancialError] = useState<string | null>(null);
+    const [tuitionError, setTuitionError] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
+
+    // Get return parameters from URL
+    const returnPage = searchParams.get('page') || '1';
+    const returnQuery = searchParams.get('query') || '';
+
+    const handleBackClick = () => {
+        // Go back to root (/) instead of /institutions
+        let backUrl = '/';
+        const urlParams = new URLSearchParams();
+
+        if (returnPage && returnPage !== '1') {
+            urlParams.append('page', returnPage);
+        }
+        if (returnQuery) {
+            urlParams.append('query', returnQuery);
+        }
+
+        if (urlParams.toString()) {
+            backUrl += `?${urlParams.toString()}`;
+        }
+
+        router.push(backUrl);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -110,8 +147,8 @@ export default function InstitutionDetail() {
                             setFacultyLoading(false);
                         }
 
-                        // Fetch financial data using the ipeds_id
-                        console.log(`Fetching financial data for IPEDS ID: ${institutionData.ipeds_id}`);
+                        // Fetch legacy financial data (keep for backward compatibility if needed)
+                        console.log(`Fetching legacy financial data for IPEDS ID: ${institutionData.ipeds_id}`);
                         try {
                             const financialResponse = await fetch(`${API_BASE_URL}/api/v1/by-ipeds/${institutionData.ipeds_id}`);
 
@@ -119,20 +156,38 @@ export default function InstitutionDetail() {
                                 const financialDataResult = await financialResponse.json();
                                 setFinancialData(financialDataResult);
                             } else {
-                                console.warn(`Financial data not found for IPEDS ID: ${institutionData.ipeds_id}`);
-                                setFinancialError('Financial data not available for this institution');
+                                console.warn(`Legacy financial data not found for IPEDS ID: ${institutionData.ipeds_id}`);
+                                setFinancialError('Legacy financial data not available for this institution');
                             }
                         } catch (error) {
-                            console.error('Error fetching financial data:', error);
-                            setFinancialError('Failed to load financial data');
+                            console.error('Error fetching legacy financial data:', error);
+                            setFinancialError('Failed to load legacy financial data');
                         } finally {
                             setFinancialLoading(false);
+                        }
+
+                        // Fetch NEW tuition data using our comprehensive tuition API
+                        console.log(`Fetching tuition data for IPEDS ID: ${institutionData.ipeds_id}`);
+                        try {
+                            const tuitionResult = await tuitionService.getTuitionByInstitution(parseInt(institutionData.ipeds_id));
+                            if (tuitionResult) {
+                                setTuitionData(tuitionResult);
+                            } else {
+                                setTuitionError('Tuition data not available for this institution');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching tuition data:', error);
+                            setTuitionError('Failed to load tuition data');
+                        } finally {
+                            setTuitionLoading(false);
                         }
                     } else {
                         setFacultyLoading(false);
                         setFinancialLoading(false);
+                        setTuitionLoading(false);
                         setFacultyError('No IPEDS ID available');
                         setFinancialError('No IPEDS ID available for financial data lookup');
+                        setTuitionError('No IPEDS ID available for tuition data lookup');
                     }
                 } else {
                     console.error('Failed to fetch institution data');
@@ -192,11 +247,55 @@ export default function InstitutionDetail() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
+            {/* Back Button */}
+            <div className="bg-white border-b">
+                <div className="max-w-4xl mx-auto px-4 py-4">
+                    <button
+                        onClick={handleBackClick}
+                        className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to {returnQuery ? 'search results' : 'institutions'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Header with Image */}
             <div className="bg-white shadow">
                 <div className="max-w-4xl mx-auto px-4 py-6">
-                    <div className="flex items-start justify-between">
-                        <div>
+                    <div className="flex flex-col lg:flex-row items-start gap-6">
+                        {/* Institution Image */}
+                        <div className="flex-shrink-0">
+                            {institution.primary_image_url || institution.display_image_url ? (
+                                <div className="relative">
+                                    <img
+                                        src={institution.display_image_url || institution.primary_image_url}
+                                        alt={`${institution.name} campus`}
+                                        className="w-64 h-48 object-cover rounded-lg shadow-md"
+                                        onError={() => setImageError(true)}
+                                        style={{ display: imageError ? 'none' : 'block' }}
+                                    />
+                                    {imageError && (
+                                        <div className="w-64 h-48 bg-gray-200 rounded-lg shadow-md flex items-center justify-center">
+                                            <div className="text-center text-gray-500">
+                                                <GraduationCap className="w-12 h-12 mx-auto mb-2" />
+                                                <p className="text-sm">No image available</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="w-64 h-48 bg-gray-200 rounded-lg shadow-md flex items-center justify-center">
+                                    <div className="text-center text-gray-500">
+                                        <GraduationCap className="w-12 h-12 mx-auto mb-2" />
+                                        <p className="text-sm">No image available</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Institution Details */}
+                        <div className="flex-1">
                             <h1 className="text-3xl font-bold text-gray-900 mb-2">
                                 {institution.display_name || institution.name}
                             </h1>
@@ -245,29 +344,53 @@ export default function InstitutionDetail() {
                     </div>
                 </div>
 
-                {/* Financial Information using the reusable component */}
-                {financialLoading ? (
+                {/* NEW Comprehensive Tuition Information */}
+                {tuitionLoading ? (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                         <div className="text-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                            <p className="mt-2 text-gray-600">Loading financial data...</p>
+                            <p className="mt-2 text-gray-600">Loading tuition data...</p>
                         </div>
                     </div>
-                ) : financialError ? (
+                ) : tuitionData ? (
+                    <TuitionDisplay tuitionData={tuitionData} />
+                ) : (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                         <div className="text-center py-8">
                             <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                            <p className="text-gray-600 mb-2">{financialError}</p>
-                            <p className="text-sm text-gray-500">Financial data may not be available for all institutions.</p>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Comprehensive Tuition Data Available</h3>
+                            <p className="text-gray-600 mb-2">Comprehensive financial information is not currently available for this institution.</p>
+                            <p className="text-sm text-gray-500">We're continuously expanding our database coverage.</p>
                         </div>
                     </div>
-                ) : financialData ? (
-                    <FinancialDataDisplay
-                        data={financialData}
+                )}
 
-                        className="mb-6"
-                    />
-                ) : null}
+                {/* Legacy Financial Information (keep for institutions that don't have new tuition data) */}
+                {!tuitionData && (
+                    <>
+                        {financialLoading ? (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                <div className="text-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                    <p className="mt-2 text-gray-600">Loading financial data...</p>
+                                </div>
+                            </div>
+                        ) : financialError ? (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                                <div className="text-center py-8">
+                                    <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                                    <p className="text-gray-600 mb-2">{financialError}</p>
+                                    <p className="text-sm text-gray-500">Financial data may not be available for all institutions.</p>
+                                </div>
+                            </div>
+                        ) : financialData ? (
+                            <FinancialDataDisplay
+                                data={financialData}
+                                className="mb-6"
+                            />
+                        ) : null}
+                    </>
+                )}
 
                 {/* Faculty Metrics */}
                 <div className="bg-white rounded-lg shadow-lg p-6">

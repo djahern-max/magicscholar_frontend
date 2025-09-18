@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -25,6 +26,9 @@ interface Institution {
 }
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Core state
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +44,75 @@ export default function Home() {
   // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
-  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('featured'); // Track which endpoint we're using
+  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('featured');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Return-to-card state
+  const [returnedInstitutionId, setReturnedInstitutionId] = useState<string | null>(null);
+
+  // Handle URL parameters on load (for returning from detail page)
+  useEffect(() => {
+    const page = searchParams.get('page');
+    const query = searchParams.get('query');
+    const institutionId = searchParams.get('returnTo');
+
+    if (page) setCurrentPage(parseInt(page));
+    if (query) {
+      setSearchQuery(query);
+      handleSearch(query); // Re-run search if returning with query
+    }
+    if (institutionId) {
+      setReturnedInstitutionId(institutionId);
+    }
+  }, []);
+
+  // Scroll to specific institution card after data loads
+  useEffect(() => {
+    if (returnedInstitutionId && institutions.length > 0) {
+      console.log(`🔍 Looking for institution-${returnedInstitutionId}`);
+
+      const attemptScroll = () => {
+        const element = document.getElementById(`institution-${returnedInstitutionId}`);
+        console.log('🎯 Element found:', element);
+
+        if (element) {
+          console.log('📍 Scrolling to element');
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+
+          // Also try alternative scroll method
+          setTimeout(() => {
+            const elementRect = element.getBoundingClientRect();
+            const absoluteElementTop = elementRect.top + window.pageYOffset;
+            const middle = absoluteElementTop - (window.innerHeight / 2);
+            window.scrollTo({ top: middle, behavior: 'smooth' });
+          }, 100);
+
+          setReturnedInstitutionId(null);
+          return true;
+        }
+        return false;
+      };
+
+      // Try multiple times with increasing delays
+      const timer1 = setTimeout(() => {
+        if (!attemptScroll()) {
+          const timer2 = setTimeout(() => {
+            if (!attemptScroll()) {
+              const timer3 = setTimeout(attemptScroll, 1000);
+            }
+          }, 500);
+        }
+      }, 100);
+
+      return () => {
+        clearTimeout(timer1);
+      };
+    }
+  }, [institutions, returnedInstitutionId]);
 
   // Debug function to test API endpoints
   const debugAPI = async () => {
@@ -214,6 +286,22 @@ export default function Home() {
     setSearchResults([]);
   };
 
+  // Handle institution card click with return parameters
+  const handleInstitutionClick = (institutionId: number) => {
+    const params = new URLSearchParams();
+
+    if (currentPage > 1) {
+      params.append('page', currentPage.toString());
+    }
+    if (searchQuery) {
+      params.append('query', searchQuery);
+    }
+    params.append('returnTo', institutionId.toString());
+
+    const url = `/institution/${institutionId}?${params.toString()}`;
+    router.push(url);
+  };
+
   // Show "all institutions" button handler
   const showAllInstitutions = async () => {
     setLoading(true);
@@ -261,6 +349,7 @@ export default function Home() {
           console.log(`Loaded ${newInstitutions.length} more institutions`);
           setInstitutions(prev => [...prev, ...newInstitutions]);
           setHasMoreData(newInstitutions.length === 48);
+          setCurrentPage(prev => prev + 1); // Track page for return navigation
         } else {
           console.log('No more institutions found');
           setHasMoreData(false);
@@ -428,7 +517,11 @@ export default function Home() {
             {/* Institution Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayInstitutions.map((institution) => (
-                <div key={institution.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div
+                  key={institution.id}
+                  id={`institution-${institution.id}`}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                >
                   {/* Institution Image */}
                   <div className="h-48 bg-gray-200 relative">
                     {institution.display_image_url || institution.primary_image_url ? (
@@ -470,12 +563,12 @@ export default function Home() {
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                      <a
-                        href={`/institution/${institution.id}`}
+                      <button
+                        onClick={() => handleInstitutionClick(institution.id)}
                         className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                       >
                         View Details
-                      </a>
+                      </button>
                       {institution.website && (
                         <a
                           href={institution.website}
