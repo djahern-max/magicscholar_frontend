@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } from 'lucide-react';
 
@@ -25,7 +25,8 @@ interface Institution {
   website?: string;
 }
 
-export default function Home() {
+// Separate component that uses useSearchParams
+function HomeWithSearchParams() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -64,7 +65,7 @@ export default function Home() {
     if (institutionId) {
       setReturnedInstitutionId(institutionId);
     }
-  }, []);
+  }, [searchParams]);
 
   // Scroll to specific institution card after data loads
   useEffect(() => {
@@ -611,5 +612,19 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+// Main export with Suspense wrapper
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>}>
+      <HomeWithSearchParams />
+    </Suspense>
   );
 }
