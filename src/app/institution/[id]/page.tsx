@@ -9,7 +9,6 @@ import {
     Users,
     GraduationCap,
     AlertCircle,
-    CheckCircle,
     ArrowLeft
 } from 'lucide-react';
 import FinancialDataDisplay from '@/components/financial/financial-data';
@@ -33,24 +32,6 @@ interface Institution {
     primary_image_url?: string;
     primary_image_quality_score?: number;
     display_image_url?: string;
-}
-
-interface FacultyMetrics {
-    unitid: string;
-    total_faculty: number;
-    female_faculty_percent: number;
-    male_faculty_percent: number;
-    diversity_category: string;
-    faculty_size_category: string;
-    faculty_description: string;
-    diversity_index: number;
-    faculty_highlights: string[];
-    demographics: {
-        asian_percent: number;
-        black_percent: number;
-        hispanic_percent: number;
-        white_percent: number;
-    };
 }
 
 // Keep your existing FinancialData interface for legacy support
@@ -80,14 +61,11 @@ export default function InstitutionDetail() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [institution, setInstitution] = useState<Institution | null>(null);
-    const [facultyMetrics, setFacultyMetrics] = useState<FacultyMetrics | null>(null);
     const [financialData, setFinancialData] = useState<FinancialData | null>(null);
     const [tuitionData, setTuitionData] = useState<TuitionData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [facultyLoading, setFacultyLoading] = useState(true);
     const [financialLoading, setFinancialLoading] = useState(true);
     const [tuitionLoading, setTuitionLoading] = useState(true);
-    const [facultyError, setFacultyError] = useState<string | null>(null);
     const [financialError, setFinancialError] = useState<string | null>(null);
     const [tuitionError, setTuitionError] = useState<string | null>(null);
     const [imageError, setImageError] = useState(false);
@@ -127,46 +105,8 @@ export default function InstitutionDetail() {
                     const institutionData = await institutionResponse.json();
                     setInstitution(institutionData);
 
-                    // Now fetch faculty data using the ipeds_id (unitid) if available
+                    // Fetch tuition data using our comprehensive tuition API
                     if (institutionData.ipeds_id) {
-                        console.log(`Fetching faculty data for unitid: ${institutionData.ipeds_id}`);
-                        try {
-                            const facultyResponse = await fetch(`${API_BASE_URL}/api/v1/institution/${institutionData.ipeds_id}`);
-
-                            if (facultyResponse.ok) {
-                                const facultyData = await facultyResponse.json();
-                                setFacultyMetrics(facultyData);
-                            } else {
-                                console.warn(`Faculty data not found for unitid: ${institutionData.ipeds_id}`);
-                                setFacultyError('Faculty data not available for this institution');
-                            }
-                        } catch (error) {
-                            console.error('Error fetching faculty data:', error);
-                            setFacultyError('Failed to load faculty data');
-                        } finally {
-                            setFacultyLoading(false);
-                        }
-
-                        // Fetch legacy financial data (keep for backward compatibility if needed)
-                        console.log(`Fetching legacy financial data for IPEDS ID: ${institutionData.ipeds_id}`);
-                        try {
-                            const financialResponse = await fetch(`${API_BASE_URL}/api/v1/by-ipeds/${institutionData.ipeds_id}`);
-
-                            if (financialResponse.ok) {
-                                const financialDataResult = await financialResponse.json();
-                                setFinancialData(financialDataResult);
-                            } else {
-                                console.warn(`Legacy financial data not found for IPEDS ID: ${institutionData.ipeds_id}`);
-                                setFinancialError('Legacy financial data not available for this institution');
-                            }
-                        } catch (error) {
-                            console.error('Error fetching legacy financial data:', error);
-                            setFinancialError('Failed to load legacy financial data');
-                        } finally {
-                            setFinancialLoading(false);
-                        }
-
-                        // Fetch NEW tuition data using our comprehensive tuition API
                         console.log(`Fetching tuition data for IPEDS ID: ${institutionData.ipeds_id}`);
                         try {
                             const tuitionResult = await tuitionService.getTuitionByInstitution(parseInt(institutionData.ipeds_id));
@@ -182,11 +122,7 @@ export default function InstitutionDetail() {
                             setTuitionLoading(false);
                         }
                     } else {
-                        setFacultyLoading(false);
-                        setFinancialLoading(false);
                         setTuitionLoading(false);
-                        setFacultyError('No IPEDS ID available');
-                        setFinancialError('No IPEDS ID available for financial data lookup');
                         setTuitionError('No IPEDS ID available for tuition data lookup');
                     }
                 } else {
@@ -196,6 +132,7 @@ export default function InstitutionDetail() {
                 console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
+                setFinancialLoading(false);
             }
         };
 
@@ -344,7 +281,7 @@ export default function InstitutionDetail() {
                     </div>
                 </div>
 
-                {/* NEW Comprehensive Tuition Information */}
+                {/* Tuition Information */}
                 {tuitionLoading ? (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                         <div className="text-center py-8">
@@ -358,118 +295,14 @@ export default function InstitutionDetail() {
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                         <div className="text-center py-8">
                             <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Comprehensive Tuition Data Available</h3>
-                            <p className="text-gray-600 mb-2">Comprehensive financial information is not currently available for this institution.</p>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Tuition Data Available</h3>
+                            <p className="text-gray-600 mb-2">
+                                {tuitionError || 'Tuition information is not currently available for this institution.'}
+                            </p>
                             <p className="text-sm text-gray-500">We're continuously expanding our database coverage.</p>
                         </div>
                     </div>
                 )}
-
-                {/* Legacy Financial Information (keep for institutions that don't have new tuition data) */}
-                {!tuitionData && (
-                    <>
-                        {financialLoading ? (
-                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <div className="text-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                                    <p className="mt-2 text-gray-600">Loading financial data...</p>
-                                </div>
-                            </div>
-                        ) : financialError ? (
-                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                                <div className="text-center py-8">
-                                    <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                                    <p className="text-gray-600 mb-2">{financialError}</p>
-                                    <p className="text-sm text-gray-500">Financial data may not be available for all institutions.</p>
-                                </div>
-                            </div>
-                        ) : financialData ? (
-                            <FinancialDataDisplay
-                                data={financialData}
-                                className="mb-6"
-                            />
-                        ) : null}
-                    </>
-                )}
-
-                {/* Faculty Metrics */}
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Faculty Information</h2>
-
-                    {facultyLoading ? (
-                        <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                            <p className="mt-2 text-gray-600">Loading faculty data...</p>
-                        </div>
-                    ) : facultyError ? (
-                        <div className="text-center py-8">
-                            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                            <p className="text-gray-600 mb-2">{facultyError}</p>
-                            <p className="text-sm text-gray-500">Faculty data may not be available for all institutions.</p>
-                        </div>
-                    ) : facultyMetrics ? (
-                        <div className="space-y-6">
-                            {/* Overview */}
-                            <div className="text-center">
-                                <p className="text-gray-600 mb-4">{facultyMetrics.faculty_description}</p>
-                            </div>
-
-                            {/* Key Metrics */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="p-4 bg-blue-50 rounded-lg text-center">
-                                    <div className="text-2xl font-bold text-blue-600">{facultyMetrics.total_faculty.toLocaleString()}</div>
-                                    <div className="text-sm text-blue-700">Total Faculty</div>
-                                </div>
-                                <div className="p-4 bg-green-50 rounded-lg text-center">
-                                    <div className="text-2xl font-bold text-green-600">{facultyMetrics.female_faculty_percent.toFixed(1)}%</div>
-                                    <div className="text-sm text-green-700">Female Faculty</div>
-                                </div>
-                                <div className="p-4 bg-purple-50 rounded-lg text-center">
-                                    <div className="text-2xl font-bold text-purple-600 capitalize">{facultyMetrics.diversity_category}</div>
-                                    <div className="text-sm text-purple-700">Diversity Level</div>
-                                </div>
-                            </div>
-
-                            {/* Demographics */}
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-3">Faculty Demographics</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="text-center">
-                                        <div className="text-lg font-bold text-gray-900">{facultyMetrics.demographics.white_percent}%</div>
-                                        <div className="text-sm text-gray-600">White</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-lg font-bold text-gray-900">{facultyMetrics.demographics.asian_percent}%</div>
-                                        <div className="text-sm text-gray-600">Asian</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-lg font-bold text-gray-900">{facultyMetrics.demographics.hispanic_percent}%</div>
-                                        <div className="text-sm text-gray-600">Hispanic</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-lg font-bold text-gray-900">{facultyMetrics.demographics.black_percent}%</div>
-                                        <div className="text-sm text-gray-600">Black</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Highlights */}
-                            {facultyMetrics.faculty_highlights && facultyMetrics.faculty_highlights.length > 0 && (
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Highlights</h3>
-                                    <ul className="space-y-2">
-                                        {facultyMetrics.faculty_highlights.map((highlight, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                                                <span className="text-gray-700">{highlight}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    ) : null}
-                </div>
             </div>
         </div>
     );

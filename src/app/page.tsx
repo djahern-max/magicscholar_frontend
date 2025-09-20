@@ -45,7 +45,7 @@ function HomeWithSearchParams() {
   // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
-  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('featured');
+  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('list'); // Default to list
   const [currentPage, setCurrentPage] = useState(1);
 
   // Return-to-card state
@@ -139,73 +139,34 @@ function HomeWithSearchParams() {
     }
   };
 
-  // Fetch initial data with better error handling
+  // FIXED: Fetch initial data - only use list endpoint for proper pagination
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching initial data...');
+        console.log('Fetching initial data using list endpoint...');
 
-        let institutionsData = [];
-        let endpointUsed: 'featured' | 'list' = 'list';
+        const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
 
-        // Try featured endpoint first, but fall back to list endpoint
-        try {
-          const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=99`);
-          if (featuredResponse.ok) {
-            institutionsData = await featuredResponse.json();
-            console.log('Featured data loaded:', institutionsData.length);
-
-            // Only use featured if it actually returns data and supports pagination
-            if (institutionsData.length > 0) {
-              // Check if featured endpoint supports offset for pagination
-              const testPaginationResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=1&offset=1`);
-              if (testPaginationResponse.ok) {
-                endpointUsed = 'featured';
-                console.log('Using featured endpoint with pagination support');
-              } else {
-                console.log('Featured endpoint does not support pagination, switching to list endpoint');
-                throw new Error('Featured endpoint does not support pagination');
-              }
-            }
-          }
-        } catch (e) {
-          console.log('Featured endpoint failed or does not support pagination, using list endpoint...');
+        if (!listResponse.ok) {
+          throw new Error(`HTTP error! status: ${listResponse.status}`);
         }
 
-        // Use list endpoint if featured failed or doesn't support pagination
-        if (institutionsData.length === 0 || endpointUsed === 'list') {
-          try {
-            const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
-            if (listResponse.ok) {
-              const listData = await listResponse.json();
-              institutionsData = listData.institutions || listData;
-              endpointUsed = 'list';
-              console.log('List data loaded:', institutionsData.length);
-            }
-          } catch (e) {
-            console.log('List endpoint also failed');
-          }
-        }
+        const listData = await listResponse.json();
+        console.log('List data response:', listData);
 
-        if (institutionsData.length > 0) {
-          setInstitutions(institutionsData);
-          setCurrentEndpoint(endpointUsed);
-          setHasMoreData(institutionsData.length === 99); // Assume more data if we got exactly 99
-          setError(null);
-        } else {
-          setError('No institutions found. Check if the database has data.');
-        }
+        // Handle the structured response from list endpoint
+        const institutionsArray = listData.institutions || [];
+        const totalCount = listData.total || 0;
 
-        // Try to get total count
-        try {
-          const statsResponse = await fetch(`${API_BASE_URL}/api/v1/admin/images/stats`);
-          if (statsResponse.ok) {
-            const statsData = await statsResponse.json();
-            setTotalInstitutions(statsData.total_institutions || 0);
-          }
-        } catch (e) {
-          console.log('Stats endpoint failed');
-        }
+        console.log(`Loaded ${institutionsArray.length} institutions out of ${totalCount} total`);
+
+        setInstitutions(institutionsArray);
+        setCurrentEndpoint('list');
+        setTotalInstitutions(totalCount);
+
+        // FIXED: Use total count to determine if there's more data
+        setHasMoreData(institutionsArray.length < totalCount);
+        setError(null);
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -303,17 +264,20 @@ function HomeWithSearchParams() {
     router.push(url);
   };
 
-  // Show "all institutions" button handler
+  // Show "all institutions" button handler - FIXED
   const showAllInstitutions = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
       if (response.ok) {
         const data = await response.json();
-        const institutionsArray = data.institutions || data;
-        setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
-        setCurrentEndpoint('list'); // Make sure we track the endpoint
-        setHasMoreData(institutionsArray.length === 99);
+        const institutionsArray = data.institutions || [];
+        const totalCount = data.total || 0;
+
+        setInstitutions(institutionsArray);
+        setCurrentEndpoint('list');
+        setTotalInstitutions(totalCount);
+        setHasMoreData(institutionsArray.length < totalCount);
         setShowSearchResults(false);
       }
     } catch (error) {
@@ -323,34 +287,44 @@ function HomeWithSearchParams() {
     }
   };
 
-  // Fixed load more institutions function
+  // FIXED: Load more institutions function
   const loadMoreInstitutions = async () => {
     setLoadingMore(true);
     try {
-      const offset = institutions.length;
-      console.log(`Loading more institutions. Current count: ${offset}, Using endpoint: ${currentEndpoint}`);
+      // FIXED: Simple approach - try the next logical page
+      // Since we know there are 1,018 total institutions and 48 per page after initial load
+      // Just try to load the next page that should contain the missing institutions
+      const remainingInstitutions = totalInstitutions - institutions.length;
+      console.log(`Missing ${remainingInstitutions} institutions of ${totalInstitutions} total`);
 
-      // Use the same endpoint that was used initially
-      let response;
-      if (currentEndpoint === 'featured') {
-        response = await fetch(
-          `${API_BASE_URL}/api/v1/institutions/featured?limit=48&offset=${offset}`
-        );
-      } else {
-        response = await fetch(
-          `${API_BASE_URL}/api/v1/institutions/?per_page=48&offset=${offset}`
-        );
-      }
+      // Calculate expected page based on current progress  
+      const nextPage = Math.ceil((institutions.length + 1) / 48);
+      console.log(`Loading more institutions. Current count: ${institutions.length}, Loading page: ${nextPage}, Total available: ${totalInstitutions}`);
+
+      // Always use list endpoint with PAGE parameter (not offset)
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/institutions/?per_page=48&page=${nextPage}`
+      );
 
       if (response.ok) {
         const data = await response.json();
-        const newInstitutions = data.institutions || data;
+        const newInstitutions = data.institutions || [];
 
         if (Array.isArray(newInstitutions) && newInstitutions.length > 0) {
           console.log(`Loaded ${newInstitutions.length} more institutions`);
-          setInstitutions(prev => [...prev, ...newInstitutions]);
-          setHasMoreData(newInstitutions.length === 48);
-          setCurrentPage(prev => prev + 1); // Track page for return navigation
+
+          // FIXED: Deduplicate institutions to prevent React key errors
+          const existingIds = new Set(institutions.map(inst => inst.id));
+          const uniqueNewInstitutions = newInstitutions.filter(inst => !existingIds.has(inst.id));
+
+          console.log(`After deduplication: ${uniqueNewInstitutions.length} unique new institutions`);
+
+          const updatedInstitutions = [...institutions, ...uniqueNewInstitutions];
+          setInstitutions(updatedInstitutions);
+
+          // FIXED: Check if we have more data based on total count, not batch size
+          setHasMoreData(updatedInstitutions.length < totalInstitutions);
+          setCurrentPage(prev => prev + 1);
         } else {
           console.log('No more institutions found');
           setHasMoreData(false);
@@ -412,7 +386,7 @@ function HomeWithSearchParams() {
             </h1>
             <p className="text-xl text-gray-600">Find Your Perfect School</p>
             <p className="text-gray-500 mt-2">
-              Discover and compare {totalInstitutions.toLocaleString() || '6,000+'} colleges and universities
+              Discover and compare {totalInstitutions.toLocaleString() || '1,000+'} colleges and universities with tuition data
             </p>
           </div>
 
@@ -469,7 +443,7 @@ function HomeWithSearchParams() {
             ) : showSearchResults ? (
               `Showing ${searchResults.length} results for "${searchQuery}"`
             ) : (
-              `Showing ${institutions.length} ${currentEndpoint === 'featured' ? 'featured' : ''} institutions`
+              `Showing ${institutions.length} of ${totalInstitutions.toLocaleString()} institutions with tuition data`
             )}
           </p>
 
@@ -586,7 +560,7 @@ function HomeWithSearchParams() {
               ))}
             </div>
 
-            {/* Load More Button - Only show for non-search results */}
+            {/* FIXED: Load More Button - Only show for non-search results */}
             {!showSearchResults && hasMoreData && (
               <div className="text-center mt-8">
                 <button
@@ -604,7 +578,19 @@ function HomeWithSearchParams() {
                   )}
                 </button>
                 <p className="text-sm text-gray-500 mt-2">
-                  Currently showing {institutions.length} institutions
+                  Currently showing {institutions.length} of {totalInstitutions.toLocaleString()} institutions with tuition data
+                </p>
+              </div>
+            )}
+
+            {/* Show completion message when all data is loaded */}
+            {!showSearchResults && !hasMoreData && totalInstitutions > 0 && (
+              <div className="text-center mt-8 py-6 border-t border-gray-200">
+                <p className="text-gray-600 font-medium">
+                  ✨ You've seen all {institutions.length.toLocaleString()} institutions with tuition data!
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  These are all the schools in our database that have complete tuition information.
                 </p>
               </div>
             )}
