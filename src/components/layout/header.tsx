@@ -85,26 +85,24 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <a
-                href="/"
-                className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
-              >
-                <span className="text-2xl">🪄</span>
 
-                {/* one wrapper = one flex item → no gap between magic and Scholar */}
+              href="/"
+              className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
+              <a>
+                <span className="text-2xl">🪄</span>
                 <span className="inline-flex whitespace-nowrap leading-none tracking-tight">
-                  <span className="text-blue-600">magic</span>{/* no space */}<span className="text-gray-900">Scholar</span>
+                  <span className="text-blue-600">magic</span><span className="text-gray-900">Scholar</span>
                 </span>
               </a>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Fixed: Use static values for server render */}
             <div className="hidden md:flex items-center">
-              <a
-                href={getNavigationUrl()}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {getNavigationText()}
+
+              href="/scholarships"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              <a>
+                Find Scholarships
               </a>
             </div>
 
