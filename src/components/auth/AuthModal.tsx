@@ -1,4 +1,4 @@
-// components/auth/AuthModal.tsx
+// components/auth/AuthModal.tsx - FIXED VERSION
 'use client';
 
 import React, { useState } from 'react';
@@ -14,7 +14,7 @@ interface AuthModalProps {
 }
 
 interface LoginData {
-    username: string;
+    email: string;  // CHANGED: Use email instead of username
     password: string;
 }
 
@@ -34,7 +34,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
     // Form data
     const [loginData, setLoginData] = useState<LoginData>({
-        username: '',
+        email: '',  // CHANGED: Use email
         password: ''
     });
 
@@ -50,14 +50,14 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         if (isOpen) {
             setMode(defaultMode);
             setError('');
-            setLoginData({ username: '', password: '' });
+            setLoginData({ email: '', password: '' });  // CHANGED: Reset email field
             setRegisterData({ username: '', email: '', password: '', first_name: '', last_name: '' });
         }
     }, [isOpen, defaultMode]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!loginData.username || !loginData.password) {
+        if (!loginData.email || !loginData.password) {  // CHANGED: Check email
             setError('Please fill in all fields');
             return;
         }
@@ -68,8 +68,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         try {
             // Create form data for OAuth2 login
             const formData = new FormData();
-            formData.append('username', loginData.username);
+            formData.append('username', loginData.email);  // FIXED: Use email as username for OAuth2
             formData.append('password', loginData.password);
+
+            console.log('Attempting login with email:', loginData.email); // DEBUG
 
             const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
                 method: 'POST',
@@ -78,15 +80,18 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('Login successful:', data); // DEBUG
                 localStorage.setItem('token', data.access_token);
                 onSuccess?.();
                 onClose();
                 window.location.reload(); // Refresh to update header
             } else {
                 const errorData = await response.json().catch(() => ({ detail: 'Login failed' }));
-                setError(errorData.detail || 'Invalid username or password');
+                console.error('Login failed:', errorData); // DEBUG
+                setError(errorData.detail || 'Invalid email or password');
             }
         } catch (err) {
+            console.error('Network error:', err); // DEBUG
             setError('Network error. Please try again.');
         } finally {
             setLoading(false);
@@ -110,6 +115,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         setError('');
 
         try {
+            console.log('Attempting registration:', { ...registerData, password: '[HIDDEN]' }); // DEBUG
+
             const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
                 method: 'POST',
                 headers: {
@@ -120,15 +127,27 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('token', data.access_token);
-                onSuccess?.();
-                onClose();
-                window.location.reload(); // Refresh to update header
+                console.log('Registration successful:', data); // DEBUG
+
+                // FIXED: Check if registration returns a token
+                if (data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    onSuccess?.();
+                    onClose();
+                    window.location.reload();
+                } else {
+                    // If no token returned, switch to login mode
+                    setError('Registration successful! Please log in.');
+                    setMode('login');
+                    setLoginData({ email: registerData.email, password: '' });
+                }
             } else {
                 const errorData = await response.json().catch(() => ({ detail: 'Registration failed' }));
+                console.error('Registration failed:', errorData); // DEBUG
                 setError(errorData.detail || 'Registration failed');
             }
         } catch (err) {
+            console.error('Network error:', err); // DEBUG
             setError('Network error. Please try again.');
         } finally {
             setLoading(false);
@@ -136,12 +155,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
     };
 
     const handleGoogleLogin = () => {
-        // Redirect to your backend's Google OAuth endpoint
         window.location.href = `${API_BASE_URL}/api/v1/oauth/google/url`;
     };
 
     const handleLinkedInLogin = () => {
-        // You'll need to implement LinkedIn OAuth endpoint
         window.location.href = `${API_BASE_URL}/api/v1/oauth/linkedin/url`;
     };
 
@@ -153,21 +170,21 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                     <h2 className="text-xl font-semibold text-gray-900">
-                        {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+                        {mode === 'login' ? 'Welcome back' : 'Create account'}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
-                        <X size={20} className="text-gray-500" />
+                        <X size={24} />
                     </button>
                 </div>
 
                 <div className="p-6">
                     {/* Error Message */}
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                            {error}
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-600 text-sm">{error}</p>
                         </div>
                     )}
 
@@ -175,9 +192,9 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                     <div className="space-y-3 mb-6">
                         <button
                             onClick={handleGoogleLogin}
-                            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
-                            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -188,9 +205,9 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
                         <button
                             onClick={handleLinkedInLogin}
-                            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
-                            <svg className="w-5 h-5 mr-3" fill="#0077B5" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="#0077B5" viewBox="0 0 24 24">
                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                             </svg>
                             Continue with LinkedIn
@@ -211,16 +228,17 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Username or Email
+                                    Email Address
                                 </label>
                                 <div className="relative">
-                                    <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <Mail size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                     <input
-                                        type="text"
-                                        value={loginData.username}
-                                        onChange={(e) => setLoginData(prev => ({ ...prev, username: e.target.value }))}
+                                        type="email"
+                                        value={loginData.email}  // CHANGED: Use email field
+                                        onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}  // CHANGED
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
-                                        placeholder="Enter your username or email"
+                                        placeholder="Enter your email address"
+                                        required
                                     />
                                 </div>
                             </div>
@@ -237,6 +255,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                                         className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="Enter your password"
+                                        required
                                     />
                                     <button
                                         type="button"
@@ -253,7 +272,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                 disabled={loading}
                                 className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors font-medium"
                             >
-                                {loading ? 'Signing in...' : 'Sign In'}
+                                {loading ? 'Signing in...' : 'Sign in'}
                             </button>
                         </form>
                     ) : (
@@ -270,6 +289,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setRegisterData(prev => ({ ...prev, first_name: e.target.value }))}
                                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="First name"
+                                        required
                                     />
                                 </div>
                                 <div>
@@ -282,6 +302,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setRegisterData(prev => ({ ...prev, last_name: e.target.value }))}
                                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="Last name"
+                                        required
                                     />
                                 </div>
                             </div>
@@ -298,6 +319,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setRegisterData(prev => ({ ...prev, username: e.target.value }))}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="Choose a username"
+                                        required
                                     />
                                 </div>
                             </div>
@@ -314,6 +336,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="Enter your email"
+                                        required
                                     />
                                 </div>
                             </div>
@@ -330,6 +353,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
                                         className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                                         placeholder="Create a password"
+                                        required
                                     />
                                     <button
                                         type="button"
@@ -339,7 +363,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+                                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
                             </div>
 
                             <button
@@ -347,29 +371,28 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                 disabled={loading}
                                 className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors font-medium"
                             >
-                                {loading ? 'Creating account...' : 'Create Account'}
+                                {loading ? 'Creating account...' : 'Create account'}
                             </button>
                         </form>
                     )}
 
                     {/* Switch Mode */}
                     <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                            {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
-                            <button
-                                onClick={() => {
-                                    setMode(mode === 'login' ? 'register' : 'login');
-                                    setError('');
-                                }}
-                                className="ml-1 text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                                {mode === 'login' ? 'Sign up' : 'Sign in'}
-                            </button>
-                        </p>
+                        <span className="text-gray-600">
+                            {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                        </span>
+                        <button
+                            onClick={() => {
+                                setMode(mode === 'login' ? 'register' : 'login');
+                                setError('');
+                            }}
+                            className="text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                            {mode === 'login' ? 'Sign up' : 'Sign in'}
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     );
 }
-
