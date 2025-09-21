@@ -1,22 +1,12 @@
-// src/components/layout/header.tsx - Updated for your structure
+// src/components/layout/header.tsx - Updated with shared types
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { User, Menu, X } from 'lucide-react';
 import AuthModal from '../auth/AuthModal';
+import { UserData } from '@/types/user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-// Define the user type based on your API response
-interface UserData {
-  id: number;
-  email: string;
-  username: string;
-  first_name: string;
-  last_name: string;
-  is_active: boolean;
-  created_at?: string;
-}
 
 export default function Header() {
   const [user, setUser] = useState<UserData | null>(null);
@@ -95,105 +85,63 @@ export default function Header() {
 
   const getNavigationText = () => {
     const currentPath = getCurrentPath();
-    return currentPath === '/scholarships' ? 'Find Schools' : 'Find Scholarships';
+    return currentPath === '/scholarships' ? 'Home' : 'Find Scholarships';
   };
 
-  // Loading skeleton while mounting
   if (!mounted) {
-    return (
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <a
-                href="/"
-                className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
-              >
-                <span className="text-2xl">🪄</span>
-                <span className="inline-flex whitespace-nowrap leading-none tracking-tight">
-                  <span className="text-blue-600">magic</span><span className="text-gray-900">Scholar</span>
-                </span>
-              </a>
-            </div>
-
-            <div className="hidden md:flex items-center">
-              <a
-                href="/scholarships"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Find Scholarships
-              </a>
-            </div>
-
-            <div className="flex items-center space-x-1">
-              <div className="w-20 h-8 bg-gray-100 rounded animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      </header>
-    );
+    return null; // Prevent hydration mismatch
   }
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <a
-                href="/"
-                className="text-2xl font-bold hover:opacity-80 transition-opacity flex items-center gap-2"
-              >
-                <span className="text-2xl">🪄</span>
-                <span className="inline-flex whitespace-nowrap leading-none tracking-tight">
-                  <span className="text-blue-600">magic</span><span className="text-gray-900">Scholar</span>
-                </span>
+              <a href="/" className="text-xl font-bold text-blue-600">
+                magic<span className="text-gray-900">Scholar</span>
               </a>
             </div>
 
-            {/* Navigation */}
-            <div className="hidden md:flex items-center">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
               <a
                 href={getNavigationUrl()}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="text-gray-700 hover:text-blue-600 transition-colors"
               >
                 {getNavigationText()}
               </a>
-            </div>
 
-            {/* Desktop Navigation & Auth */}
-            <div className="hidden md:flex items-center space-x-1">
               {user ? (
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-2 bg-gray-50 hover:bg-gray-100 rounded-full px-3 py-2 transition-colors cursor-pointer">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <User size={14} className="text-white" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {user.first_name || user.username}
-                    </span>
-                  </div>
-
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-700">
+                    Welcome, {user.first_name || user.username}
+                  </span>
+                  <button
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    Dashboard
+                  </button>
                   <button
                     onClick={handleLogout}
-                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="text-gray-700 hover:text-red-600 transition-colors"
                   >
                     Logout
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <button
                     onClick={openLoginModal}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="text-gray-700 hover:text-blue-600 transition-colors"
                   >
                     Log in
                   </button>
                   <button
                     onClick={openRegisterModal}
-                    className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Sign up
                   </button>
@@ -205,63 +153,73 @@ export default function Header() {
             <div className="md:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="text-gray-700 hover:text-blue-600 transition-colors"
               >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
+          {/* Mobile Navigation */}
           {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-100 py-3">
-              <div className="px-3 py-2">
+            <div className="md:hidden py-4 border-t border-gray-200">
+              <div className="space-y-2">
                 <a
                   href={getNavigationUrl()}
-                  className="block text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded transition-colors"
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {getNavigationText()}
                 </a>
-              </div>
 
-              {user ? (
-                <div className="space-y-3 border-t border-gray-100 pt-3">
-                  <div className="flex items-center space-x-3 px-3 py-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <User size={16} className="text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.first_name || user.username}
+                {user ? (
+                  <div className="space-y-2 border-t border-gray-100 pt-2">
+                    <div className="flex items-center space-x-3 px-3 py-2">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <User size={16} className="text-white" />
                       </div>
-                      <div className="text-xs text-gray-500">{user.email}</div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.first_name || user.username}
+                        </div>
+                        <div className="text-xs text-gray-500">{user.email}</div>
+                      </div>
                     </div>
-                  </div>
 
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2 border-t border-gray-100 pt-3">
-                  <button
-                    onClick={openLoginModal}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-                  >
-                    Log in
-                  </button>
-                  <button
-                    onClick={openRegisterModal}
-                    className="w-full text-left px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Sign up
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => {
+                        window.location.href = '/dashboard';
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Dashboard
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 border-t border-gray-100 pt-2">
+                    <button
+                      onClick={openLoginModal}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Log in
+                    </button>
+                    <button
+                      onClick={openRegisterModal}
+                      className="w-full text-left px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-3"
+                    >
+                      Sign up
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
