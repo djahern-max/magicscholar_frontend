@@ -1,4 +1,4 @@
-// components/auth/AuthModal.tsx - FIXED VERSION
+https://accounts.google.com/o/oauth2/v2/auth?client_id=341182696930-aaqj098tdtunueqdf6rto5nhb9ht60kf.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fwww.magicscholar.com%2Fapi%2Fv1%2Foauth%2Fgoogle%2Fcallback&scope=openid+email+profile&response_type=code&access_type=offline&prompt=consent&state=sZGJBsRxOeFOPcIkEwoFdp00mgz0zFdKmXlQpF_12QU","state":"sZGJBsRxOeFOPcIkEwoFdp00mgz0zFdKmXlQpF_12QU// components/auth/AuthModal.tsx - FIXED VERSION
 'use client';
 
 import React, { useState } from 'react';
@@ -154,12 +154,52 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         }
     };
 
-    const handleGoogleLogin = () => {
-        window.location.href = `${API_BASE_URL}/api/v1/oauth/google/url`;
+    const handleGoogleLogin = async () => {
+        try {
+            setLoading(true);
+            console.log('Fetching Google OAuth URL...'); // DEBUG
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/oauth/google/url`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Google OAuth URL received:', data.url); // DEBUG
+
+                // Redirect to the actual Google OAuth URL
+                window.location.href = data.url;
+            } else {
+                console.error('Failed to get Google OAuth URL:', response.status);
+                setError('Failed to initialize Google login');
+            }
+        } catch (err) {
+            console.error('Error getting Google OAuth URL:', err);
+            setError('Failed to initialize Google login');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleLinkedInLogin = () => {
-        window.location.href = `${API_BASE_URL}/api/v1/oauth/linkedin/url`;
+    const handleLinkedInLogin = async () => {
+        try {
+            setLoading(true);
+            console.log('Fetching LinkedIn OAuth URL...'); // DEBUG
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/oauth/linkedin/url`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('LinkedIn OAuth URL received:', data.url); // DEBUG
+
+                // Redirect to the actual LinkedIn OAuth URL
+                window.location.href = data.url;
+            } else {
+                console.error('Failed to get LinkedIn OAuth URL:', response.status);
+                setError('Failed to initialize LinkedIn login');
+            }
+        } catch (err) {
+            console.error('Error getting LinkedIn OAuth URL:', err);
+            setError('Failed to initialize LinkedIn login');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (!isOpen) return null;
