@@ -2,9 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 
-export default function AuthError() {
+function AuthErrorContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const error = searchParams.get('message') || searchParams.get('error');
@@ -33,5 +33,23 @@ export default function AuthError() {
                 </button>
             </div>
         </div>
+    );
+}
+
+export default function AuthError() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-pulse">
+                        <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto"></div>
+                        <div className="mt-4 h-4 bg-gray-300 rounded w-32 mx-auto"></div>
+                        <div className="mt-2 h-3 bg-gray-300 rounded w-48 mx-auto"></div>
+                    </div>
+                </div>
+            </div>
+        }>
+            <AuthErrorContent />
+        </Suspense>
     );
 }
