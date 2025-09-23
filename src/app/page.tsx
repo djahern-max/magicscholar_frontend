@@ -6,6 +6,18 @@ import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } f
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Available states for your curated schools
+const AVAILABLE_STATES = [
+  { code: 'ALL', name: 'All States', color: 'bg-blue-100 text-blue-800' },
+  { code: 'NH', name: 'New Hampshire', color: 'bg-green-100 text-green-800' },
+  { code: 'MA', name: 'Massachusetts', color: 'bg-purple-100 text-purple-800' },
+  // Coming soon states
+  { code: 'CT', name: 'Connecticut', color: 'bg-indigo-100 text-indigo-800', disabled: true },
+  { code: 'VT', name: 'Vermont', color: 'bg-emerald-100 text-emerald-800', disabled: true },
+  { code: 'ME', name: 'Maine', color: 'bg-teal-100 text-teal-800', disabled: true },
+  { code: 'RI', name: 'Rhode Island', color: 'bg-cyan-100 text-cyan-800', disabled: true },
+];
+
 interface Institution {
   id: number;
   name: string;
@@ -42,10 +54,13 @@ function HomeWithSearchParams() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
+  // NEW: State filter
+  const [selectedState, setSelectedState] = useState('ALL');
+
   // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
-  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('list'); // Default to list
+  const [currentEndpoint, setCurrentEndpoint] = useState<'featured' | 'list'>('list');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Return-to-card state
@@ -55,12 +70,15 @@ function HomeWithSearchParams() {
   useEffect(() => {
     const page = searchParams.get('page');
     const query = searchParams.get('query');
+    const state = searchParams.get('state');
     const institutionId = searchParams.get('returnTo');
 
     if (page) setCurrentPage(parseInt(page));
     if (query) {
       setSearchQuery(query);
-      handleSearch(query); // Re-run search if returning with query
+    }
+    if (state) {
+      setSelectedState(state);
     }
     if (institutionId) {
       setReturnedInstitutionId(institutionId);
@@ -70,28 +88,16 @@ function HomeWithSearchParams() {
   // Scroll to specific institution card after data loads
   useEffect(() => {
     if (returnedInstitutionId && institutions.length > 0) {
-      console.log(`🔍 Looking for institution-${returnedInstitutionId}`);
+      console.log(`Looking for institution-${returnedInstitutionId}`);
 
       const attemptScroll = () => {
         const element = document.getElementById(`institution-${returnedInstitutionId}`);
-        console.log('🎯 Element found:', element);
-
         if (element) {
-          console.log('📍 Scrolling to element');
           element.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
             inline: 'nearest'
           });
-
-          // Also try alternative scroll method
-          setTimeout(() => {
-            const elementRect = element.getBoundingClientRect();
-            const absoluteElementTop = elementRect.top + window.pageYOffset;
-            const middle = absoluteElementTop - (window.innerHeight / 2);
-            window.scrollTo({ top: middle, behavior: 'smooth' });
-          }, 100);
-
           setReturnedInstitutionId(null);
           return true;
         }
@@ -115,59 +121,107 @@ function HomeWithSearchParams() {
     }
   }, [institutions, returnedInstitutionId]);
 
+  // NEW: Combined search and filter function
+  const searchAndFilter = async (query: string = searchQuery, stateFilter: string = selectedState) => {
+    setIsSearching(true);
+
+    try {
+      let url = `${API_BASE_URL}/api/v1/institutions/?per_page=99`;
+
+      // Add search query if provided
+      if (query.trim()) {
+        url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(query)}&per_page=99`;
+      }
+
+      // Add state filter if not 'ALL'
+      if (stateFilter !== 'ALL') {
+        const separator = url.includes('?') ? '&' : '?';
+        url += `${separator}state=${stateFilter}`;
+      }
+
+      console.log('Fetching from URL:', url);
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const institutionsArray = data.institutions || [];
+        const totalCount = data.total || institutionsArray.length;
+
+        if (query.trim() || stateFilter !== 'ALL') {
+          // This is a search/filter result
+          setSearchResults(institutionsArray);
+          setShowSearchResults(true);
+        } else {
+          // This is the main list
+          setInstitutions(institutionsArray);
+          setTotalInstitutions(totalCount);
+          setShowSearchResults(false);
+        }
+      } else {
+        console.error('Search/filter failed:', response.status);
+        if (query.trim() || stateFilter !== 'ALL') {
+          setSearchResults([]);
+          setShowSearchResults(true);
+        }
+      }
+    } catch (error) {
+      console.error('Search/filter error:', error);
+      if (query.trim() || stateFilter !== 'ALL') {
+        setSearchResults([]);
+        setShowSearchResults(true);
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // Debug function to test API endpoints
   const debugAPI = async () => {
     console.log('=== DEBUG API ENDPOINTS ===');
-
     try {
-      // Test health endpoint
       const healthResponse = await fetch(`${API_BASE_URL}/health`);
       console.log('Health check:', healthResponse.ok ? 'OK' : 'Failed');
 
-      // Test featured endpoint
       const featuredResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/featured?limit=5`);
       const featuredData = await featuredResponse.json();
       console.log('Featured institutions:', featuredData);
 
-      // Test list endpoint
       const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=5`);
       const listData = await listResponse.json();
       console.log('List institutions:', listData);
-
     } catch (error) {
       console.error('API Debug Error:', error);
     }
   };
 
-  // FIXED: Fetch initial data - only use list endpoint for proper pagination
+  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching initial data using list endpoint...');
+        // If we have URL params, use them for initial search/filter
+        const query = searchParams.get('query') || '';
+        const state = searchParams.get('state') || 'ALL';
 
-        const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
+        if (query || state !== 'ALL') {
+          await searchAndFilter(query, state);
+        } else {
+          // Default: load all institutions
+          const listResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
 
-        if (!listResponse.ok) {
-          throw new Error(`HTTP error! status: ${listResponse.status}`);
+          if (!listResponse.ok) {
+            throw new Error(`HTTP error! status: ${listResponse.status}`);
+          }
+
+          const listData = await listResponse.json();
+          const institutionsArray = listData.institutions || [];
+          const totalCount = listData.total || 0;
+
+          setInstitutions(institutionsArray);
+          setTotalInstitutions(totalCount);
+          setHasMoreData(institutionsArray.length < totalCount);
         }
 
-        const listData = await listResponse.json();
-        console.log('List data response:', listData);
-
-        // Handle the structured response from list endpoint
-        const institutionsArray = listData.institutions || [];
-        const totalCount = listData.total || 0;
-
-        console.log(`Loaded ${institutionsArray.length} institutions out of ${totalCount} total`);
-
-        setInstitutions(institutionsArray);
-        setCurrentEndpoint('list');
-        setTotalInstitutions(totalCount);
-
-        // FIXED: Use total count to determine if there's more data
-        setHasMoreData(institutionsArray.length < totalCount);
         setError(null);
-
       } catch (error) {
         console.error('Error fetching data:', error);
         setError(`Failed to load institutions: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -177,48 +231,10 @@ function HomeWithSearchParams() {
     };
 
     fetchData();
-    debugAPI(); // Run debug on load
+    debugAPI();
   }, []);
 
-  // Search functionality with better error handling
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setShowSearchResults(false);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      console.log('Searching for:', query);
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(query)}&per_page=20`
-      );
-
-      if (response.ok) {
-        const results = await response.json();
-        console.log('Search results:', results);
-
-        const institutionsArray = results.institutions || results;
-        setSearchResults(Array.isArray(institutionsArray) ? institutionsArray : []);
-        setShowSearchResults(true);
-      } else {
-        console.error('Search failed:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('Error details:', errorText);
-        setSearchResults([]);
-        setShowSearchResults(true);
-      }
-    } catch (error) {
-      console.error('Error searching:', error);
-      setSearchResults([]);
-      setShowSearchResults(true);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Debounced search
+  // Handle search input changes
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const debouncedSearch = useCallback((query: string) => {
@@ -227,25 +243,40 @@ function HomeWithSearchParams() {
     }
 
     const timeout = setTimeout(() => {
-      handleSearch(query);
+      searchAndFilter(query, selectedState);
     }, 300);
 
     setSearchTimeout(timeout);
-  }, [searchTimeout]);
+  }, [searchTimeout, selectedState]);
 
   const handleSearchInputChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) {
       debouncedSearch(value);
-    } else {
+    } else if (selectedState === 'ALL') {
       setShowSearchResults(false);
+      // Reload all institutions
+      searchAndFilter('', 'ALL');
+    } else {
+      // Keep state filter active
+      searchAndFilter('', selectedState);
     }
+  };
+
+  // NEW: Handle state filter clicks
+  const handleStateClick = (stateCode: string) => {
+    const state = AVAILABLE_STATES.find(s => s.code === stateCode);
+    if (state?.disabled) return;
+
+    setSelectedState(stateCode);
+    searchAndFilter(searchQuery, stateCode);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
+    setSelectedState('ALL');
     setShowSearchResults(false);
-    setSearchResults([]);
+    searchAndFilter('', 'ALL');
   };
 
   // Handle institution card click with return parameters
@@ -258,15 +289,20 @@ function HomeWithSearchParams() {
     if (searchQuery) {
       params.append('query', searchQuery);
     }
+    if (selectedState !== 'ALL') {
+      params.append('state', selectedState);
+    }
     params.append('returnTo', institutionId.toString());
 
     const url = `/institution/${institutionId}?${params.toString()}`;
     router.push(url);
   };
 
-  // Show "all institutions" button handler - FIXED
+  // Show all institutions handler
   const showAllInstitutions = async () => {
     setLoading(true);
+    setSelectedState('ALL');
+    setSearchQuery('');
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?per_page=99`);
       if (response.ok) {
@@ -275,7 +311,6 @@ function HomeWithSearchParams() {
         const totalCount = data.total || 0;
 
         setInstitutions(institutionsArray);
-        setCurrentEndpoint('list');
         setTotalInstitutions(totalCount);
         setHasMoreData(institutionsArray.length < totalCount);
         setShowSearchResults(false);
@@ -287,21 +322,15 @@ function HomeWithSearchParams() {
     }
   };
 
-  // FIXED: Load more institutions function
+  // Load more institutions function
   const loadMoreInstitutions = async () => {
     setLoadingMore(true);
     try {
-      // FIXED: Simple approach - try the next logical page
-      // Since we know there are 1,018 total institutions and 48 per page after initial load
-      // Just try to load the next page that should contain the missing institutions
       const remainingInstitutions = totalInstitutions - institutions.length;
       console.log(`Missing ${remainingInstitutions} institutions of ${totalInstitutions} total`);
 
-      // Calculate expected page based on current progress  
       const nextPage = Math.ceil((institutions.length + 1) / 48);
-      console.log(`Loading more institutions. Current count: ${institutions.length}, Loading page: ${nextPage}, Total available: ${totalInstitutions}`);
 
-      // Always use list endpoint with PAGE parameter (not offset)
       const response = await fetch(
         `${API_BASE_URL}/api/v1/institutions/?per_page=48&page=${nextPage}`
       );
@@ -311,26 +340,17 @@ function HomeWithSearchParams() {
         const newInstitutions = data.institutions || [];
 
         if (Array.isArray(newInstitutions) && newInstitutions.length > 0) {
-          console.log(`Loaded ${newInstitutions.length} more institutions`);
-
-          // FIXED: Deduplicate institutions to prevent React key errors
           const existingIds = new Set(institutions.map(inst => inst.id));
           const uniqueNewInstitutions = newInstitutions.filter(inst => !existingIds.has(inst.id));
 
-          console.log(`After deduplication: ${uniqueNewInstitutions.length} unique new institutions`);
-
           const updatedInstitutions = [...institutions, ...uniqueNewInstitutions];
           setInstitutions(updatedInstitutions);
-
-          // FIXED: Check if we have more data based on total count, not batch size
           setHasMoreData(updatedInstitutions.length < totalInstitutions);
           setCurrentPage(prev => prev + 1);
         } else {
-          console.log('No more institutions found');
           setHasMoreData(false);
         }
       } else {
-        console.error('Failed to load more institutions:', response.status, response.statusText);
         setHasMoreData(false);
       }
     } catch (error) {
@@ -382,16 +402,16 @@ function HomeWithSearchParams() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              🪄 <span className="text-blue-600">magic</span>Scholar
+              <span className="text-blue-600">magic</span>Scholar
             </h1>
             <p className="text-xl text-gray-600">Find Your Perfect School</p>
             <p className="text-gray-500 mt-2">
-              Discover and compare {totalInstitutions.toLocaleString() || '1,000+'} colleges and universities with tuition data
+              Discover and compare {totalInstitutions.toLocaleString() || '24+'} top universities with detailed cost information
             </p>
           </div>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -403,7 +423,7 @@ function HomeWithSearchParams() {
                 placeholder="Search by school name, city, or state..."
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
               />
-              {searchQuery && (
+              {(searchQuery || selectedState !== 'ALL') && (
                 <button
                   onClick={clearSearch}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -412,6 +432,29 @@ function HomeWithSearchParams() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* NEW: State Filter Buttons */}
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            {AVAILABLE_STATES.map((state) => (
+              <button
+                key={state.code}
+                onClick={() => handleStateClick(state.code)}
+                disabled={state.disabled}
+                className={`
+                  px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                  ${state.disabled
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                    : selectedState === state.code
+                      ? `${state.color} ring-2 ring-offset-2 ring-blue-400 shadow-md scale-105`
+                      : `${state.color} hover:shadow-md hover:scale-105 cursor-pointer`
+                  }
+                `}
+              >
+                {state.name}
+                {state.disabled && ' (Coming Soon)'}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -441,18 +484,18 @@ function HomeWithSearchParams() {
                 Searching...
               </span>
             ) : showSearchResults ? (
-              `Showing ${searchResults.length} results for "${searchQuery}"`
+              `Showing ${searchResults.length} results${searchQuery ? ` for "${searchQuery}"` : ''}${selectedState !== 'ALL' ? ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.name}` : ''}`
             ) : (
-              `Showing ${institutions.length} of ${totalInstitutions.toLocaleString()} institutions with tuition data`
+              `Showing ${institutions.length} of ${totalInstitutions.toLocaleString()} premium universities`
             )}
           </p>
 
-          {showSearchResults && (
+          {(showSearchResults || selectedState !== 'ALL') && (
             <button
               onClick={clearSearch}
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              Clear Search
+              Show All Schools
             </button>
           )}
         </div>
@@ -468,7 +511,7 @@ function HomeWithSearchParams() {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No institutions found</h3>
             <p className="text-gray-600 mb-6">
               {showSearchResults
-                ? "Try adjusting your search terms or filters to find more results."
+                ? "Try adjusting your search terms or selecting a different state."
                 : "We couldn't load any institutions. This might be a database issue."
               }
             </p>
@@ -478,12 +521,6 @@ function HomeWithSearchParams() {
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
               >
                 Show All Institutions
-              </button>
-              <button
-                onClick={debugAPI}
-                className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300"
-              >
-                Debug API
               </button>
             </div>
           </div>
@@ -495,7 +532,8 @@ function HomeWithSearchParams() {
                 <div
                   key={institution.id}
                   id={`institution-${institution.id}`}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                  onClick={() => handleInstitutionClick(institution.id)}
                 >
                   {/* Institution Image */}
                   <div className="h-48 bg-gray-200 relative">
@@ -537,31 +575,18 @@ function HomeWithSearchParams() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                      <button
-                        onClick={() => handleInstitutionClick(institution.id)}
-                        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                      >
-                        View Details
-                      </button>
-                      {institution.website && (
-                        <a
-                          href={institution.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      )}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="w-full text-center py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
+                        View Costs & Details
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* FIXED: Load More Button - Only show for non-search results */}
-            {!showSearchResults && hasMoreData && (
+            {/* Load More Button - Only for non-filtered results */}
+            {!showSearchResults && hasMoreData && selectedState === 'ALL' && (
               <div className="text-center mt-8">
                 <button
                   onClick={loadMoreInstitutions}
@@ -577,21 +602,6 @@ function HomeWithSearchParams() {
                     'Load More Institutions'
                   )}
                 </button>
-                <p className="text-sm text-gray-500 mt-2">
-                  Currently showing {institutions.length} of {totalInstitutions.toLocaleString()} institutions with tuition data
-                </p>
-              </div>
-            )}
-
-            {/* Show completion message when all data is loaded */}
-            {!showSearchResults && !hasMoreData && totalInstitutions > 0 && (
-              <div className="text-center mt-8 py-6 border-t border-gray-200">
-                <p className="text-gray-600 font-medium">
-                  ✨ You've seen all {institutions.length.toLocaleString()} institutions with tuition data!
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  These are all the schools in our database that have complete tuition information.
-                </p>
               </div>
             )}
           </>
