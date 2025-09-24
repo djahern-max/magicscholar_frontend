@@ -320,37 +320,44 @@ function HomeWithSearchParams() {
           </div>
 
           {/* State Filter Buttons with Icons */}
-          <div className="flex flex-wrap justify-center gap-2">
-            <button
-              onClick={() => handleStateFilter('all')}
-              className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                }`}
-            >
-              <span className="mr-2">🌟</span>
-              All
-            </button>
-            {AVAILABLE_STATES.map((state) => (
+
+          <div className="relative">
+            <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-2">
               <button
-                key={state.code}
-                onClick={() => state.available && handleStateFilter(state.code)}
-                disabled={!state.available}
-                className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === state.code
+                onClick={() => handleStateFilter('all')}
+                className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${selectedState === 'all'
                   ? 'bg-blue-600 text-white'
-                  : state.available
-                    ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                   }`}
               >
-                <span className="mr-2">{state.icon}</span>
-                {state.name}
-                {state.comingSoon && (
-                  <span className="ml-1 text-xs">(Coming Soon)</span>
-                )}
+                <span className="mr-2">🌟</span>
+                All
               </button>
-            ))}
+              {AVAILABLE_STATES.map((state) => (
+                <button
+                  key={state.code}
+                  onClick={() => state.available && handleStateFilter(state.code)}
+                  disabled={!state.available}
+                  className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${selectedState === state.code
+                    ? 'bg-blue-600 text-white'
+                    : state.available
+                      ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                    }`}
+                >
+                  <span className="mr-2">{state.icon}</span>
+                  {state.name}
+                  {state.comingSoon && (
+                    <span className="ml-1 text-xs">(Coming Soon)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
           </div>
+
         </div>
       </div>
 

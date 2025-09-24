@@ -63,5 +63,20 @@ module.exports = {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        // Add this plugin to create the scrollbar-hide utility
+        function ({ addUtilities }) {
+            addUtilities({
+                '.scrollbar-hide': {
+                    /* Hide scrollbar for IE, Edge and Firefox */
+                    '-ms-overflow-style': 'none',
+                    'scrollbar-width': 'none',
+                    /* Hide scrollbar for Chrome, Safari and Opera */
+                    '&::-webkit-scrollbar': {
+                        display: 'none',
+                    },
+                },
+            })
+        },
+    ],
 }
