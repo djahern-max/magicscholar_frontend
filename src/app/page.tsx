@@ -6,13 +6,13 @@ import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } f
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Available states for filtering - removed Rhode Island to fit on one line
+// Available states for filtering with state symbols
 const AVAILABLE_STATES = [
-  { code: 'NH', name: 'New Hampshire', available: true },
-  { code: 'MA', name: 'Massachusetts', available: true },
-  { code: 'CT', name: 'Connecticut', available: false, comingSoon: true },
-  { code: 'VT', name: 'Vermont', available: false, comingSoon: true },
-  { code: 'ME', name: 'Maine', available: false, comingSoon: true }
+  { code: 'NH', name: 'NH', fullName: 'New Hampshire', available: true, icon: '🏔️' },
+  { code: 'MA', name: 'MA', fullName: 'Massachusetts', available: true, icon: '🎓' },
+  { code: 'CT', name: 'CT', fullName: 'Connecticut', available: false, comingSoon: true, icon: '🌳' },
+  { code: 'VT', name: 'VT', fullName: 'Vermont', available: false, comingSoon: true, icon: '🍁' },
+  { code: 'ME', name: 'ME', fullName: 'Maine', available: false, comingSoon: true, icon: '🦞' }
 ];
 
 interface Institution {
@@ -319,29 +319,31 @@ function HomeWithSearchParams() {
             </div>
           </div>
 
-          {/* State Filter Buttons - Single row, removed Rhode Island */}
+          {/* State Filter Buttons with Icons */}
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => handleStateFilter('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === 'all'
+              className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === 'all'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
             >
-              All States
+              <span className="mr-2">🌟</span>
+              All
             </button>
             {AVAILABLE_STATES.map((state) => (
               <button
                 key={state.code}
                 onClick={() => state.available && handleStateFilter(state.code)}
                 disabled={!state.available}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === state.code
+                className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === state.code
                   ? 'bg-blue-600 text-white'
                   : state.available
                     ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
                   }`}
               >
+                <span className="mr-2">{state.icon}</span>
                 {state.name}
                 {state.comingSoon && (
                   <span className="ml-1 text-xs">(Coming Soon)</span>
@@ -378,7 +380,7 @@ function HomeWithSearchParams() {
               </span>
             ) : showSearchResults ? (
               `Found ${totalDisplayed} ${totalDisplayed === 1 ? 'school' : 'schools'}${searchQuery ? ` for "${searchQuery}"` : ''
-              }${selectedState !== 'all' ? ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.name}` : ''}`
+              }${selectedState !== 'all' ? ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.fullName}` : ''}`
             ) : (
               `Showing ${totalDisplayed} schools`
             )}
