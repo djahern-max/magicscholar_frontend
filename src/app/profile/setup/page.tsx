@@ -149,11 +149,17 @@ export default function ProfileSetupPage() {
                 family_income_range: null,
                 household_size: null,
 
-                // College preferences - use our state data
+                // College preferences - use correct data types based on schema
                 preferred_states: profileData.preferred_states,
-                preferred_college_size: [],
-                preferred_college_type: [],
+                preferred_college_size: null, // CollegeSize enum: very_small, small, medium, large, very_large
                 max_tuition_budget: null,
+                financial_aid_needed: null,
+                work_study_interest: false,
+                campus_setting: [], // Array of strings like ["urban", "suburban", "rural"]
+                religious_affiliation: null,
+                greek_life_interest: null,
+                research_opportunities_important: false,
+                study_abroad_interest: false,
 
                 // Essays and other fields
                 has_personal_statement: false,
@@ -163,11 +169,23 @@ export default function ProfileSetupPage() {
                 has_community_service_essay: false,
                 has_academic_interest_essay: false,
 
-                // Other optional fields
+                // Scholarship preferences from schema
+                scholarship_types_interested: [],
+                application_deadline_preference: null,
+                min_scholarship_amount: null,
+                renewable_scholarships_only: false,
+                local_scholarships_priority: true,
+
+                // Additional information
                 languages_spoken: [],
                 special_talents: [],
                 certifications: [],
-                additional_notes: null
+                additional_notes: null,
+
+                // Parent/guardian information (if in schema)
+                parent_education_level: null,
+                parent_occupation: null,
+                parent_employer: null
             };
 
             const response = await fetch(`${API_BASE_URL}/api/v1/profiles/`, {
