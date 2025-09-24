@@ -1,90 +1,158 @@
-// src/app/dashboard/page.tsx - Simplified Skool-style dashboard
+// src/app/profile/setup/page.tsx - Simplified version
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Settings, LogOut } from 'lucide-react';
+import { GraduationCap, MapPin, Calendar, BookOpen } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-interface UserData {
-    id: number;
-    email: string;
-    username: string;
-    first_name: string;
-    last_name: string;
-    is_active: boolean;
-    created_at?: string;
-    profile?: {
-        profile_completed: boolean;
-        completion_percentage: number;
-        profile_tier: string;
-    };
+// Common majors list - you can expand this
+const COMMON_MAJORS = [
+    'Business Administration',
+    'Computer Science',
+    'Engineering',
+    'Psychology',
+    'Biology',
+    'English',
+    'Communications',
+    'Political Science',
+    'Economics',
+    'Pre-Med',
+    'Education',
+    'Art/Design',
+    'Mathematics',
+    'History',
+    'Nursing',
+    'Criminal Justice',
+    'Marketing',
+    'Finance',
+    'Sociology',
+    'Environmental Science',
+    'Undecided'
+];
+
+// State options using your existing state data
+const STATE_OPTIONS = [
+    { code: 'NH', name: 'New Hampshire', icon: '🏔️' },
+    { code: 'MA', name: 'Massachusetts', icon: '🎓' },
+    { code: 'CT', name: 'Connecticut', icon: '🌳' },
+    { code: 'VT', name: 'Vermont', icon: '🍁' },
+    { code: 'ME', name: 'Maine', icon: '🦞' },
+    // Add more states as you expand
+];
+
+interface SimpleProfileData {
+    gpa?: string;
+    intended_majors: string[];
+    preferred_states: string[];
+    graduation_year: string;
 }
 
-export default function DashboardPage() {
+export default function ProfileSetupPage() {
     const router = useRouter();
-    const [user, setUser] = useState<UserData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [user, setUser] = useState(null);
+
+    const [profileData, setProfileData] = useState<SimpleProfileData>({
+        gpa: '',
+        intended_majors: [],
+        preferred_states: [],
+        graduation_year: ''
+    });
 
     useEffect(() => {
+        // Verify user is authenticated
         const token = localStorage.getItem('token');
         if (!token) {
             router.push('/');
             return;
         }
 
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const userData = await response.json();
-
-                    // Try to fetch profile data
-                    try {
-                        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/profile/me`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-
-                        if (profileResponse.ok) {
-                            const profileData = await profileResponse.json();
-                            userData.profile = profileData;
-                        }
-                    } catch (profileError) {
-                        // No profile yet
-                        userData.profile = {
-                            profile_completed: false,
-                            completion_percentage: 0,
-                            profile_tier: 'BASIC'
-                        };
-                    }
-
+        // Fetch current user data
+        fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.ok ? res.json() : null)
+            .then(userData => {
+                if (userData) {
                     setUser(userData);
                 } else {
-                    localStorage.removeItem('token');
                     router.push('/');
                 }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                localStorage.removeItem('token');
-                router.push('/');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUserData();
+            })
+            .catch(() => router.push('/'));
     }, [router]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        router.push('/');
+    const handleMajorToggle = (major: string) => {
+        setProfileData(prev => ({
+            ...prev,
+            intended_majors: prev.intended_majors.includes(major)
+                ? prev.intended_majors.filter(m => m !== major)
+                : [...prev.intended_majors, major]
+        }));
     };
 
-    if (loading) {
+    const handleStateToggle = (stateCode: string) => {
+        setProfileData(prev => ({
+            ...prev,
+            preferred_states: prev.preferred_states.includes(stateCode)
+                ? prev.preferred_states.filter(s => s !== stateCode)
+                : [...prev.preferred_states, stateCode]
+        }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            const token = localStorage.getItem('token');
+
+            // Transform the simple data into your backend format
+            const backendData = {
+                academic_level: 'undergraduate', // Default for now
+                field_of_study: profileData.intended_majors[0] || 'Undecided', // Take first major as primary
+                gpa: profileData.gpa || '',
+                graduation_year: profileData.graduation_year,
+                location: profileData.preferred_states[0] || '', // Take first state as primary location
+                financial_need: 'medium', // Default for now
+                // Store additional data as JSON if your backend supports it
+                additional_majors: profileData.intended_majors.slice(1),
+                preferred_states: profileData.preferred_states
+            };
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/profiles/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(backendData),
+            });
+
+            if (response.ok) {
+                console.log('Profile setup completed successfully');
+                router.push('/dashboard');
+            } else {
+                const errorData = await response.json();
+                setError(errorData.detail || 'Profile setup failed');
+            }
+        } catch (err) {
+            console.error('Profile setup error:', err);
+            setError('Network error. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSkip = () => {
+        router.push('/dashboard');
+    };
+
+    if (!user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -92,179 +160,160 @@ export default function DashboardPage() {
         );
     }
 
-    if (!user) {
-        return null;
-    }
-
-    const hasProfile = user.profile?.profile_completed ?? false;
-
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm">
-                <div className="max-w-4xl mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                                <User size={24} className="text-white" />
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8">
+                    <div className="flex justify-center mb-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                            <GraduationCap className="w-8 h-8 text-blue-600" />
+                        </div>
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">Set Up Your Profile</h1>
+                    <p className="mt-2 text-gray-600">
+                        Help us recommend the best schools and scholarships for you
+                    </p>
+                </div>
+
+                <div className="bg-white shadow rounded-lg p-6">
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-600 text-sm">{error}</p>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* GPA Section */}
+                        <div>
+                            <div className="flex items-center mb-3">
+                                <BookOpen className="w-5 h-5 text-blue-600 mr-2" />
+                                <h3 className="text-lg font-medium text-gray-900">Academic Information</h3>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Current GPA (optional)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="4.0"
+                                        value={profileData.gpa}
+                                        onChange={(e) => setProfileData(prev => ({ ...prev, gpa: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="e.g., 3.75"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Expected Graduation Year
+                                    </label>
+                                    <select
+                                        value={profileData.graduation_year}
+                                        onChange={(e) => setProfileData(prev => ({ ...prev, graduation_year: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        required
+                                    >
+                                        <option value="">Select year</option>
+                                        {Array.from({ length: 8 }, (_, i) => {
+                                            const year = new Date().getFullYear() + i;
+                                            return (
+                                                <option key={year} value={year.toString()}>{year}</option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Intended Majors Section */}
+                        <div>
+                            <div className="flex items-center mb-3">
+                                <GraduationCap className="w-5 h-5 text-blue-600 mr-2" />
+                                <h3 className="text-lg font-medium text-gray-900">Academic Interests</h3>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">
-                                    {user.first_name ? `Hi, ${user.first_name}` : `Hi, ${user.username}`}
-                                </h1>
-                                <p className="text-gray-600">{user.email}</p>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Intended Majors (select all that interest you)
+                                </label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                                    {COMMON_MAJORS.map((major) => (
+                                        <label key={major} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={profileData.intended_majors.includes(major)}
+                                                onChange={() => handleMajorToggle(major)}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-700">{major}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Selected: {profileData.intended_majors.length} major{profileData.intended_majors.length !== 1 ? 's' : ''}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-3">
+                        {/* Preferred States Section */}
+                        <div>
+                            <div className="flex items-center mb-3">
+                                <MapPin className="w-5 h-5 text-blue-600 mr-2" />
+                                <h3 className="text-lg font-medium text-gray-900">Location Preferences</h3>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Preferred States (select all that interest you)
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {STATE_OPTIONS.map((state) => (
+                                        <button
+                                            key={state.code}
+                                            type="button"
+                                            onClick={() => handleStateToggle(state.code)}
+                                            className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${profileData.preferred_states.includes(state.code)
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            <span className="mr-2">{state.icon}</span>
+                                            {state.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Selected: {profileData.preferred_states.length} state{profileData.preferred_states.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Submit Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
                             <button
-                                onClick={() => router.push('/profile/setup')}
-                                className="flex items-center text-gray-700 hover:text-blue-600 transition-colors"
+                                type="submit"
+                                disabled={loading || !profileData.graduation_year}
+                                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors font-medium"
                             >
-                                <Settings size={20} className="mr-1" />
-                                <span className="hidden sm:inline">Settings</span>
+                                {loading ? 'Saving Profile...' : 'Complete Setup'}
                             </button>
+
                             <button
-                                onClick={handleLogout}
-                                className="flex items-center text-gray-700 hover:text-red-600 transition-colors"
+                                type="button"
+                                onClick={handleSkip}
+                                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                             >
-                                <LogOut size={20} className="mr-1" />
-                                <span className="hidden sm:inline">Logout</span>
+                                Skip for Now
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </form>
 
-            {/* Main Content */}
-            <div className="max-w-4xl mx-auto px-4 py-8">
-                {/* Profile Setup Prompt (if not completed) */}
-                {!hasProfile && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-                        <div className="flex items-start space-x-4">
-                            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                                <User size={20} className="text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-medium text-blue-900 mb-2">
-                                    Complete Your Profile
-                                </h3>
-                                <p className="text-blue-800 mb-4">
-                                    Set up your profile to get personalized school and scholarship recommendations.
-                                </p>
-                                <button
-                                    onClick={() => router.push('/profile/setup')}
-                                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                >
-                                    Set Up Profile
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Main Actions */}
-                <div className="space-y-6">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                            What would you like to explore?
-                        </h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Schools Card */}
-                            <div
-                                onClick={() => router.push('/')}
-                                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-6"
-                            >
-                                <div className="flex items-center mb-4">
-                                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                        <span className="text-2xl">🏔️</span>
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-gray-900">
-                                        Discover Schools
-                                    </h3>
-                                </div>
-                                <p className="text-gray-600 mb-4">
-                                    Browse and compare universities in New Hampshire and Massachusetts.
-                                </p>
-                                <div className="text-blue-600 font-medium text-sm">
-                                    Explore schools →
-                                </div>
-                            </div>
-
-                            {/* Scholarships Card */}
-                            <div
-                                onClick={() => router.push('/scholarships')}
-                                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-6"
-                            >
-                                <div className="flex items-center mb-4">
-                                    <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
-                                        <span className="text-2xl">🎓</span>
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-gray-900">
-                                        Find Scholarships
-                                    </h3>
-                                </div>
-                                <p className="text-gray-600 mb-4">
-                                    Search for scholarship opportunities from leading organizations.
-                                </p>
-                                <div className="text-blue-600 font-medium text-sm">
-                                    Browse scholarships →
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Account Section */}
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                            Account
-                        </h2>
-
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between py-2">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">Profile</h4>
-                                        <p className="text-sm text-gray-600">
-                                            {hasProfile ? 'Profile completed' : 'Complete your profile for better recommendations'}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() => router.push('/profile/setup')}
-                                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                                    >
-                                        {hasProfile ? 'Edit' : 'Complete'}
-                                    </button>
-                                </div>
-
-                                <hr className="border-gray-200" />
-
-                                <div className="flex items-center justify-between py-2">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">Email</h4>
-                                        <p className="text-sm text-gray-600">{user.email}</p>
-                                    </div>
-                                </div>
-
-                                <hr className="border-gray-200" />
-
-                                <div className="flex items-center justify-between py-2">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">Account</h4>
-                                        <p className="text-sm text-gray-600">
-                                            Member since {new Date(user.created_at || '').getFullYear() || 'recently'}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="text-red-600 hover:text-red-700 font-medium text-sm"
-                                    >
-                                        Logout
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="mt-6 text-center">
+                        <p className="text-xs text-gray-500">
+                            You can always update your profile later to get better recommendations
+                        </p>
                     </div>
                 </div>
             </div>
