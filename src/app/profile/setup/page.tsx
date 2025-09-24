@@ -111,20 +111,66 @@ export default function ProfileSetupPage() {
         try {
             const token = localStorage.getItem('token');
 
-            // Transform the simple data into your backend format
+            // Transform the simple data into your backend's ProfileCreate format
             const backendData = {
-                academic_level: 'undergraduate', // Default for now
-                field_of_study: profileData.intended_majors[0] || 'Undecided', // Take first major as primary
-                gpa: profileData.gpa || '',
-                graduation_year: profileData.graduation_year,
-                location: profileData.preferred_states[0] || '', // Take first state as primary location
-                financial_need: 'medium', // Default for now
-                // Store additional data as JSON if your backend supports it
-                additional_majors: profileData.intended_majors.slice(1),
-                preferred_states: profileData.preferred_states
+                // Required/main fields from our simple form
+                graduation_year: parseInt(profileData.graduation_year),
+                gpa: profileData.gpa ? parseFloat(profileData.gpa) : null,
+                intended_major: profileData.intended_majors[0] || 'Undecided',
+                state: profileData.preferred_states[0] || '',
+
+                // Set reasonable defaults for other expected fields
+                high_school_name: '', // Optional in schema
+                gpa_scale: '4.0',
+                academic_interests: profileData.intended_majors,
+
+                // Optional fields with defaults
+                sat_score: null,
+                act_score: null,
+                secondary_major: null,
+                minor_interests: profileData.intended_majors.slice(1), // Additional majors as minors
+                career_goals: [],
+
+                // Additional data for future use - store as empty arrays/objects
+                ap_courses: [],
+                honors_courses: [],
+                dual_enrollment: false,
+                class_rank: null,
+                extracurricular_activities: {},
+                volunteer_experience: {},
+                volunteer_hours: null,
+                leadership_positions: {},
+                work_experience: {},
+                awards_honors: [],
+
+                // Demographics - all optional
+                ethnicity: null,
+                first_generation_college: null,
+                family_income_range: null,
+                household_size: null,
+
+                // College preferences - use our state data
+                preferred_states: profileData.preferred_states,
+                preferred_college_size: [],
+                preferred_college_type: [],
+                max_tuition_budget: null,
+
+                // Essays and other fields
+                has_personal_statement: false,
+                has_leadership_essay: false,
+                has_challenges_essay: false,
+                has_diversity_essay: false,
+                has_community_service_essay: false,
+                has_academic_interest_essay: false,
+
+                // Other optional fields
+                languages_spoken: [],
+                special_talents: [],
+                certifications: [],
+                additional_notes: null
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/profile/setup`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/profiles/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
