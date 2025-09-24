@@ -1,8 +1,8 @@
-// src/components/layout/header.tsx - Improved layout
+// src/components/layout/header.tsx - Skool-inspired simplified design
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Menu, X } from 'lucide-react';
+import { User, ChevronDown, ChevronUp } from 'lucide-react';
 import AuthModal from '../auth/AuthModal';
 import { UserData } from '@/types/user';
 
@@ -11,7 +11,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function Header() {
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     mode: 'login' | 'register';
@@ -54,12 +54,12 @@ export default function Header() {
 
   const openLoginModal = () => {
     setAuthModal({ isOpen: true, mode: 'login' });
-    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
   };
 
   const openRegisterModal = () => {
     setAuthModal({ isOpen: true, mode: 'register' });
-    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
   };
 
   const closeAuthModal = () => {
@@ -78,15 +78,30 @@ export default function Header() {
     return '/';
   };
 
-  const getNavigationUrl = () => {
+  const getOtherNavUrl = () => {
     const currentPath = getCurrentPath();
     return currentPath === '/scholarships' ? '/' : '/scholarships';
   };
 
-  const getNavigationText = () => {
+  const getOtherNavText = () => {
     const currentPath = getCurrentPath();
-    return currentPath === '/scholarships' ? 'Home' : 'Find Scholarships';
+    return currentPath === '/scholarships' ? 'Schools' : 'Scholarships';
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('navigation-dropdown');
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isDropdownOpen]);
 
   if (!mounted) {
     return null; // Prevent hydration mismatch
@@ -97,149 +112,89 @@ export default function Header() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <a href="/" className="text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+            {/* Logo with Dropdown */}
+            <div className="flex items-center relative">
+              <a href="/" className="flex items-center text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                <span className="mr-1">🪄</span>
                 magic<span className="text-gray-900">Scholar</span>
               </a>
-            </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              {/* Navigation Links */}
-              <nav className="flex items-center space-x-6">
-                <a
-                  href={getNavigationUrl()}
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              {/* Navigation Dropdown */}
+              <div className="relative ml-2" id="navigation-dropdown">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center text-gray-500 hover:text-gray-700 transition-colors p-1"
+                  aria-label="Navigation menu"
                 >
-                  {getNavigationText()}
-                </a>
-              </nav>
+                  {isDropdownOpen ? (
+                    <ChevronUp size={20} />
+                  ) : (
+                    <ChevronDown size={20} />
+                  )}
+                </button>
 
-              {/* Auth Section */}
-              {user ? (
-                <div className="flex items-center space-x-4 border-l border-gray-200 pl-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <User size={16} className="text-white" />
-                    </div>
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-900">
-                        {user.first_name || user.username}
-                      </div>
-                      <div className="text-gray-500 text-xs">{user.email}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => window.location.href = '/dashboard'}
-                      className="text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[140px] z-50">
+                    <a
+                      href={getOtherNavUrl()}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
                     >
-                      Dashboard
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="text-sm text-gray-700 hover:text-red-600 font-medium transition-colors"
+                      {getOtherNavText()}
+                    </a>
+                    <a
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
                     >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-3 border-l border-gray-200 pl-6">
-                  <button
-                    onClick={openLoginModal}
-                    className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
-                  >
-                    Log in
-                  </button>
-                  <button
-                    onClick={openRegisterModal}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-                  >
-                    Sign up
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="text-gray-700 hover:text-blue-600 transition-colors p-2"
-                aria-label="Toggle menu"
-              >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-200 bg-white">
-              <div className="space-y-1">
-                <a
-                  href={getNavigationUrl()}
-                  className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {getNavigationText()}
-                </a>
-
-                {user ? (
-                  <div className="space-y-1 pt-4 border-t border-gray-100 mt-4">
-                    {/* User Info */}
-                    <div className="flex items-center space-x-3 px-3 py-3 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <User size={18} className="text-white" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.first_name || user.username}
-                        </div>
-                        <div className="text-xs text-gray-500">{user.email}</div>
-                      </div>
-                    </div>
-
-                    {/* User Actions */}
-                    <button
-                      onClick={() => {
-                        window.location.href = '/dashboard';
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      Dashboard
-                    </button>
-
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-3 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2 pt-4 border-t border-gray-100 mt-4">
-                    <button
-                      onClick={openLoginModal}
-                      className="w-full text-left px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      Log in
-                    </button>
-                    <button
-                      onClick={openRegisterModal}
-                      className="w-full bg-blue-600 text-white px-3 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition-colors shadow-sm mx-3"
-                    >
-                      Sign up
-                    </button>
+                      Profile
+                    </a>
                   </div>
                 )}
               </div>
             </div>
-          )}
+
+            {/* Auth Section */}
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <div className="hidden sm:flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User size={16} className="text-white" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">
+                      {user.first_name || user.username}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm text-gray-700 hover:text-red-600 font-medium transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <button
+                  onClick={openLoginModal}
+                  className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  LOG IN
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

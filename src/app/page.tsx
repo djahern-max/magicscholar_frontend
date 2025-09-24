@@ -272,7 +272,7 @@ function HomeWithSearchParams() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading institutions...</p>
+          <p className="mt-4 text-gray-600">Loading schools...</p>
         </div>
       </div>
     );
@@ -283,13 +283,15 @@ function HomeWithSearchParams() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Removed MagicScholar logo to conserve space */}
+      {/* Header - Skool Style */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="text-center mb-6">
-            <p className="text-xl text-gray-600 mb-1">Find Your Perfect School</p>
-            <p className="text-gray-500">
-              Discover and compare {totalInstitutions} top universities with detailed cost information
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Discover schools
+            </h1>
+            <p className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
+              or <a href="/scholarships" className="underline">scholarships</a>
             </p>
           </div>
 
@@ -303,7 +305,7 @@ function HomeWithSearchParams() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
-                placeholder="Search by school name, city, or state..."
+                placeholder="Search for anything"
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
               />
               {(searchQuery || selectedState !== 'all') && (
@@ -322,8 +324,8 @@ function HomeWithSearchParams() {
             <button
               onClick={() => handleStateFilter('all')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
             >
               All States
@@ -334,10 +336,10 @@ function HomeWithSearchParams() {
                 onClick={() => state.available && handleStateFilter(state.code)}
                 disabled={!state.available}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedState === state.code
-                    ? 'bg-blue-600 text-white'
-                    : state.available
-                      ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                      : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                  ? 'bg-blue-600 text-white'
+                  : state.available
+                    ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
                   }`}
               >
                 {state.name}
@@ -378,7 +380,7 @@ function HomeWithSearchParams() {
               `Found ${totalDisplayed} ${totalDisplayed === 1 ? 'school' : 'schools'}${searchQuery ? ` for "${searchQuery}"` : ''
               }${selectedState !== 'all' ? ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.name}` : ''}`
             ) : (
-              `Showing ${totalDisplayed} premium universities`
+              `Showing ${totalDisplayed} schools`
             )}
           </p>
 

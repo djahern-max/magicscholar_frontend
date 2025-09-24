@@ -1,4 +1,4 @@
-// src/app/scholarships/page.tsx
+// src/app/scholarships/page.tsx - Skool-inspired design
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -99,16 +99,15 @@ export default function ScholarshipsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header - Matching college page style */}
+            {/* Header - Skool Style */}
             <div className="bg-white shadow-sm">
-                <div className="max-w-6xl mx-auto px-4 py-6">
+                <div className="max-w-6xl mx-auto px-4 py-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                            🪄 <span className="text-blue-600">magic</span>Scholar
+                        <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                            Discover scholarships
                         </h1>
-                        <p className="text-xl text-gray-600">Find Your Perfect Scholarship</p>
-                        <p className="text-gray-500 mt-2">
-                            Discover scholarship opportunities from leading organizations
+                        <p className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
+                            or <a href="/" className="underline">schools</a>
                         </p>
                     </div>
 
@@ -123,7 +122,7 @@ export default function ScholarshipsPage() {
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search by scholarship name, organization, or type..."
+                                    placeholder="Search for anything"
                                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
                                 />
                                 {searchTerm && (
