@@ -51,7 +51,7 @@ function OAuthCallbackContent() {
 
                         if (needsProfileSetup) {
                             console.log('User is new, but redirecting to home page');
-                            router.push('/');  // Changed from '/profile/setup'
+                            window.location.href = '/';  // Changed from '/profile/setup'
                         } else {
                             console.log('Redirecting to home page...');
                             router.push('/');
