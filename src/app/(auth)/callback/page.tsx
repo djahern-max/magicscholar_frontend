@@ -18,7 +18,7 @@ function OAuthCallbackContent() {
 
             if (error) {
                 console.error('OAuth error:', error);
-                router.push('/?error=oauth_failed');
+                router.push(`/?error=oauth_failed&detail=${encodeURIComponent(error)}`);
                 return;
             }
 
@@ -30,10 +30,17 @@ function OAuthCallbackContent() {
                 localStorage.setItem('token', token);
 
                 try {
+                    // Create AbortController for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                     // Verify the token and get user info
                     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        signal: controller.signal
                     });
+
+                    clearTimeout(timeoutId);
 
                     if (response.ok) {
                         const userData = await response.json();
@@ -50,17 +57,44 @@ function OAuthCallbackContent() {
                             router.push('/dashboard');
                         }
                     } else {
-                        console.error('Failed to fetch user data:', response.status);
-                        // Token might be invalid, redirect to home
-                        router.push('/');
+                        console.error('Failed to fetch user data:', response.status, response.statusText);
+
+                        // Clean up invalid token
+                        localStorage.removeItem('token');
+
+                        // Redirect with more specific error
+                        if (response.status === 401) {
+                            router.push('/?error=invalid_token');
+                        } else {
+                            router.push(`/?error=auth_failed&status=${response.status}`);
+                        }
                     }
                 } catch (err) {
                     console.error('Error verifying token:', err);
-                    router.push('/');
-                }
+
+                    // Clean up token on error
+                    localStorage.removeItem('token');
+
+                    // Handle different error types
+                    if (err instanceof Error) {
+                        if (err.name === 'AbortError') {
+                            console.error('Token verification timed out');
+                            router.push('/?error=timeout');
+                        } else if (err.message.includes('NetworkError') || err.message.includes('fetch') || err.message.includes('Failed to fetch')) {
+                            console.error('Network error during token verification');
+                            router.push('/?error=network_error');
+                        } else {
+                            router.push(`/?error=verification_failed&detail=${encodeURIComponent(err.message)}`);
+                        }
+                    } else {
+                        // Handle non-Error objects
+                        console.error('Unknown error type:', typeof err, err);
+                        router.push('/?error=unknown_error');
+                    }
+                } // <- This closing brace was missing
             } else {
                 console.error('No token received in OAuth callback');
-                router.push('/?error=oauth_failed');
+                router.push('/?error=missing_token');
             }
         };
 

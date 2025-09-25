@@ -73,9 +73,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
             console.log('Attempting login with email:', loginData.email); // DEBUG
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/auth/login-json`, {
                 method: 'POST',
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loginData),
             });
 
             if (response.ok) {
