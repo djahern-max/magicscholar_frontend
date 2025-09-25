@@ -50,8 +50,8 @@ function OAuthCallbackContent() {
                         const needsProfileSetup = isNewUser || !userData.profile_completed;
 
                         if (needsProfileSetup) {
-                            console.log('Redirecting to profile setup...');
-                            router.push('/profile/setup');
+                            console.log('User is new, but redirecting to home page');
+                            router.push('/');  // Changed from '/profile/setup'
                         } else {
                             console.log('Redirecting to home page...');
                             router.push('/');
