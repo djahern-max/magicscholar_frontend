@@ -53,8 +53,8 @@ function OAuthCallbackContent() {
                             console.log('Redirecting to profile setup...');
                             router.push('/profile/setup');
                         } else {
-                            console.log('Redirecting to dashboard...');
-                            router.push('/dashboard');
+                            console.log('Redirecting to home page...');
+                            router.push('/');
                         }
                     } else {
                         console.error('Failed to fetch user data:', response.status, response.statusText);
