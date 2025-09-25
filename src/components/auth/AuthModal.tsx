@@ -31,6 +31,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Form data
     const [loginData, setLoginData] = useState<LoginData>({
@@ -38,10 +39,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         password: ''
     });
 
-    const [registerData, setRegisterData] = useState<RegisterData>({
+    const [registerData, setRegisterData] = useState({
         username: '',
         email: '',
         password: '',
+        confirmPassword: '',
         first_name: '',
         last_name: ''
     });
@@ -50,8 +52,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
         if (isOpen) {
             setMode(defaultMode);
             setError('');
-            setLoginData({ email: '', password: '' });  // CHANGED: Reset email field
-            setRegisterData({ username: '', email: '', password: '', first_name: '', last_name: '' });
+            setLoginData({ email: '', password: '' });
+            setRegisterData({
+                username: '',
+                email: '',
+                password: '',
+                confirmPassword: '',
+                first_name: '',
+                last_name: ''
+            });
         }
     }, [isOpen, defaultMode]);
 
@@ -101,6 +110,12 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (registerData.password !== registerData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
         if (!registerData.username || !registerData.email || !registerData.password ||
             !registerData.first_name || !registerData.last_name) {
             setError('Please fill in all fields');
@@ -405,6 +420,42 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login', onSu
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                            </div>
+
+                            {/* NEW: Confirm Password Field */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Confirm Password
+                                </label>
+                                <div className="relative">
+                                    <Lock size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        value={registerData.confirmPassword}
+                                        onChange={(e) => setRegisterData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                        className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition-colors ${registerData.confirmPassword && registerData.password !== registerData.confirmPassword
+                                            ? 'border-red-300 focus:ring-red-500'
+                                            : registerData.confirmPassword && registerData.password === registerData.confirmPassword
+                                                ? 'border-green-300 focus:ring-green-500'
+                                                : 'border-gray-300 focus:ring-blue-500'
+                                            }`}
+                                        placeholder="Confirm your password"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
+                                {registerData.confirmPassword && registerData.password !== registerData.confirmPassword && (
+                                    <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                                )}
+                                {registerData.confirmPassword && registerData.password === registerData.confirmPassword && (
+                                    <p className="text-xs text-green-500 mt-1">Passwords match</p>
+                                )}
                             </div>
 
                             <button
