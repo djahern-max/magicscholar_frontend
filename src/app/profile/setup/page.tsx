@@ -213,7 +213,7 @@ export default function ProfileSetupPage() {
     };
 
     const handleSkip = () => {
-        router.push('/dashboard');
+        router.push('/');
     };
 
     if (!user) {
@@ -339,8 +339,8 @@ export default function ProfileSetupPage() {
                                             type="button"
                                             onClick={() => handleStateToggle(state.code)}
                                             className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${profileData.preferred_states.includes(state.code)
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
                                             <span className="mr-2">{state.icon}</span>
