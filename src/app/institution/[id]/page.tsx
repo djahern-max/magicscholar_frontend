@@ -12,7 +12,9 @@ import {
     ArrowLeft,
     DollarSign,
     Home,
-    BookOpen
+    BookOpen,
+    Info,
+    Star
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -46,6 +48,7 @@ interface TuitionData {
         meals?: number;
         total?: number;
         source?: string;
+        notes?: string;
     } | null;
     books_supplies?: number | null;
     // Handle the nested structure from your API
@@ -60,6 +63,7 @@ interface TuitionData {
             meals?: number;
             total?: number;
             source?: string;
+            notes?: string;
         } | null;
         books_supplies?: number | null;
         academic_year?: string;
@@ -254,6 +258,43 @@ export default function InstitutionDetail() {
         return null;
     };
 
+    // Get policy notes from breakdown - check both current and future years
+    const getPolicyNotes = () => {
+        if (!tuitionData) return null;
+
+        // Get notes from the room_board_breakdown field
+        let notes = null;
+
+        // Try direct access first
+        if (tuitionData.room_board_breakdown?.notes) {
+            notes = tuitionData.room_board_breakdown.notes;
+        }
+        // Try nested structure
+        else if (tuitionData.tuition_data?.room_board_breakdown?.notes) {
+            notes = tuitionData.tuition_data.room_board_breakdown.notes;
+        }
+
+        // If we found notes, return them as-is from the database
+        // Split on semicolons or periods followed by capital letters to create bullet points
+        if (notes) {
+            // Check if it contains multiple sentences/points that should be split
+            if (notes.includes(';') || (notes.match(/\.\s+[A-Z]/g) && notes.length > 100)) {
+                // Split on semicolons first, then on '. ' followed by capital letter
+                let splitNotes = notes.split(';');
+                if (splitNotes.length === 1) {
+                    splitNotes = notes.split(/\.\s+(?=[A-Z])/);
+                }
+                return splitNotes
+                    .map(note => note.trim())
+                    .filter(note => note.length > 0)
+                    .map(note => note.endsWith('.') ? note : note + '.');
+            }
+            return notes;
+        }
+
+        return null;
+    };
+
     const getAcademicYear = () => {
         if (tuitionData?.academic_year) return tuitionData.academic_year;
         if (tuitionData?.tuition_data?.academic_year) return tuitionData.tuition_data.academic_year;
@@ -284,6 +325,7 @@ export default function InstitutionDetail() {
 
     const roomBoardBreakdown = getRoomBoardBreakdown();
     const hasAnyTuitionData = getCurrentTuition() || getCurrentFees() || getRoomBoard();
+    const policyNotes = getPolicyNotes();
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -364,11 +406,41 @@ export default function InstitutionDetail() {
                                     href={institution.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                                    className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
                                 >
                                     <ExternalLink className="w-4 h-4 mr-1" />
                                     Visit Website
                                 </a>
+                            )}
+
+                            {/* Policy Notes Section - NEW */}
+                            {policyNotes && (
+                                <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-start">
+                                        <div className="flex-shrink-0">
+                                            <Star className="w-5 h-5 text-green-600 mt-0.5" />
+                                        </div>
+                                        <div className="ml-3">
+                                            <h3 className="text-sm font-semibold text-green-800 mb-2">
+                                                Important Financial Aid Information
+                                            </h3>
+                                            {Array.isArray(policyNotes) ? (
+                                                <ul className="space-y-1">
+                                                    {policyNotes.map((note, index) => (
+                                                        <li key={index} className="text-sm text-green-700 leading-relaxed flex items-start">
+                                                            <span className="inline-block w-1.5 h-1.5 bg-green-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                                            {note}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="text-sm text-green-700 leading-relaxed">
+                                                    {policyNotes}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
