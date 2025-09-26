@@ -106,12 +106,16 @@ export default function InstitutionDetail() {
         const fetchData = async () => {
             if (!params.id) return;
 
+            // ADD THESE DEBUG LOGS:
+            console.log('Raw params object:', params);
+            console.log('params.id type:', typeof params.id);
+            console.log('params.id value:', params.id);
+            console.log('Current URL:', window.location.href);
+
             try {
                 console.log('Fetching institution data for ID:', params.id);
 
-                // Fetch institution details
                 const institutionResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/${params.id}`);
-
                 if (institutionResponse.ok) {
                     const institutionData = await institutionResponse.json();
                     console.log('Institution data:', institutionData);
