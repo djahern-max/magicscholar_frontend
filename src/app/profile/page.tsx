@@ -23,7 +23,6 @@ export default function ProfilePage() {
         }
 
         try {
-            // Fetch profile
             const profileRes = await fetch(`${API_BASE_URL}/api/v1/profiles/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -31,12 +30,8 @@ export default function ProfilePage() {
             if (profileRes.ok) {
                 const data = await profileRes.json();
                 setProfileData(data);
-            } else {
-                router.push('/profile/setup');
-                return;
             }
 
-            // Fetch scholarships
             const scholarshipsRes = await fetch(`${API_BASE_URL}/api/v1/scholarships/list`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -56,10 +51,8 @@ export default function ProfilePage() {
         return <div style={{ padding: '20px', textAlign: 'center' }}>Loading profile...</div>;
     }
 
-    if (!profileData) return null;
-
     const totalFields = 75;
-    const filledFields = 8;
+    const filledFields = profileData ? 8 : 0;
     const actualCompletion = Math.round((filledFields / totalFields) * 100);
 
     return (
@@ -72,10 +65,9 @@ export default function ProfilePage() {
             border: '1px solid #ddd'
         }}>
             <h1 style={{ borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
-                PROFILE FIELD REPORT - User: {profileData.user_id}
+                PROFILE FIELD REPORT - User: {profileData?.user_id || 'No Profile'}
             </h1>
 
-            {/* Summary */}
             <div style={{ background: '#f0f0f0', padding: '15px', marginBottom: '20px', border: '1px solid #ccc' }}>
                 <table style={{ width: '100%' }}>
                     <tbody>
@@ -95,37 +87,35 @@ export default function ProfilePage() {
                             <td style={{ padding: '5px' }}>Actual Completion:</td>
                             <td>{actualCompletion}%</td>
                         </tr>
-
                     </tbody>
                 </table>
             </div>
 
-            {/* Scholarships */}
             <div style={{ background: '#e3f2fd', padding: '15px', marginBottom: '20px', border: '1px solid #90caf9' }}>
                 <h3 style={{ margin: '0 0 10px 0' }}>SCHOLARSHIP MATCHES</h3>
                 <p><strong>Count:</strong> {scholarshipCount}</p>
                 <p style={{ fontSize: '12px', color: '#666' }}>Total scholarships in database</p>
             </div>
 
-            {/* Filled Fields */}
-            <div style={{ marginBottom: '20px' }}>
-                <h2 style={{ borderBottom: '1px solid #000' }}>FILLED FIELDS (8)</h2>
-                <div style={{ padding: '10px 0' }}>
-                    <div>✓ high_school_name: "{profileData.high_school_name}"</div>
-                    <div>✓ graduation_year: {profileData.graduation_year}</div>
-                    <div>✓ gpa: {profileData.gpa}</div>
-                    <div>✓ intended_major: "{profileData.intended_major}"</div>
-                    <div>✓ state: "{profileData.state}"</div>
-                    <div>✓ academic_interests: {profileData.academic_interests?.join(', ')}</div>
+            {profileData && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h2 style={{ borderBottom: '1px solid #000' }}>FILLED FIELDS ({filledFields})</h2>
+                    <div style={{ padding: '10px 0' }}>
+                        <div>✓ high_school_name: "{profileData.high_school_name}"</div>
+                        <div>✓ graduation_year: {profileData.graduation_year}</div>
+                        <div>✓ gpa: {profileData.gpa}</div>
+                        <div>✓ intended_major: "{profileData.intended_major}"</div>
+                        <div>✓ state: "{profileData.state}"</div>
+                        <div>✓ academic_interests: {profileData.academic_interests?.join(', ')}</div>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Actions */}
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={loadData} style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}>
                     Refresh
                 </button>
-                <button onClick={() => router.push('/profile/setup')} style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => router.push('/profile/edit')} style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
                     Edit Profile
                 </button>
                 <button onClick={() => router.push('/scholarships')} style={{ padding: '10px 20px', background: '#17a2b8', color: 'white', border: 'none', cursor: 'pointer' }}>
@@ -133,15 +123,16 @@ export default function ProfilePage() {
                 </button>
             </div>
 
-            {/* Raw JSON */}
-            <details style={{ marginTop: '30px' }}>
-                <summary style={{ cursor: 'pointer', padding: '10px', background: '#e9ecef' }}>
-                    Raw API Response
-                </summary>
-                <pre style={{ background: '#f8f9fa', padding: '15px', overflow: 'auto', fontSize: '12px' }}>
-                    {JSON.stringify(profileData, null, 2)}
-                </pre>
-            </details>
+            {profileData && (
+                <details style={{ marginTop: '30px' }}>
+                    <summary style={{ cursor: 'pointer', padding: '10px', background: '#e9ecef' }}>
+                        Raw API Response
+                    </summary>
+                    <pre style={{ background: '#f8f9fa', padding: '15px', overflow: 'auto', fontSize: '12px' }}>
+                        {JSON.stringify(profileData, null, 2)}
+                    </pre>
+                </details>
+            )}
         </div>
     );
 }
