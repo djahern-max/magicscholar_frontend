@@ -1,3 +1,5 @@
+// src/app/page.tsx
+
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -255,7 +257,7 @@ function HomeWithSearchParams() {
 
   if (loading && institutions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-page-bg flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading schools...</p>
@@ -268,9 +270,9 @@ function HomeWithSearchParams() {
   const totalDisplayed = displayInstitutions.length;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-page-bg">
       {/* Header */}
-      <div className="bg-gray-100 border-b-2 border-gray-300">
+      <div className="bg-page-bg border-b-2 border-gray-300">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-3">
@@ -309,8 +311,8 @@ function HomeWithSearchParams() {
             <button
               onClick={() => handleStateFilter('all')}
               className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === 'all'
-                  ? 'bg-gray-400 text-white border-gray-400'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                ? 'bg-gray-400 text-white border-gray-400'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                 }`}
             >
               <span className="mr-2">🌟</span>
@@ -322,10 +324,10 @@ function HomeWithSearchParams() {
                 onClick={() => state.available && handleStateFilter(state.code)}
                 disabled={!state.available}
                 className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === state.code
-                    ? 'bg-gray-400 text-white border-gray-400'
-                    : state.available
-                      ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                      : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                  ? 'bg-gray-400 text-white border-gray-400'
+                  : state.available
+                    ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
                   }`}
               >
                 <span className="mr-2">{state.icon}</span>
@@ -466,7 +468,7 @@ function HomeWithSearchParams() {
 export default function Home() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-page-bg flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading...</p>

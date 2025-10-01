@@ -1,4 +1,4 @@
-// src/app/scholarships/page.tsx - Skool-inspired design
+// src/app/scholarships/page.tsx - Matching schools page design
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -99,43 +99,39 @@ export default function ScholarshipsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header - Skool Style */}
-            <div className="bg-white shadow-sm">
+            {/* Header - Matching schools page style */}
+            <div className="bg-gray-50 border-b-2 border-gray-300">
                 <div className="max-w-6xl mx-auto px-4 py-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-                            Discover scholarships
+                        <h1 className="text-4xl font-bold mb-3">
+                            <span className="text-blue-600">Discover</span>{' '}
+                            <span className="text-purple-600">scholarships</span>
                         </h1>
-                        <p className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
-                            or <a href="/" className="underline">schools</a>
+                        <p className="text-gray-700">
+                            or <a href="/" className="text-blue-600 hover:text-blue-700 font-medium underline">schools</a>
                         </p>
                     </div>
 
-                    {/* Search Bar - Matching college page style */}
-                    <div className="max-w-2xl mx-auto">
-                        <form onSubmit={handleSearch}>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search for anything"
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
-                                />
-                                {searchTerm && (
-                                    <button
-                                        type="button"
-                                        onClick={clearSearch}
-                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                    >
-                                        <span className="text-gray-400 hover:text-gray-600 text-xl">×</span>
-                                    </button>
-                                )}
-                            </div>
-                        </form>
+                    {/* Search Bar - Matching schools page style */}
+                    <div className="max-w-2xl mx-auto mb-6">
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search for scholarships"
+                                className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-300 rounded-full text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 transition-colors"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={clearSearch}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <span className="text-2xl">×</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -143,61 +139,54 @@ export default function ScholarshipsPage() {
             {/* Error Message */}
             {error && (
                 <div className="max-w-6xl mx-auto px-4 py-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                         <p className="text-red-800">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="mt-2 text-red-600 hover:text-red-800 underline text-sm"
+                        >
+                            Try Again
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Search Status */}
-            <div className="max-w-6xl mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <p className="text-gray-600">
-                        {loading ? (
-                            "Loading scholarships..."
-                        ) : (
-                            `Showing ${scholarships.length} scholarships${searchTerm ? ` for "${searchTerm}"` : ''}`
-                        )}
-                    </p>
-
-                    {/* Quick Stats */}
-                    <div className="hidden md:flex items-center space-x-6 text-sm text-gray-500">
-                        <div className="flex items-center">
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            Various amounts
-                        </div>
-                        <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            Multiple deadlines
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Results */}
-            <div className="max-w-6xl mx-auto px-4 pb-8">
+            <div className="max-w-6xl mx-auto px-4 py-8">
                 {loading ? (
-                    <div className="text-center py-12">
+                    <div className="text-center py-20">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                         <p className="mt-4 text-gray-600">Loading scholarships...</p>
                     </div>
-                ) : scholarships.length === 0 && !loading ? (
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                ) : scholarships.length === 0 ? (
+                    <div className="text-center py-20">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Award className="w-8 h-8 text-gray-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No scholarships found</h3>
                         <p className="text-gray-600 mb-6">
                             {searchTerm
                                 ? "Try adjusting your search terms to find more scholarships."
-                                : "We couldn't load any scholarships. This might be a database issue."
-                            }
+                                : "We couldn't load any scholarships."}
                         </p>
+                        <button
+                            onClick={clearSearch}
+                            className="bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium"
+                        >
+                            Show All Scholarships
+                        </button>
                     </div>
                 ) : (
                     <>
+                        <div className="mb-6 text-sm text-gray-600">
+                            <span>
+                                {scholarships.length} {scholarships.length === 1 ? 'scholarship' : 'scholarships'}
+                                {searchTerm && ` matching "${searchTerm}"`}
+                            </span>
+                        </div>
+
                         {/* Scholarships Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {scholarships.map((scholarship) => (
                                 <ScholarshipCard key={scholarship.id} scholarship={scholarship} />
                             ))}
@@ -205,28 +194,26 @@ export default function ScholarshipsPage() {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="text-center mt-8">
-                                <div className="flex items-center justify-center space-x-2">
-                                    <button
-                                        onClick={() => setPage(Math.max(1, page - 1))}
-                                        disabled={page === 1}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Previous
-                                    </button>
+                            <div className="flex items-center justify-center space-x-2 mt-8">
+                                <button
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page === 1}
+                                    className="px-4 py-2 border-2 border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Previous
+                                </button>
 
-                                    <span className="px-4 py-2 text-sm text-gray-700">
-                                        Page {page} of {totalPages}
-                                    </span>
+                                <span className="px-4 py-2 text-sm text-gray-700">
+                                    Page {page} of {totalPages}
+                                </span>
 
-                                    <button
-                                        onClick={() => setPage(Math.min(totalPages, page + 1))}
-                                        disabled={page === totalPages}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                                    disabled={page === totalPages}
+                                    className="px-4 py-2 border-2 border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next
+                                </button>
                             </div>
                         )}
                     </>
