@@ -48,7 +48,7 @@ export default function ProfilePage() {
     };
 
     if (loading) {
-        return <div style={{ padding: '20px', textAlign: 'center' }}>Loading profile...</div>;
+        return <div className="p-5 text-center">Loading profile...</div>;
     }
 
     const totalFields = 75;
@@ -56,51 +56,44 @@ export default function ProfilePage() {
     const actualCompletion = Math.round((filledFields / totalFields) * 100);
 
     return (
-        <div style={{
-            fontFamily: 'monospace',
-            maxWidth: '900px',
-            margin: '20px auto',
-            padding: '20px',
-            background: '#fff',
-            border: '1px solid #ddd'
-        }}>
-            <h1 style={{ borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
+        <div className="font-mono max-w-4xl mx-auto my-5 p-5 bg-white border border-gray-300">
+            <h1 className="border-b-2 border-black pb-2.5 mb-5">
                 PROFILE FIELD REPORT - User: {profileData?.user_id || 'No Profile'}
             </h1>
 
-            <div style={{ background: '#f0f0f0', padding: '15px', marginBottom: '20px', border: '1px solid #ccc' }}>
-                <table style={{ width: '100%' }}>
+            <div className="bg-gray-100 p-4 mb-5 border border-gray-400">
+                <table className="w-full">
                     <tbody>
                         <tr>
-                            <td style={{ padding: '5px' }}>Total fields:</td>
+                            <td className="py-1">Total fields:</td>
                             <td>{totalFields}</td>
                         </tr>
                         <tr>
-                            <td style={{ padding: '5px' }}>Filled:</td>
+                            <td className="py-1">Filled:</td>
                             <td>{filledFields}</td>
                         </tr>
                         <tr>
-                            <td style={{ padding: '5px' }}>Empty:</td>
+                            <td className="py-1">Empty:</td>
                             <td>{totalFields - filledFields}</td>
                         </tr>
-                        <tr style={{ fontWeight: 'bold' }}>
-                            <td style={{ padding: '5px' }}>Actual Completion:</td>
+                        <tr className="font-bold">
+                            <td className="py-1">Actual Completion:</td>
                             <td>{actualCompletion}%</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div style={{ background: '#e3f2fd', padding: '15px', marginBottom: '20px', border: '1px solid #90caf9' }}>
-                <h3 style={{ margin: '0 0 10px 0' }}>SCHOLARSHIP MATCHES</h3>
+            <div className="bg-blue-50 p-4 mb-5 border border-blue-300">
+                <h3 className="mt-0 mb-2.5">SCHOLARSHIP MATCHES</h3>
                 <p><strong>Count:</strong> {scholarshipCount}</p>
-                <p style={{ fontSize: '12px', color: '#666' }}>Total scholarships in database</p>
+                <p className="text-xs text-gray-600">Total scholarships in database</p>
             </div>
 
             {profileData && (
-                <div style={{ marginBottom: '20px' }}>
-                    <h2 style={{ borderBottom: '1px solid #000' }}>FILLED FIELDS ({filledFields})</h2>
-                    <div style={{ padding: '10px 0' }}>
+                <div className="mb-5">
+                    <h2 className="border-b border-black">FILLED FIELDS ({filledFields})</h2>
+                    <div className="py-2.5">
                         <div>✓ high_school_name: "{profileData.high_school_name}"</div>
                         <div>✓ graduation_year: {profileData.graduation_year}</div>
                         <div>✓ gpa: {profileData.gpa}</div>
@@ -111,24 +104,33 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={loadData} style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}>
+            <div className="flex gap-2.5">
+                <button
+                    onClick={loadData}
+                    className="px-5 py-2.5 bg-blue-600 text-white border-none cursor-pointer hover:bg-blue-700 transition-colors"
+                >
                     Refresh
                 </button>
-                <button onClick={() => router.push('/profile/edit')} style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>
+                <button
+                    onClick={() => router.push('/profile/edit')}
+                    className="px-5 py-2.5 bg-green-600 text-white border-none cursor-pointer hover:bg-green-700 transition-colors"
+                >
                     Edit Profile
                 </button>
-                <button onClick={() => router.push('/scholarships')} style={{ padding: '10px 20px', background: '#17a2b8', color: 'white', border: 'none', cursor: 'pointer' }}>
+                <button
+                    onClick={() => router.push('/scholarships')}
+                    className="px-5 py-2.5 bg-cyan-600 text-white border-none cursor-pointer hover:bg-cyan-700 transition-colors"
+                >
                     View Scholarships
                 </button>
             </div>
 
             {profileData && (
-                <details style={{ marginTop: '30px' }}>
-                    <summary style={{ cursor: 'pointer', padding: '10px', background: '#e9ecef' }}>
+                <details className="mt-8">
+                    <summary className="cursor-pointer p-2.5 bg-gray-200 hover:bg-gray-300 transition-colors">
                         Raw API Response
                     </summary>
-                    <pre style={{ background: '#f8f9fa', padding: '15px', overflow: 'auto', fontSize: '12px' }}>
+                    <pre className="bg-gray-50 p-4 overflow-auto text-xs">
                         {JSON.stringify(profileData, null, 2)}
                     </pre>
                 </details>

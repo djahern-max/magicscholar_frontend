@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, MapPin, ExternalLink, Users, GraduationCap, Loader2 } from 'lucide-react';
+import { Search, MapPin, ExternalLink, Users, GraduationCap, Loader2 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -34,33 +34,27 @@ interface Institution {
   website?: string;
 }
 
-// Separate component that uses useSearchParams
 function HomeWithSearchParams() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Core state
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalInstitutions, setTotalInstitutions] = useState(24); // Start with expected curated count
+  const [totalInstitutions, setTotalInstitutions] = useState(24);
 
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedState, setSelectedState] = useState<string>('all');
   const [searchResults, setSearchResults] = useState<Institution[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // Pagination state
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Return-to-card state
   const [returnedInstitutionId, setReturnedInstitutionId] = useState<string | null>(null);
 
-  // Handle URL parameters on load
   useEffect(() => {
     const page = searchParams.get('page');
     const query = searchParams.get('query');
@@ -80,7 +74,6 @@ function HomeWithSearchParams() {
     }
   }, [searchParams]);
 
-  // Scroll to specific institution card after data loads
   useEffect(() => {
     if (returnedInstitutionId && institutions.length > 0) {
       const attemptScroll = () => {
@@ -102,7 +95,6 @@ function HomeWithSearchParams() {
     }
   }, [institutions, returnedInstitutionId]);
 
-  // Search functionality
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
       setShowSearchResults(false);
@@ -136,7 +128,6 @@ function HomeWithSearchParams() {
     }
   };
 
-  // Combined search and filter function
   const searchAndFilter = async (query: string = searchQuery, state: string = selectedState) => {
     setIsSearching(true);
     try {
@@ -166,12 +157,10 @@ function HomeWithSearchParams() {
     }
   };
 
-  // Handle state filter selection
   const handleStateFilter = (stateCode: string) => {
     setSelectedState(stateCode);
     searchAndFilter(searchQuery, stateCode);
 
-    // Update URL
     const params = new URLSearchParams();
     if (searchQuery) params.append('query', searchQuery);
     if (stateCode !== 'all') params.append('state', stateCode);
@@ -180,7 +169,6 @@ function HomeWithSearchParams() {
     router.replace(newUrl);
   };
 
-  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -209,7 +197,6 @@ function HomeWithSearchParams() {
     fetchData();
   }, []);
 
-  // Debounced search
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const debouncedSearch = useCallback((query: string) => {
@@ -235,7 +222,6 @@ function HomeWithSearchParams() {
     router.replace('/');
   };
 
-  // Handle institution card click
   const handleInstitutionClick = (institutionId: number) => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.append('page', currentPage.toString());
@@ -282,93 +268,82 @@ function HomeWithSearchParams() {
   const totalDisplayed = displayInstitutions.length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - Skool Style */}
-      <div className="bg-white shadow-sm">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-gray-100 border-b-2 border-gray-300">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
-              Discover schools
+            <h1 className="text-4xl font-bold mb-3">
+              <span className="text-green-600">Discover</span>{' '}
+              <span className="text-cyan-600">schools</span>
             </h1>
-            <p className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
-              or <a href="/scholarships" className="underline">scholarships</a>
+            <p className="text-gray-700">
+              or <a href="/scholarships" className="text-blue-600 hover:text-blue-700 font-medium underline">scholarships</a>
             </p>
           </div>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
-                placeholder="Search for anything"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                placeholder="Search for schools"
+                className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-300 rounded-full text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 transition-colors"
               />
               {(searchQuery || selectedState !== 'all') && (
                 <button
                   onClick={clearSearch}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  <span className="text-gray-400 hover:text-gray-600 text-xl">×</span>
+                  <span className="text-2xl">×</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* State Filter Buttons with Icons */}
-
-          <div className="relative">
-            <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-2">
+          {/* State Filter Buttons */}
+          <div className="flex justify-center gap-2 flex-wrap max-w-4xl mx-auto">
+            <button
+              onClick={() => handleStateFilter('all')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === 'all'
+                  ? 'bg-gray-400 text-white border-gray-400'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                }`}
+            >
+              <span className="mr-2">🌟</span>
+              All
+            </button>
+            {AVAILABLE_STATES.map((state) => (
               <button
-                onClick={() => handleStateFilter('all')}
-                className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${selectedState === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                key={state.code}
+                onClick={() => state.available && handleStateFilter(state.code)}
+                disabled={!state.available}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === state.code
+                    ? 'bg-gray-400 text-white border-gray-400'
+                    : state.available
+                      ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                      : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
                   }`}
               >
-                <span className="mr-2">🌟</span>
-                All
+                <span className="mr-2">{state.icon}</span>
+                {state.name}
               </button>
-              {AVAILABLE_STATES.map((state) => (
-                <button
-                  key={state.code}
-                  onClick={() => state.available && handleStateFilter(state.code)}
-                  disabled={!state.available}
-                  className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${selectedState === state.code
-                    ? 'bg-blue-600 text-white'
-                    : state.available
-                      ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                      : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
-                    }`}
-                >
-                  <span className="mr-2">{state.icon}</span>
-                  {state.name}
-                  {state.comingSoon && (
-                    <span className="ml-1 text-xs">(Coming Soon)</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+            ))}
           </div>
-
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <p className="text-red-800">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-2 text-red-600 hover:text-red-800 underline"
+              className="mt-2 text-red-600 hover:text-red-800 underline text-sm"
             >
               Try Again
             </button>
@@ -376,117 +351,101 @@ function HomeWithSearchParams() {
         </div>
       )}
 
-      {/* Results Summary */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <p className="text-gray-600">
-            {isSearching ? (
-              <span className="flex items-center">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Searching...
-              </span>
-            ) : showSearchResults ? (
-              `Found ${totalDisplayed} ${totalDisplayed === 1 ? 'school' : 'schools'}${searchQuery ? ` for "${searchQuery}"` : ''
-              }${selectedState !== 'all' ? ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.fullName}` : ''}`
-            ) : (
-              `Showing ${totalDisplayed} schools`
-            )}
-          </p>
-
-          {(showSearchResults && (searchQuery || selectedState !== 'all')) && (
-            <button
-              onClick={clearSearch}
-              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-            >
-              Show All Schools
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Results */}
-      <div className="max-w-6xl mx-auto px-4 pb-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {displayInstitutions.length === 0 && !loading ? (
-          <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No schools found</h3>
             <p className="text-gray-600 mb-6">
               {showSearchResults
-                ? "Try adjusting your search terms or select a different state."
-                : "We couldn't load the school data."
-              }
+                ? "Try adjusting your search terms or selecting a different state."
+                : "We couldn't load the school data."}
             </p>
             <button
               onClick={clearSearch}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium"
             >
               Show All Schools
             </button>
           </div>
         ) : (
           <>
-            {/* Institution Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="mb-6 text-sm text-gray-600">
+              {isSearching ? (
+                <span className="flex items-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Searching...
+                </span>
+              ) : (
+                <span>
+                  {totalDisplayed} {totalDisplayed === 1 ? 'school' : 'schools'}
+                  {searchQuery && ` matching "${searchQuery}"`}
+                  {selectedState !== 'all' && ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.fullName}`}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayInstitutions.map((institution) => (
                 <div
                   key={institution.id}
                   id={`institution-${institution.id}`}
-                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
                   onClick={() => handleInstitutionClick(institution.id)}
                 >
                   {/* Institution Image */}
-                  <div className="h-48 bg-gray-200 relative rounded-t-lg overflow-hidden">
+                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                     {institution.display_image_url || institution.primary_image_url ? (
                       <img
                         src={institution.display_image_url || institution.primary_image_url}
                         alt={institution.display_name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                         }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <GraduationCap className="w-16 h-16 text-gray-400" />
+                        <GraduationCap className="w-16 h-16 text-gray-300" />
                       </div>
                     )}
                   </div>
 
                   {/* Institution Info */}
                   <div className="p-5">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
                       {institution.display_name || institution.name}
                     </h3>
 
-                    <div className="flex items-center text-gray-600 mb-4">
-                      <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                      <span className="text-sm">{institution.city}, {institution.state}</span>
+                    <div className="space-y-2 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                        <span>{institution.city}, {institution.state}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                        <span className="text-xs">{getSizeCategoryDisplay(institution.size_category)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <GraduationCap className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                        <span className="text-xs">{getControlTypeDisplay(institution.control_type)}</span>
+                      </div>
                     </div>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Users className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span>{getSizeCategoryDisplay(institution.size_category)}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <GraduationCap className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span>{getControlTypeDisplay(institution.control_type)}</span>
-                      </div>
-                    </div>
-
-                    {/* Subtle call-to-action text instead of overpowering button */}
-                    <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-                      <span className="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                        View costs & details →
+                    {/* Footer with stats */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <span className="text-sm font-medium text-gray-900">
+                        View details
                       </span>
                       {institution.website && (
                         <a
                           href={institution.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-gray-400 hover:text-blue-600 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -504,11 +463,10 @@ function HomeWithSearchParams() {
   );
 }
 
-// Main export with Suspense wrapper
 export default function Home() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading...</p>

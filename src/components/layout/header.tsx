@@ -49,115 +49,77 @@ export default function Header() {
 
   return (
     <>
-      <header style={{
-        fontFamily: 'monospace',
-        backgroundColor: '#fff',
-        borderBottom: '2px solid #000',
-        padding: '12px 0'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+      <header className="bg-white border-b-2 border-gray-300">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
 
-          {/* Logo + Nav */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <a href="/" style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: '#000',
-              textDecoration: 'none'
-            }}>
-              magicScholar
-            </a>
+            {/* Logo + Nav */}
+            <div className="flex items-center gap-8">
+              <a
+                href="/"
+                className="text-xl font-bold hover:opacity-80 transition-opacity"
+              >
+                <span className="text-blue-600">m</span>
+                <span className="text-green-600">a</span>
+                <span className="text-cyan-600">g</span>
+                <span className="text-purple-600">i</span>
+                <span className="text-orange-500">c</span>
+                <span className="text-red-600">S</span>
+                <span className="text-blue-600">c</span>
+                <span className="text-green-600">h</span>
+                <span className="text-cyan-600">o</span>
+                <span className="text-purple-600">l</span>
+                <span className="text-orange-500">a</span>
+                <span className="text-red-600">r</span>
+              </a>
 
-            <nav style={{ display: 'flex', gap: '10px' }}>
-              <a href="/" style={{
-                color: '#000',
-                textDecoration: 'none',
-                fontSize: '14px',
-                padding: '5px 12px',
-                border: '1px solid #000',
-                backgroundColor: '#fff',
-                transition: 'background-color 0.2s'
-              }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}>
-                [Schools]
-              </a>
-              <a href="/scholarships" style={{
-                color: '#000',
-                textDecoration: 'none',
-                fontSize: '14px',
-                padding: '5px 12px',
-                border: '1px solid #000',
-                backgroundColor: '#fff',
-                transition: 'background-color 0.2s'
-              }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff3cd'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}>
-                [Scholarships]
-              </a>
-              {user && (
-                <a href="/profile" style={{
-                  color: '#000',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  padding: '5px 12px',
-                  border: '1px solid #000',
-                  backgroundColor: '#fff',
-                  transition: 'background-color 0.2s'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d1ecf1'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}>
-                  [Profile]
+              <nav className="hidden md:flex items-center gap-2">
+                <a
+                  href="/"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                >
+                  Schools
                 </a>
-              )}
-            </nav>
-          </div>
+                <a
+                  href="/scholarships"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                >
+                  Scholarships
+                </a>
+                {user && (
+                  <a
+                    href="/profile"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                  >
+                    Profile
+                  </a>
+                )}
+              </nav>
+            </div>
 
-          {/* Auth Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            {user ? (
-              <>
-                <span style={{ fontSize: '14px', color: '#555' }}>
-                  USER: <span style={{ color: '#0066cc' }}>{user.username}</span>
-                </span>
-                <button onClick={handleLogout} style={{
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  padding: '5px 12px',
-                  border: '1px solid #000',
-                  backgroundColor: '#fff',
-                  cursor: 'pointer',
-                  color: '#000',
-                  transition: 'background-color 0.2s'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8d7da'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}>
-                  LOGOUT
+            {/* Auth Section */}
+            <div className="flex items-center gap-3">
+              {user ? (
+                <>
+                  <span className="hidden sm:inline text-sm text-gray-700">
+                    <span className="font-medium">{user.username}</span>
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={openLoginModal}
+                  className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-full"
+                >
+                  Log in
                 </button>
-              </>
-            ) : (
-              <button onClick={openLoginModal} style={{
-                fontFamily: 'monospace',
-                fontSize: '14px',
-                padding: '5px 12px',
-                border: '1px solid #000',
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                color: '#000',
-                transition: 'background-color 0.2s'
-              }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d4edda'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}>
-                LOGIN
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
