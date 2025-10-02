@@ -275,9 +275,9 @@ function HomeWithSearchParams() {
       <div className="bg-page-bg border-b-2 border-gray-300">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-3">
-              <span className="text-green-600">Discover</span>{' '}
-              <span className="text-cyan-600">schools</span>
+            <h1 className="text-3xl font-bold mb-3">
+              <span >Discover</span>{' '}
+              <span >Schools</span>
             </h1>
             <p className="text-gray-700">
               or <a href="/scholarships" className="text-blue-600 hover:text-blue-700 font-medium underline">scholarships</a>
@@ -316,8 +316,8 @@ function HomeWithSearchParams() {
               <button
                 onClick={() => handleStateFilter('all')}
                 className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === 'all'
-                    ? 'bg-gray-400 text-white border-gray-400'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                  ? 'bg-gray-400 text-white border-gray-400'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                   }`}
               >
                 <span className="mr-2">🌟</span>
@@ -329,10 +329,10 @@ function HomeWithSearchParams() {
                   onClick={() => state.available && handleStateFilter(state.code)}
                   disabled={!state.available}
                   className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
-                      ? 'bg-gray-400 text-white border-gray-400'
-                      : state.available
-                        ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                        : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                    ? 'bg-gray-400 text-white border-gray-400'
+                    : state.available
+                      ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                      : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
                     }`}
                 >
                   <span className="mr-2">{state.icon}</span>

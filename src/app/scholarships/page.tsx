@@ -103,9 +103,9 @@ export default function ScholarshipsPage() {
             <div className="bg-gray-50 border-b-2 border-gray-300">
                 <div className="max-w-6xl mx-auto px-4 py-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold mb-3">
-                            <span className="text-blue-600">Discover</span>{' '}
-                            <span className="text-purple-600">scholarships</span>
+                        <h1 className="text-3xl font-bold mb-3">
+                            <span >Discover</span>{' '}
+                            <span >Scholarships</span>
                         </h1>
                         <p className="text-gray-700">
                             or <a href="/" className="text-blue-600 hover:text-blue-700 font-medium underline">schools</a>
