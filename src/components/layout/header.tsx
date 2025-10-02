@@ -83,7 +83,7 @@ export default function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-2">
+            {/* <nav className="hidden md:flex items-center gap-2">
               <Link
                 href="/"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
@@ -106,7 +106,7 @@ export default function Header() {
                   Profile
                 </Link>
               )}
-            </nav>
+            </nav> */}
 
             {/* Right Side - Auth + Mobile Menu */}
             <div className="flex items-center gap-3">
