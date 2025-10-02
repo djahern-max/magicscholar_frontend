@@ -66,6 +66,7 @@ export default function Header() {
               href="/"
               className="text-xl font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
             >
+              <span className="text-2xl">✨</span>
               <span className="text-blue-600">m</span>
               <span className="text-green-600">a</span>
               <span className="text-cyan-600">g</span>
@@ -78,6 +79,7 @@ export default function Header() {
               <span className="text-purple-600">l</span>
               <span className="text-orange-500">a</span>
               <span className="text-red-600">r</span>
+              <span className="text-2xl">✨</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -125,9 +127,9 @@ export default function Header() {
                 ) : (
                   <button
                     onClick={openLoginModal}
-                    className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-full"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    Log in
+                    LOG IN
                   </button>
                 )}
               </div>
