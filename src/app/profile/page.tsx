@@ -5,11 +5,21 @@ import { useRouter } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+interface School {
+    id: number;
+    name: string;
+    city: string;
+    state: string;
+    match_score?: number;
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const [profileData, setProfileData] = useState<any>(null);
     const [scholarshipCount, setScholarshipCount] = useState(0);
+    const [schoolMatches, setSchoolMatches] = useState<School[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAllSchools, setShowAllSchools] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -23,6 +33,7 @@ export default function ProfilePage() {
         }
 
         try {
+            // Load profile
             const profileRes = await fetch(`${API_BASE_URL}/api/v1/profiles/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -32,6 +43,7 @@ export default function ProfilePage() {
                 setProfileData(data);
             }
 
+            // Load scholarships
             const scholarshipsRes = await fetch(`${API_BASE_URL}/api/v1/scholarships/list`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -39,6 +51,16 @@ export default function ProfilePage() {
             if (scholarshipsRes.ok) {
                 const scholarships = await scholarshipsRes.json();
                 setScholarshipCount(scholarships.scholarships?.length || 0);
+            }
+
+            // Load school matches
+            const schoolsRes = await fetch(`${API_BASE_URL}/api/v1/profiles/school-matches`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (schoolsRes.ok) {
+                const schools = await schoolsRes.json();
+                setSchoolMatches(schools.matches || []);
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -52,7 +74,21 @@ export default function ProfilePage() {
     }
 
     const totalFields = 75;
-    const filledFields = profileData ? 8 : 0;
+    const countFilledFields = (profile: any) => {
+        if (!profile) return 0;
+
+        let count = 0;
+        if (profile.state) count++;
+        if (profile.high_school_name) count++;
+        if (profile.graduation_year) count++;
+        if (profile.gpa) count++;
+        if (profile.intended_major) count++;
+        if (profile.academic_interests?.length > 0) count++;
+
+        return count;
+    };
+
+    const filledFields = countFilledFields(profileData);
     const actualCompletion = Math.round((filledFields / totalFields) * 100);
 
     return (
@@ -82,6 +118,41 @@ export default function ProfilePage() {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            {/* School Matches Section */}
+            <div className="bg-green-50 p-4 mb-5 border border-green-300">
+                <h3 className="mt-0 mb-2.5">SCHOOL MATCHES</h3>
+                <p><strong>Count:</strong> {schoolMatches.length}</p>
+                <p className="text-xs text-gray-600 mb-3">Schools matched to your profile</p>
+                {schoolMatches.length > 0 && (
+                    <>
+                        <div className="mt-3 max-h-60 overflow-y-auto border border-green-200 rounded">
+                            {schoolMatches.slice(0, showAllSchools ? schoolMatches.length : 5).map((school, idx) => (
+                                <div
+                                    key={school.id}
+                                    className="py-2 px-3 border-b border-green-200 last:border-b-0 hover:bg-green-100 cursor-pointer"
+                                    onClick={() => router.push(`/institution/${school.id}`)}
+                                >
+                                    <span className="font-bold">#{idx + 1}</span> {school.name} - {school.city}, {school.state}
+                                    {school.match_score && (
+                                        <span className="text-xs text-green-700 ml-2">
+                                            ({school.match_score}% match)
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        {schoolMatches.length > 5 && (
+                            <button
+                                onClick={() => setShowAllSchools(!showAllSchools)}
+                                className="text-sm text-green-700 hover:text-green-900 font-bold mt-2 cursor-pointer bg-transparent border-none"
+                            >
+                                {showAllSchools ? '- Show less' : `+ ${schoolMatches.length - 5} more schools`}
+                            </button>
+                        )}
+                    </>
+                )}
             </div>
 
             <div className="bg-blue-50 p-4 mb-5 border border-blue-300">
