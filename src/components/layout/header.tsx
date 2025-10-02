@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import AuthModal from '../auth/AuthModal';
 import { UserData } from '@/types/user';
 
@@ -13,6 +13,7 @@ export default function Header() {
   const [user, setUser] = useState<UserData | null>(null);
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     mode: 'login' | 'register';
@@ -20,6 +21,8 @@ export default function Header() {
     isOpen: false,
     mode: 'login',
   });
+
+
 
   useEffect(() => {
     setMounted(true);
@@ -43,16 +46,19 @@ export default function Header() {
     }
   }, [mounted]);
 
+
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    // force a refresh so app-wide auth state resets
     window.location.reload();
   };
 
   const openLoginModal = () => {
     setAuthModal({ isOpen: true, mode: 'login' });
   };
+
+
 
   if (!mounted) return null;
 
@@ -64,7 +70,7 @@ export default function Header() {
             {/* Logo */}
             <Link
               href="/"
-              className="text-xl font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
+              className="text-xl font-bold hover:opacity-80 transition-opacity flex items-center gap-1 flex-shrink-0"
             >
               <span className="text-2xl">✨</span>
               <span className="text-blue-600">m</span>
@@ -82,31 +88,34 @@ export default function Header() {
               <span className="text-2xl">✨</span>
             </Link>
 
-            {/* Desktop Navigation */}
-            {/* <nav className="hidden md:flex items-center gap-2">
+            {/* Desktop Navigation - Centered */}
+            <nav className="hidden md:flex items-center gap-0 absolute left-1/2 -translate-x-1/2">
               <Link
                 href="/"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded flex items-center gap-1"
               >
                 Schools
+                <ChevronDown size={16} className="text-gray-500" />
               </Link>
 
               <Link
                 href="/scholarships"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded flex items-center gap-1"
               >
                 Scholarships
+                <ChevronDown size={16} className="text-gray-500" />
               </Link>
 
               {user && (
                 <Link
                   href="/profile"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
+                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded flex items-center gap-1"
                 >
                   Profile
+                  <ChevronDown size={16} className="text-gray-500" />
                 </Link>
               )}
-            </nav> */}
+            </nav>
 
             {/* Right Side - Auth + Mobile Menu */}
             <div className="flex items-center gap-3">
