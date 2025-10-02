@@ -307,34 +307,42 @@ function HomeWithSearchParams() {
           </div>
 
           {/* State Filter Buttons */}
-          <div className="flex justify-center gap-2 flex-wrap max-w-4xl mx-auto">
-            <button
-              onClick={() => handleStateFilter('all')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === 'all'
-                ? 'bg-gray-400 text-white border-gray-400'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                }`}
-            >
-              <span className="mr-2">🌟</span>
-              All
-            </button>
-            {AVAILABLE_STATES.map((state) => (
+
+
+
+          {/* State Filter Buttons */}
+          <div className="overflow-x-auto pb-4 -mx-4 px-4">
+            <div className="flex gap-2 min-w-max">
               <button
-                key={state.code}
-                onClick={() => state.available && handleStateFilter(state.code)}
-                disabled={!state.available}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full ${selectedState === state.code
-                  ? 'bg-gray-400 text-white border-gray-400'
-                  : state.available
-                    ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                    : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                onClick={() => handleStateFilter('all')}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === 'all'
+                    ? 'bg-gray-400 text-white border-gray-400'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                   }`}
               >
-                <span className="mr-2">{state.icon}</span>
-                {state.name}
+                <span className="mr-2">🌟</span>
+                All
               </button>
-            ))}
+              {AVAILABLE_STATES.map((state) => (
+                <button
+                  key={state.code}
+                  onClick={() => state.available && handleStateFilter(state.code)}
+                  disabled={!state.available}
+                  className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
+                      ? 'bg-gray-400 text-white border-gray-400'
+                      : state.available
+                        ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                        : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                    }`}
+                >
+                  <span className="mr-2">{state.icon}</span>
+                  {state.name}
+                </button>
+              ))}
+            </div>
           </div>
+
+
         </div>
       </div>
 
