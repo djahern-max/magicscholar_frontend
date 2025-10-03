@@ -120,6 +120,7 @@ export default function ProfileEditPage() {
                 setMessage('✓ Profile updated successfully');
                 setTimeout(() => {
                     router.push('/profile');
+                    router.refresh(); // Add this line to force reload
                 }, 1500);
             } else {
                 setMessage('✗ Error updating profile');
