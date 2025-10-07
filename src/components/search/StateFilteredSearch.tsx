@@ -1,68 +1,69 @@
-// src/components/search/StateFilterSearch.tsx
+// src/components/search/StateFilteredSearch.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Loader2 } from 'lucide-react';
+import { Search, MapPin, Loader2, Users, GraduationCap, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Your available states - matches your backend curated schools
+// Your available states with icons (using abbreviations)
 const AVAILABLE_STATES = [
-    { code: 'ALL', name: 'All States', color: 'bg-blue-100 text-blue-800' },
-    { code: 'AK', name: 'Alaska', color: 'bg-sky-100 text-sky-800' },
-    { code: 'AL', name: 'Alabama', color: 'bg-red-100 text-red-800' },
-    { code: 'AR', name: 'Arkansas', color: 'bg-rose-100 text-rose-800' },
-    { code: 'AZ', name: 'Arizona', color: 'bg-orange-100 text-orange-800' },
-    { code: 'CA', name: 'California', color: 'bg-amber-100 text-amber-800' },
-    { code: 'CO', name: 'Colorado', color: 'bg-yellow-100 text-yellow-800' },
-    { code: 'CT', name: 'Connecticut', color: 'bg-lime-100 text-lime-800' },
-    { code: 'DC', name: 'Washington DC', color: 'bg-slate-100 text-slate-800' },
-    { code: 'DE', name: 'Delaware', color: 'bg-green-100 text-green-800' },
-    { code: 'FL', name: 'Florida', color: 'bg-emerald-100 text-emerald-800' },
-    { code: 'GA', name: 'Georgia', color: 'bg-teal-100 text-teal-800' },
-    { code: 'HI', name: 'Hawaii', color: 'bg-cyan-100 text-cyan-800' },
-    { code: 'IA', name: 'Iowa', color: 'bg-sky-100 text-sky-800' },
-    { code: 'ID', name: 'Idaho', color: 'bg-blue-100 text-blue-800' },
-    { code: 'IL', name: 'Illinois', color: 'bg-indigo-100 text-indigo-800' },
-    { code: 'IN', name: 'Indiana', color: 'bg-violet-100 text-violet-800' },
-    { code: 'KS', name: 'Kansas', color: 'bg-purple-100 text-purple-800' },
-    { code: 'KY', name: 'Kentucky', color: 'bg-fuchsia-100 text-fuchsia-800' },
-    { code: 'LA', name: 'Louisiana', color: 'bg-pink-100 text-pink-800' },
-    { code: 'MA', name: 'Massachusetts', color: 'bg-purple-100 text-purple-800' },
-    { code: 'MD', name: 'Maryland', color: 'bg-rose-100 text-rose-800' },
-    { code: 'ME', name: 'Maine', color: 'bg-teal-100 text-teal-800' },
-    { code: 'MI', name: 'Michigan', color: 'bg-blue-100 text-blue-800' },
-    { code: 'MN', name: 'Minnesota', color: 'bg-indigo-100 text-indigo-800' },
-    { code: 'MO', name: 'Missouri', color: 'bg-red-100 text-red-800' },
-    { code: 'MS', name: 'Mississippi', color: 'bg-sky-100 text-sky-800' },
-    { code: 'MT', name: 'Montana', color: 'bg-cyan-100 text-cyan-800' },
-    { code: 'NC', name: 'North Carolina', color: 'bg-blue-100 text-blue-800' },
-    { code: 'ND', name: 'North Dakota', color: 'bg-slate-100 text-slate-800' },
-    { code: 'NE', name: 'Nebraska', color: 'bg-red-100 text-red-800' },
-    { code: 'NH', name: 'New Hampshire', color: 'bg-green-100 text-green-800' },
-    { code: 'NJ', name: 'New Jersey', color: 'bg-amber-100 text-amber-800' },
-    { code: 'NM', name: 'New Mexico', color: 'bg-yellow-100 text-yellow-800' },
-    { code: 'NV', name: 'Nevada', color: 'bg-gray-100 text-gray-800' },
-    { code: 'NY', name: 'New York', color: 'bg-blue-100 text-blue-800' },
-    { code: 'OH', name: 'Ohio', color: 'bg-red-100 text-red-800' },
-    { code: 'OK', name: 'Oklahoma', color: 'bg-orange-100 text-orange-800' },
-    { code: 'OR', name: 'Oregon', color: 'bg-green-100 text-green-800' },
-    { code: 'PA', name: 'Pennsylvania', color: 'bg-indigo-100 text-indigo-800' },
-    { code: 'RI', name: 'Rhode Island', color: 'bg-cyan-100 text-cyan-800' },
-    { code: 'SC', name: 'South Carolina', color: 'bg-blue-100 text-blue-800' },
-    { code: 'SD', name: 'South Dakota', color: 'bg-yellow-100 text-yellow-800' },
-    { code: 'TN', name: 'Tennessee', color: 'bg-orange-100 text-orange-800' },
-    { code: 'TX', name: 'Texas', color: 'bg-red-100 text-red-800' },
-    { code: 'UT', name: 'Utah', color: 'bg-blue-100 text-blue-800' },
-    { code: 'VA', name: 'Virginia', color: 'bg-indigo-100 text-indigo-800' },
-    { code: 'VT', name: 'Vermont', color: 'bg-emerald-100 text-emerald-800' },
-    { code: 'WA', name: 'Washington', color: 'bg-green-100 text-green-800' },
-    { code: 'WI', name: 'Wisconsin', color: 'bg-red-100 text-red-800' },
-    { code: 'WV', name: 'West Virginia', color: 'bg-yellow-100 text-yellow-800' },
-    { code: 'WY', name: 'Wyoming', color: 'bg-amber-100 text-amber-800' },
+    { code: 'ALL', name: 'All', icon: '🌟' },
+    { code: 'AK', name: 'AK', icon: '🏔️' },
+    { code: 'AL', name: 'AL', icon: '🏈' },
+    { code: 'AR', name: 'AR', icon: '💎' },
+    { code: 'AZ', name: 'AZ', icon: '🌵' },
+    { code: 'CA', name: 'CA', icon: '🌴' },
+    { code: 'CO', name: 'CO', icon: '⛰️' },
+    { code: 'CT', name: 'CT', icon: '🌳' },
+    { code: 'DC', name: 'DC', icon: '🏛️' },
+    { code: 'DE', name: 'DE', icon: '🦅' },
+    { code: 'FL', name: 'FL', icon: '🌊' },
+    { code: 'GA', name: 'GA', icon: '🍑' },
+    { code: 'HI', name: 'HI', icon: '🌺' },
+    { code: 'IA', name: 'IA', icon: '🌽' },
+    { code: 'ID', name: 'ID', icon: '🥔' },
+    { code: 'IL', name: 'IL', icon: '🌆' },
+    { code: 'IN', name: 'IN', icon: '🏎️' },
+    { code: 'KS', name: 'KS', icon: '🌾' },
+    { code: 'KY', name: 'KY', icon: '🐴' },
+    { code: 'LA', name: 'LA', icon: '🎷' },
+    { code: 'MA', name: 'MA', icon: '🎓' },
+    { code: 'MD', name: 'MD', icon: '🦀' },
+    { code: 'ME', name: 'ME', icon: '🦞' },
+    { code: 'MI', name: 'MI', icon: '🚗' },
+    { code: 'MN', name: 'MN', icon: '❄️' },
+    { code: 'MO', name: 'MO', icon: '🎸' },
+    { code: 'MS', name: 'MS', icon: '🎵' },
+    { code: 'MT', name: 'MT', icon: '🦌' },
+    { code: 'NC', name: 'NC', icon: '🏀' },
+    { code: 'ND', name: 'ND', icon: '🌾' },
+    { code: 'NE', name: 'NE', icon: '🌽' },
+    { code: 'NH', name: 'NH', icon: '🏔️' },
+    { code: 'NJ', name: 'NJ', icon: '🏖️' },
+    { code: 'NM', name: 'NM', icon: '🌶️' },
+    { code: 'NV', name: 'NV', icon: '🎰' },
+    { code: 'NY', name: 'NY', icon: '🗽' },
+    { code: 'OH', name: 'OH', icon: '🌰' },
+    { code: 'OK', name: 'OK', icon: '🤠' },
+    { code: 'OR', name: 'OR', icon: '🌲' },
+    { code: 'PA', name: 'PA', icon: '🔔' },
+    { code: 'RI', name: 'RI', icon: '⚓' },
+    { code: 'SC', name: 'SC', icon: '🌴' },
+    { code: 'SD', name: 'SD', icon: '🗻' },
+    { code: 'TN', name: 'TN', icon: '🎸' },
+    { code: 'TX', name: 'TX', icon: '⭐' },
+    { code: 'UT', name: 'UT', icon: '🏔️' },
+    { code: 'VA', name: 'VA', icon: '🏛️' },
+    { code: 'VT', name: 'VT', icon: '🍁' },
+    { code: 'WA', name: 'WA', icon: '🌲' },
+    { code: 'WI', name: 'WI', icon: '🧀' },
+    { code: 'WV', name: 'WV', icon: '⛰️' },
+    { code: 'WY', name: 'WY', icon: '🦬' },
 ];
 
-// Use 6 per page (divisible by both 2 and 3)
-const ITEMS_PER_PAGE = 6;
+// Dynamic items per page based on selection
+const ITEMS_PER_PAGE_ALL = 48; // Show many schools when viewing all (divisible by 2, 3, 4, 6)
+const ITEMS_PER_PAGE_STATE = 12; // Show all schools in a state at once
 
 interface Institution {
     id: number;
@@ -74,6 +75,7 @@ interface Institution {
     size_category: string;
     display_image_url?: string;
     primary_image_url?: string;
+    website?: string;
 }
 
 interface StateFilterSearchProps {
@@ -100,11 +102,13 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
         }
 
         try {
-            let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${ITEMS_PER_PAGE}`;
+            // Use different page sizes based on selection
+            const itemsPerPage = selectedState === 'ALL' ? ITEMS_PER_PAGE_ALL : ITEMS_PER_PAGE_STATE;
+            let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
 
             // Add search query if provided
             if (searchQuery.trim()) {
-                url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${ITEMS_PER_PAGE}`;
+                url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${itemsPerPage}`;
             }
 
             // Add state filter if not 'ALL'
@@ -175,7 +179,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
         if (onInstitutionClick) {
             onInstitutionClick(institutionId);
         } else {
-            // Build return parameters for navigation
             const params = new URLSearchParams();
             if (searchQuery) params.append('query', searchQuery);
             if (selectedState !== 'ALL') params.append('state', selectedState);
@@ -188,6 +191,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
     const getControlTypeDisplay = (controlType: string) => {
         const types = {
             'public': 'Public',
+            'private': 'Private',
             'private_nonprofit': 'Private Non-Profit',
             'private_for_profit': 'Private For-Profit'
         };
@@ -209,50 +213,53 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
         <div className="w-full">
             {/* Search Header */}
             <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                    Find Your Perfect University
+                <h1 className="text-3xl font-bold mb-3">
+                    <span>Discover Schools</span>
                 </h1>
-                <p className="text-lg text-gray-600 mb-8">
-                    Discover top universities with detailed cost information
+                <p className="text-gray-700 mb-8">
+                    or <a href="/scholarships" className="text-blue-600 hover:text-blue-700 font-medium underline">scholarships</a>
                 </p>
 
                 {/* Search Bar */}
-                <div className="max-w-2xl mx-auto mb-8">
+                <div className="max-w-2xl mx-auto mb-6">
                     <div className="relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search universities, cities, or programs..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300 shadow-sm transition-colors"
                         />
                     </div>
                 </div>
 
-                {/* State Filter Buttons */}
-                <div className="flex flex-wrap justify-center gap-3 mb-6">
-                    {AVAILABLE_STATES.map((state) => (
-                        <button
-                            key={state.code}
-                            onClick={() => handleStateClick(state.code)}
-                            className={`
-                                px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-                                ${selectedState === state.code
-                                    ? `${state.color} ring-2 ring-offset-2 ring-blue-400 shadow-md scale-105`
-                                    : `${state.color} hover:shadow-md hover:scale-105 cursor-pointer`
-                                }
-                            `}
-                        >
-                            {state.name}
-                        </button>
-                    ))}
+                {/* State Filter Buttons with icons */}
+                <div className="overflow-x-auto pb-4 -mx-4 px-4">
+                    <div className="flex flex-wrap justify-center gap-2 min-w-max">
+                        {AVAILABLE_STATES.map((state) => (
+                            <button
+                                key={state.code}
+                                onClick={() => handleStateClick(state.code)}
+                                className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
+                                        ? 'bg-gray-400 text-white border-gray-400'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span className="mr-2">{state.icon}</span>
+                                {state.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Results Count */}
-                <div className="text-sm text-gray-600">
+                <div className="mt-6 text-sm text-gray-600">
                     {loading ? (
-                        <span>Searching...</span>
+                        <span className="flex items-center justify-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Searching...
+                        </span>
                     ) : (
                         <span>
                             Showing {institutions.length} of {totalResults} {totalResults === 1 ? 'university' : 'universities'}
@@ -262,66 +269,77 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                 </div>
             </div>
 
-            {/* Results */}
+            {/* Results - matching your page.tsx card design */}
             <div className="w-full">
                 {loading ? (
                     <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Searching universities...</p>
+                        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+                        <p className="mt-4 text-gray-600">Loading universities...</p>
                     </div>
                 ) : institutions.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {institutions.map((institution) => (
                                 <div
                                     key={institution.id}
-                                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                                    className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
                                     onClick={() => handleInstitutionClick(institution.id)}
                                 >
-                                    {/* Image */}
-                                    <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
+                                    {/* Institution Image */}
+                                    <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                                         {institution.display_image_url || institution.primary_image_url ? (
                                             <img
                                                 src={institution.display_image_url || institution.primary_image_url}
-                                                alt={`${institution.name} campus`}
-                                                className="w-full h-full object-cover"
+                                                alt={institution.display_name || institution.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 onError={(e) => {
                                                     e.currentTarget.style.display = 'none';
                                                 }}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <div className="text-center text-gray-400">
-                                                    <MapPin className="w-12 h-12 mx-auto mb-2" />
-                                                    <p className="text-sm">No image available</p>
-                                                </div>
+                                                <GraduationCap className="w-16 h-16 text-gray-300" />
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Content */}
-                                    <div className="p-6">
-                                        <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
-                                            {institution.name}
+                                    {/* Institution Info */}
+                                    <div className="p-5">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                            {institution.display_name || institution.name}
                                         </h3>
-                                        <div className="flex items-center text-gray-600 mb-3">
-                                            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                                            <span className="text-sm">{institution.city}, {institution.state}</span>
+
+                                        <div className="space-y-2 text-sm text-gray-600 mb-4">
+                                            <div className="flex items-center">
+                                                <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                                                <span>{institution.city}, {institution.state}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <Users className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                                                <span className="text-xs">{getSizeCategoryDisplay(institution.size_category)}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <GraduationCap className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
+                                                <span className="text-xs">{getControlTypeDisplay(institution.control_type)}</span>
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                                                {getControlTypeDisplay(institution.control_type)}
+                                        {/* Footer with stats */}
+                                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                            <span className="text-sm font-medium text-gray-900">
+                                                View details
                                             </span>
-                                            {institution.size_category && (
-                                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                                    {getSizeCategoryDisplay(institution.size_category)}
-                                                </span>
+                                            {institution.website && (
+                                                <a
+                                                    href={institution.website}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
                                             )}
-                                        </div>
-
-                                        <div className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-center">
-                                            View Details & Costs
                                         </div>
                                     </div>
                                 </div>
@@ -354,11 +372,11 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                         )}
                     </>
                 ) : !loading && (
-                    <div className="text-center py-12">
-                        <div className="text-gray-400 mb-4">
-                            <Search className="w-16 h-16 mx-auto" />
+                    <div className="text-center py-20">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Search className="w-8 h-8 text-gray-400" />
                         </div>
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">No universities found</h3>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No universities found</h3>
                         <p className="text-gray-600">
                             Try adjusting your search terms or selecting a different state
                         </p>
