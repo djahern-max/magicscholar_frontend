@@ -1,6 +1,6 @@
 // src/components/search/StateFilterSearch.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -61,6 +61,8 @@ const AVAILABLE_STATES = [
     { code: 'WY', name: 'Wyoming', color: 'bg-amber-100 text-amber-800' },
 ];
 
+// Use 6 per page (divisible by both 2 and 3)
+const ITEMS_PER_PAGE = 6;
 
 interface Institution {
     id: number;
@@ -84,17 +86,25 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
     const [selectedState, setSelectedState] = useState('ALL');
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [totalResults, setTotalResults] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
 
     // Search institutions
-    const searchInstitutions = async () => {
-        setLoading(true);
+    const searchInstitutions = async (page: number = 1, append: boolean = false) => {
+        if (append) {
+            setLoadingMore(true);
+        } else {
+            setLoading(true);
+        }
+
         try {
-            let url = `${API_BASE_URL}/api/v1/institutions/?per_page=50`;
+            let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${ITEMS_PER_PAGE}`;
 
             // Add search query if provided
             if (searchQuery.trim()) {
-                url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&per_page=50`;
+                url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${ITEMS_PER_PAGE}`;
             }
 
             // Add state filter if not 'ALL'
@@ -113,30 +123,49 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                 const institutionsArray = data.institutions || data;
                 const total = data.total || institutionsArray.length;
 
-                setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
+                if (append) {
+                    setInstitutions(prev => [...prev, ...institutionsArray]);
+                } else {
+                    setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
+                }
+
                 setTotalResults(total);
+                setCurrentPage(page);
+
+                // Check if there are more results
+                const loadedCount = append ? institutions.length + institutionsArray.length : institutionsArray.length;
+                setHasMore(loadedCount < total);
             } else {
                 console.error('Search failed:', response.status);
-                setInstitutions([]);
-                setTotalResults(0);
+                if (!append) {
+                    setInstitutions([]);
+                    setTotalResults(0);
+                }
             }
         } catch (error) {
             console.error('Search error:', error);
-            setInstitutions([]);
-            setTotalResults(0);
+            if (!append) {
+                setInstitutions([]);
+                setTotalResults(0);
+            }
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
-    // Trigger search when filters change
+    // Trigger search when filters change (reset to page 1)
     useEffect(() => {
         const delayedSearch = setTimeout(() => {
-            searchInstitutions();
+            searchInstitutions(1, false);
         }, 300); // Debounce search
 
         return () => clearTimeout(delayedSearch);
     }, [searchQuery, selectedState]);
+
+    const handleLoadMore = () => {
+        searchInstitutions(currentPage + 1, true);
+    };
 
     const handleStateClick = (stateCode: string) => {
         setSelectedState(stateCode);
@@ -226,7 +255,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                         <span>Searching...</span>
                     ) : (
                         <span>
-                            Found {totalResults} {totalResults === 1 ? 'university' : 'universities'}
+                            Showing {institutions.length} of {totalResults} {totalResults === 1 ? 'university' : 'universities'}
                             {selectedState !== 'ALL' && ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.name}`}
                         </span>
                     )}
@@ -241,62 +270,89 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                         <p className="mt-4 text-gray-600">Searching universities...</p>
                     </div>
                 ) : institutions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {institutions.map((institution) => (
-                            <div
-                                key={institution.id}
-                                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                                onClick={() => handleInstitutionClick(institution.id)}
-                            >
-                                {/* Image */}
-                                <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
-                                    {institution.display_image_url || institution.primary_image_url ? (
-                                        <img
-                                            src={institution.display_image_url || institution.primary_image_url}
-                                            alt={`${institution.name} campus`}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <div className="text-center text-gray-400">
-                                                <MapPin className="w-12 h-12 mx-auto mb-2" />
-                                                <p className="text-sm">No image available</p>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {institutions.map((institution) => (
+                                <div
+                                    key={institution.id}
+                                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                                    onClick={() => handleInstitutionClick(institution.id)}
+                                >
+                                    {/* Image */}
+                                    <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
+                                        {institution.display_image_url || institution.primary_image_url ? (
+                                            <img
+                                                src={institution.display_image_url || institution.primary_image_url}
+                                                alt={`${institution.name} campus`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <div className="text-center text-gray-400">
+                                                    <MapPin className="w-12 h-12 mx-auto mb-2" />
+                                                    <p className="text-sm">No image available</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-6">
-                                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
-                                        {institution.name}
-                                    </h3>
-                                    <div className="flex items-center text-gray-600 mb-3">
-                                        <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                                        <span className="text-sm">{institution.city}, {institution.state}</span>
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                                            {getControlTypeDisplay(institution.control_type)}
-                                        </span>
-                                        {institution.size_category && (
-                                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                                {getSizeCategoryDisplay(institution.size_category)}
-                                            </span>
                                         )}
                                     </div>
 
-                                    <div className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-center">
-                                        View Details & Costs
+                                    {/* Content */}
+                                    <div className="p-6">
+                                        <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
+                                            {institution.name}
+                                        </h3>
+                                        <div className="flex items-center text-gray-600 mb-3">
+                                            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                                            <span className="text-sm">{institution.city}, {institution.state}</span>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2 mb-4">
+                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                                {getControlTypeDisplay(institution.control_type)}
+                                            </span>
+                                            {institution.size_category && (
+                                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                                    {getSizeCategoryDisplay(institution.size_category)}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-center">
+                                            View Details & Costs
+                                        </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <div className="mt-12 text-center">
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                    className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md hover:shadow-lg"
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Loading more...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Load More Schools</span>
+                                            <span className="text-sm opacity-90">
+                                                ({institutions.length} of {totalResults})
+                                            </span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 ) : !loading && (
                     <div className="text-center py-12">
                         <div className="text-gray-400 mb-4">
