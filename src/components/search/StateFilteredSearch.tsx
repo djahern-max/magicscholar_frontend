@@ -8,14 +8,59 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 // Your available states - matches your backend curated schools
 const AVAILABLE_STATES = [
     { code: 'ALL', name: 'All States', color: 'bg-blue-100 text-blue-800' },
-    { code: 'NH', name: 'New Hampshire', color: 'bg-green-100 text-green-800' },
+    { code: 'AK', name: 'Alaska', color: 'bg-sky-100 text-sky-800' },
+    { code: 'AL', name: 'Alabama', color: 'bg-red-100 text-red-800' },
+    { code: 'AR', name: 'Arkansas', color: 'bg-rose-100 text-rose-800' },
+    { code: 'AZ', name: 'Arizona', color: 'bg-orange-100 text-orange-800' },
+    { code: 'CA', name: 'California', color: 'bg-amber-100 text-amber-800' },
+    { code: 'CO', name: 'Colorado', color: 'bg-yellow-100 text-yellow-800' },
+    { code: 'CT', name: 'Connecticut', color: 'bg-lime-100 text-lime-800' },
+    { code: 'DC', name: 'Washington DC', color: 'bg-slate-100 text-slate-800' },
+    { code: 'DE', name: 'Delaware', color: 'bg-green-100 text-green-800' },
+    { code: 'FL', name: 'Florida', color: 'bg-emerald-100 text-emerald-800' },
+    { code: 'GA', name: 'Georgia', color: 'bg-teal-100 text-teal-800' },
+    { code: 'HI', name: 'Hawaii', color: 'bg-cyan-100 text-cyan-800' },
+    { code: 'IA', name: 'Iowa', color: 'bg-sky-100 text-sky-800' },
+    { code: 'ID', name: 'Idaho', color: 'bg-blue-100 text-blue-800' },
+    { code: 'IL', name: 'Illinois', color: 'bg-indigo-100 text-indigo-800' },
+    { code: 'IN', name: 'Indiana', color: 'bg-violet-100 text-violet-800' },
+    { code: 'KS', name: 'Kansas', color: 'bg-purple-100 text-purple-800' },
+    { code: 'KY', name: 'Kentucky', color: 'bg-fuchsia-100 text-fuchsia-800' },
+    { code: 'LA', name: 'Louisiana', color: 'bg-pink-100 text-pink-800' },
     { code: 'MA', name: 'Massachusetts', color: 'bg-purple-100 text-purple-800' },
-    // Coming soon states
-    { code: 'CT', name: 'Connecticut', color: 'bg-indigo-100 text-indigo-800', disabled: true },
-    { code: 'VT', name: 'Vermont', color: 'bg-emerald-100 text-emerald-800', disabled: true },
-    { code: 'ME', name: 'Maine', color: 'bg-teal-100 text-teal-800', disabled: true },
-    { code: 'RI', name: 'Rhode Island', color: 'bg-cyan-100 text-cyan-800', disabled: true },
+    { code: 'MD', name: 'Maryland', color: 'bg-rose-100 text-rose-800' },
+    { code: 'ME', name: 'Maine', color: 'bg-teal-100 text-teal-800' },
+    { code: 'MI', name: 'Michigan', color: 'bg-blue-100 text-blue-800' },
+    { code: 'MN', name: 'Minnesota', color: 'bg-indigo-100 text-indigo-800' },
+    { code: 'MO', name: 'Missouri', color: 'bg-red-100 text-red-800' },
+    { code: 'MS', name: 'Mississippi', color: 'bg-sky-100 text-sky-800' },
+    { code: 'MT', name: 'Montana', color: 'bg-cyan-100 text-cyan-800' },
+    { code: 'NC', name: 'North Carolina', color: 'bg-blue-100 text-blue-800' },
+    { code: 'ND', name: 'North Dakota', color: 'bg-slate-100 text-slate-800' },
+    { code: 'NE', name: 'Nebraska', color: 'bg-red-100 text-red-800' },
+    { code: 'NH', name: 'New Hampshire', color: 'bg-green-100 text-green-800' },
+    { code: 'NJ', name: 'New Jersey', color: 'bg-amber-100 text-amber-800' },
+    { code: 'NM', name: 'New Mexico', color: 'bg-yellow-100 text-yellow-800' },
+    { code: 'NV', name: 'Nevada', color: 'bg-gray-100 text-gray-800' },
+    { code: 'NY', name: 'New York', color: 'bg-blue-100 text-blue-800' },
+    { code: 'OH', name: 'Ohio', color: 'bg-red-100 text-red-800' },
+    { code: 'OK', name: 'Oklahoma', color: 'bg-orange-100 text-orange-800' },
+    { code: 'OR', name: 'Oregon', color: 'bg-green-100 text-green-800' },
+    { code: 'PA', name: 'Pennsylvania', color: 'bg-indigo-100 text-indigo-800' },
+    { code: 'RI', name: 'Rhode Island', color: 'bg-cyan-100 text-cyan-800' },
+    { code: 'SC', name: 'South Carolina', color: 'bg-blue-100 text-blue-800' },
+    { code: 'SD', name: 'South Dakota', color: 'bg-yellow-100 text-yellow-800' },
+    { code: 'TN', name: 'Tennessee', color: 'bg-orange-100 text-orange-800' },
+    { code: 'TX', name: 'Texas', color: 'bg-red-100 text-red-800' },
+    { code: 'UT', name: 'Utah', color: 'bg-blue-100 text-blue-800' },
+    { code: 'VA', name: 'Virginia', color: 'bg-indigo-100 text-indigo-800' },
+    { code: 'VT', name: 'Vermont', color: 'bg-emerald-100 text-emerald-800' },
+    { code: 'WA', name: 'Washington', color: 'bg-green-100 text-green-800' },
+    { code: 'WI', name: 'Wisconsin', color: 'bg-red-100 text-red-800' },
+    { code: 'WV', name: 'West Virginia', color: 'bg-yellow-100 text-yellow-800' },
+    { code: 'WY', name: 'Wyoming', color: 'bg-amber-100 text-amber-800' },
 ];
+
 
 interface Institution {
     id: number;
@@ -94,8 +139,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
     }, [searchQuery, selectedState]);
 
     const handleStateClick = (stateCode: string) => {
-        const state = AVAILABLE_STATES.find(s => s.code === stateCode);
-        if (state?.disabled) return;
         setSelectedState(stateCode);
     };
 
@@ -119,7 +162,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
             'private_nonprofit': 'Private Non-Profit',
             'private_for_profit': 'Private For-Profit'
         };
-        return types[controlType as keyof typeof types] || controlType;
+        return types[controlType.toLowerCase() as keyof typeof types] || controlType;
     };
 
     const getSizeCategoryDisplay = (sizeCategory: string) => {
@@ -164,19 +207,15 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                         <button
                             key={state.code}
                             onClick={() => handleStateClick(state.code)}
-                            disabled={state.disabled}
                             className={`
-                px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-                ${state.disabled
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                                    : selectedState === state.code
-                                        ? `${state.color} ring-2 ring-offset-2 ring-blue-400 shadow-md scale-105`
-                                        : `${state.color} hover:shadow-md hover:scale-105 cursor-pointer`
+                                px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                                ${selectedState === state.code
+                                    ? `${state.color} ring-2 ring-offset-2 ring-blue-400 shadow-md scale-105`
+                                    : `${state.color} hover:shadow-md hover:scale-105 cursor-pointer`
                                 }
-              `}
+                            `}
                         >
                             {state.name}
-                            {state.disabled && ' (Coming Soon)'}
                         </button>
                     ))}
                 </div>
