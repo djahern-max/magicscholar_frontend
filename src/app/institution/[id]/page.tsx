@@ -12,8 +12,6 @@ import {
     ArrowLeft,
     DollarSign,
     Home,
-    BookOpen,
-    Info,
     Star
 } from 'lucide-react';
 
@@ -34,38 +32,27 @@ interface Institution {
     display_image_url?: string;
 }
 
-interface TuitionData {
+interface CostData {
     ipeds_id: number;
+    institution_name: string;
+    has_cost_data: boolean;
     academic_year?: string;
+    data_source?: string;
     tuition_in_state?: number | null;
     tuition_out_state?: number | null;
     required_fees_in_state?: number | null;
     required_fees_out_state?: number | null;
+    tuition_fees_in_state?: number | null;
+    tuition_fees_out_state?: number | null;
     room_board_on_campus?: number | null;
-    room_board_breakdown?: {
-        housing?: number;
-        meals?: number;
-        total?: number;
-        source?: string;
-        notes?: string;
-    } | null;
+    room_board_off_campus?: number | null;
     books_supplies?: number | null;
-    tuition_data?: {
-        tuition_in_state?: number | null;
-        tuition_out_state?: number | null;
-        required_fees_in_state?: number | null;
-        required_fees_out_state?: number | null;
-        room_board_on_campus?: number | null;
-        room_board_breakdown?: {
-            housing?: number;
-            meals?: number;
-            total?: number;
-            source?: string;
-            notes?: string;
-        } | null;
-        books_supplies?: number | null;
-        academic_year?: string;
-    };
+    personal_expenses?: number | null;
+    transportation?: number | null;
+    has_tuition_data?: boolean;
+    has_fees_data?: boolean;
+    has_living_data?: boolean;
+    data_completeness_score?: number;
 }
 
 export default function InstitutionDetail() {
@@ -73,7 +60,7 @@ export default function InstitutionDetail() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [institution, setInstitution] = useState<Institution | null>(null);
-    const [tuitionData, setTuitionData] = useState<TuitionData | null>(null);
+    const [costData, setCostData] = useState<CostData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedResidency, setSelectedResidency] = useState<'in_state' | 'out_of_state'>('in_state');
     const [imageError, setImageError] = useState(false);
@@ -104,27 +91,22 @@ export default function InstitutionDetail() {
             if (!params.id) return;
 
             try {
+                // Fetch institution data
                 const institutionResponse = await fetch(`${API_BASE_URL}/api/v1/institutions/${params.id}`);
                 if (institutionResponse.ok) {
                     const institutionData = await institutionResponse.json();
                     setInstitution(institutionData);
 
+                    // Fetch cost data using new costs endpoint
                     if (institutionData.ipeds_id) {
-                        const tuitionResponse = await fetch(`${API_BASE_URL}/api/v1/tuition/institution/${institutionData.ipeds_id}/full`);
-
-                        if (tuitionResponse.ok) {
-                            const tuitionResult = await tuitionResponse.json();
-                            setTuitionData(tuitionResult);
-                        } else {
-                            try {
-                                const alternativeResponse = await fetch(`${API_BASE_URL}/api/v1/tuition/institution/${institutionData.ipeds_id}`);
-                                if (alternativeResponse.ok) {
-                                    const alternativeResult = await alternativeResponse.json();
-                                    setTuitionData(alternativeResult);
-                                }
-                            } catch (altError) {
-                                console.log('Alternative tuition endpoint also failed:', altError);
+                        try {
+                            const costsResponse = await fetch(`${API_BASE_URL}/api/v1/costs/institution/${institutionData.ipeds_id}`);
+                            if (costsResponse.ok) {
+                                const costsResult = await costsResponse.json();
+                                setCostData(costsResult);
                             }
+                        } catch (costError) {
+                            console.log('Could not fetch cost data:', costError);
                         }
                     }
                 }
@@ -137,24 +119,6 @@ export default function InstitutionDetail() {
 
         fetchData();
     }, [params.id]);
-
-    const getTuitionValue = (field: keyof TuitionData): number | null => {
-        if (!tuitionData) return null;
-
-        const directValue = tuitionData[field] as number | null;
-        if (directValue !== null && directValue !== undefined) {
-            return directValue;
-        }
-
-        if (tuitionData.tuition_data) {
-            const nestedValue = tuitionData.tuition_data[field as keyof typeof tuitionData.tuition_data] as number | null;
-            if (nestedValue !== null && nestedValue !== undefined) {
-                return nestedValue;
-            }
-        }
-
-        return null;
-    };
 
     const formatCurrency = (amount: number | null | undefined): string => {
         if (!amount || amount === 0) return 'Not available';
@@ -187,15 +151,17 @@ export default function InstitutionDetail() {
     };
 
     const getCurrentTuition = () => {
+        if (!costData) return null;
         return selectedResidency === 'in_state'
-            ? getTuitionValue('tuition_in_state')
-            : getTuitionValue('tuition_out_state');
+            ? costData.tuition_in_state
+            : costData.tuition_out_state;
     };
 
     const getCurrentFees = () => {
+        if (!costData) return null;
         return selectedResidency === 'in_state'
-            ? getTuitionValue('required_fees_in_state')
-            : getTuitionValue('required_fees_out_state');
+            ? costData.required_fees_in_state
+            : costData.required_fees_out_state;
     };
 
     const getAcademicTotal = () => {
@@ -205,11 +171,11 @@ export default function InstitutionDetail() {
     };
 
     const getRoomBoard = () => {
-        return getTuitionValue('room_board_on_campus');
+        return costData?.room_board_on_campus || null;
     };
 
     const getBooks = () => {
-        return getTuitionValue('books_supplies');
+        return costData?.books_supplies || null;
     };
 
     const getTotalCost = () => {
@@ -219,53 +185,8 @@ export default function InstitutionDetail() {
         return academic + roomBoard + books;
     };
 
-    const getRoomBoardBreakdown = () => {
-        if (!tuitionData) return null;
-
-        if (tuitionData.room_board_breakdown) {
-            return tuitionData.room_board_breakdown;
-        }
-
-        if (tuitionData.tuition_data?.room_board_breakdown) {
-            return tuitionData.tuition_data.room_board_breakdown;
-        }
-
-        return null;
-    };
-
-    const getPolicyNotes = () => {
-        if (!tuitionData) return null;
-
-        let notes = null;
-
-        if (tuitionData.room_board_breakdown?.notes) {
-            notes = tuitionData.room_board_breakdown.notes;
-        }
-        else if (tuitionData.tuition_data?.room_board_breakdown?.notes) {
-            notes = tuitionData.tuition_data.room_board_breakdown.notes;
-        }
-
-        if (notes) {
-            if (notes.includes(';') || (notes.match(/\.\s+[A-Z]/g) && notes.length > 100)) {
-                let splitNotes = notes.split(';');
-                if (splitNotes.length === 1) {
-                    splitNotes = notes.split(/\.\s+(?=[A-Z])/);
-                }
-                return splitNotes
-                    .map(note => note.trim())
-                    .filter(note => note.length > 0)
-                    .map(note => note.endsWith('.') ? note : note + '.');
-            }
-            return notes;
-        }
-
-        return null;
-    };
-
     const getAcademicYear = () => {
-        if (tuitionData?.academic_year) return tuitionData.academic_year;
-        if (tuitionData?.tuition_data?.academic_year) return tuitionData.tuition_data.academic_year;
-        return '2024-25';
+        return costData?.academic_year || '2024-25';
     };
 
     if (loading) {
@@ -290,9 +211,7 @@ export default function InstitutionDetail() {
         );
     }
 
-    const roomBoardBreakdown = getRoomBoardBreakdown();
-    const hasAnyTuitionData = getCurrentTuition() || getCurrentFees() || getRoomBoard();
-    const policyNotes = getPolicyNotes();
+    const hasAnyTuitionData = costData?.has_cost_data && (getCurrentTuition() || getCurrentFees() || getRoomBoard());
 
     return (
         <div className="min-h-screen bg-page-bg">
@@ -377,33 +296,13 @@ export default function InstitutionDetail() {
                                     </a>
                                 )}
 
-                                {/* Policy Notes Section */}
-                                {policyNotes && (
-                                    <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-xl p-4">
-                                        <div className="flex items-start">
-                                            <div className="flex-shrink-0">
-                                                <Star className="w-5 h-5 text-green-600 mt-0.5" />
-                                            </div>
-                                            <div className="ml-3">
-                                                <h3 className="text-sm font-semibold text-green-800 mb-2">
-                                                    Important Financial Aid Information
-                                                </h3>
-                                                {Array.isArray(policyNotes) ? (
-                                                    <ul className="space-y-1">
-                                                        {policyNotes.map((note, index) => (
-                                                            <li key={index} className="text-sm text-green-700 leading-relaxed flex items-start">
-                                                                <span className="inline-block w-1.5 h-1.5 bg-green-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                                                {note}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <p className="text-sm text-green-700 leading-relaxed">
-                                                        {policyNotes}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
+                                {/* Data Quality Badge */}
+                                {costData?.data_completeness_score && costData.data_completeness_score >= 70 && (
+                                    <div className="mt-4 inline-flex items-center bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                                        <Star className="w-4 h-4 text-green-600 mr-1" />
+                                        <span className="text-sm text-green-700 font-medium">
+                                            {costData.data_completeness_score}% Complete Data
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -455,7 +354,7 @@ export default function InstitutionDetail() {
                                         <span className="text-gray-700">Tuition</span>
                                         <span className="font-medium">{formatCurrency(getCurrentTuition())}</span>
                                     </div>
-                                    {getCurrentFees() && (
+                                    {getCurrentFees() && getCurrentFees()! > 0 && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-700">Required Fees</span>
                                             <span className="font-medium">{formatCurrency(getCurrentFees())}</span>
@@ -475,26 +374,13 @@ export default function InstitutionDetail() {
                                     <h3 className="text-lg font-semibold text-gray-900">Living Costs</h3>
                                 </div>
                                 <div className="space-y-3">
-                                    {getRoomBoard() ? (
+                                    {getRoomBoard() && getRoomBoard()! > 0 ? (
                                         <>
-                                            {roomBoardBreakdown?.housing && roomBoardBreakdown?.meals ? (
-                                                <>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-700">Housing (Double Room)</span>
-                                                        <span className="font-medium">{formatCurrency(roomBoardBreakdown.housing)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-700">Meal Plan</span>
-                                                        <span className="font-medium">{formatCurrency(roomBoardBreakdown.meals)}</span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-700">Room & Board</span>
-                                                    <span className="font-medium">{formatCurrency(getRoomBoard())}</span>
-                                                </div>
-                                            )}
-                                            {getBooks() && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-700">Room & Board</span>
+                                                <span className="font-medium">{formatCurrency(getRoomBoard())}</span>
+                                            </div>
+                                            {getBooks() && getBooks()! > 0 && (
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-700">Books & Supplies</span>
                                                     <span className="font-medium">{formatCurrency(getBooks())}</span>
@@ -510,7 +396,7 @@ export default function InstitutionDetail() {
                                     ) : (
                                         <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                                             <p className="text-sm text-yellow-800">
-                                                This institution doesn't provide on-campus housing. Students typically live at home or rent nearby apartments.
+                                                This institution doesn't provide on-campus housing data. Students typically commute or live off-campus.
                                             </p>
                                         </div>
                                     )}
@@ -526,13 +412,21 @@ export default function InstitutionDetail() {
                                         <h3 className="font-bold text-gray-900 text-xl">Estimated Total Cost</h3>
                                         <p className="text-sm text-gray-600 mt-1">
                                             {selectedResidency === 'in_state' ? 'In-state resident' : 'Out-of-state resident'}
-                                            {getRoomBoard() && ', living on campus'}
+                                            {getRoomBoard() && getRoomBoard()! > 0 && ', living on campus'}
                                         </p>
                                     </div>
                                     <span className="font-bold text-3xl text-blue-600">{formatCurrency(getTotalCost())}</span>
                                 </div>
                             </div>
                         )}
+
+                        {/* Disclaimer */}
+                        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600">
+                                <strong>Note:</strong> Costs shown are estimates for the {getAcademicYear()} academic year.
+                                Actual costs may vary. Contact the institution directly for the most current information and details about financial aid opportunities.
+                            </p>
+                        </div>
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
