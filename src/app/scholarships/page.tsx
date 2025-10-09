@@ -10,28 +10,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 interface Scholarship {
     id: number;
     title: string;
-    description: string;
     organization: string;
-    website_url?: string;
-    application_url?: string;
     scholarship_type: string;
-    categories?: string[];
-    status: string;
     difficulty_level: string;
-    amount_min?: number;
-    amount_max?: number;
-    amount_exact?: number;
+    amount_min: number;  // ← Required (no ?)
+    amount_max: number;  // ← Required (no ?)
     is_renewable: boolean;
-    renewal_years?: number;
     number_of_awards?: number;
-    min_gpa?: number;
-    academic_level?: string[];
     deadline?: string;
+    min_gpa?: number;
     primary_image_url?: string;
-    primary_image_quality_score?: number;
-    logo_image_url?: string;
-    created_at: string;
 }
+
 
 interface ScholarshipsResponse {
     scholarships: Scholarship[];
