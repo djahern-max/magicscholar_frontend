@@ -177,14 +177,14 @@ export default function ScholarshipDetailPage() {
                                     <img
                                         src={scholarship.primary_image_url}
                                         alt={`${scholarship.title} logo`}
-                                        className="w-full h-64 object-cover rounded-xl"
+                                        className="w-full h-64 object-contain lg:object-cover rounded-xl bg-white"
                                         onError={() => setImageError(true)}
                                     />
                                 ) : (
                                     <img
                                         src={fallbackImageUrl}
                                         alt={`${scholarship.title} fallback`}
-                                        className="w-full h-64 object-cover rounded-xl opacity-80"
+                                        className="w-full h-64 object-contain lg:object-cover rounded-xl opacity-80 bg-white"
                                     />
                                 )}
                             </div>
