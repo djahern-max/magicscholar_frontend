@@ -47,9 +47,9 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
 
     const formatAmount = () => {
         if (scholarship.amount_min === scholarship.amount_max) {
-            return `$${scholarship.amount_min.toLocaleString()}`;
+            return scholarship.amount_min.toLocaleString();
         }
-        return `$${scholarship.amount_min.toLocaleString()}-$${scholarship.amount_max.toLocaleString()}`;
+        return `${scholarship.amount_min.toLocaleString()}-${scholarship.amount_max.toLocaleString()}`;
     };
 
     const getFallbackImageUrl = (): string => {
@@ -72,20 +72,20 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
-            {/* Scholarship Image - Matching school card style */}
-            <div className="relative h-48 bg-gray-200">
+            {/* Scholarship Image - Matching school card style with rounded corners */}
+            <div className="relative h-48 bg-gray-200 overflow-hidden rounded-t-lg">
                 {scholarship.primary_image_url && !imageError ? (
                     <img
                         src={scholarship.primary_image_url}
                         alt={scholarship.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-t-lg"
                         onError={() => setImageError(true)}
                     />
                 ) : (
                     <img
                         src={getFallbackImageUrl()}
                         alt={scholarship.title}
-                        className="w-full h-full object-cover opacity-80"
+                        className="w-full h-full object-cover opacity-80 rounded-t-lg"
                     />
                 )}
             </div>
@@ -119,7 +119,7 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
                     {scholarship.deadline && (
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            <span>{new Date(scholarship.deadline).toLocaleDateString('en-US', {
+                            <span><strong>Deadline:</strong> {new Date(scholarship.deadline).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'

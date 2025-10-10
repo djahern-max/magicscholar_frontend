@@ -172,19 +172,19 @@ export default function ScholarshipDetailPage() {
                     <div className="p-6">
                         <div className="flex flex-col lg:flex-row items-start gap-6">
                             {/* Scholarship Image */}
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 w-full lg:w-[500px]">
                                 {scholarship.primary_image_url && !imageError ? (
                                     <img
                                         src={scholarship.primary_image_url}
                                         alt={`${scholarship.title} logo`}
-                                        className="w-64 h-48 object-cover rounded-xl"
+                                        className="w-full h-64 object-cover rounded-xl"
                                         onError={() => setImageError(true)}
                                     />
                                 ) : (
                                     <img
                                         src={fallbackImageUrl}
                                         alt={`${scholarship.title} fallback`}
-                                        className="w-64 h-48 object-cover rounded-xl opacity-80"
+                                        className="w-full h-64 object-cover rounded-xl opacity-80"
                                     />
                                 )}
                             </div>
