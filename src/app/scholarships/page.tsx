@@ -58,7 +58,7 @@ export default function ScholarshipsPage() {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '12',
+                limit: '48',
                 active_only: 'true'
             });
 
@@ -155,8 +155,8 @@ export default function ScholarshipsPage() {
                                     key={type.code}
                                     onClick={() => handleTypeClick(type.code)}
                                     className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedType === type.code
-                                            ? 'bg-gray-400 text-white border-gray-400'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                                        ? 'bg-gray-400 text-white border-gray-400'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                                         }`}
                                 >
                                     <span className="mr-2">{type.icon}</span>
