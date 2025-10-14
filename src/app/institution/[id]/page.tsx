@@ -296,15 +296,37 @@ export default function InstitutionDetail() {
                                     </a>
                                 )}
 
-                                {/* Data Quality Badge */}
-                                {costData?.data_completeness_score && costData.data_completeness_score >= 70 && (
-                                    <div className="mt-4 inline-flex items-center bg-green-50 border border-green-200 rounded-full px-3 py-1">
-                                        <Star className="w-4 h-4 text-green-600 mr-1" />
-                                        <span className="text-sm text-green-700 font-medium">
-                                            {costData.data_completeness_score}% Complete Data
-                                        </span>
+
+                                {/* Data Source Link - replaces Data Quality Badge */}
+                                {costData?.data_source && (
+                                    <div className="mt-4">
+                                        {costData.data_source.startsWith('http') ? (
+                                            <a
+                                                href={costData.data_source}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-3 py-1 hover:bg-blue-100 transition-colors"
+                                            >
+                                                <ExternalLink className="w-4 h-4 text-blue-600 mr-1" />
+                                                <span className="text-sm text-blue-700 font-medium">
+                                                    View Official Source
+                                                </span>
+                                            </a>
+                                        ) : (
+                                            <div className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+                                                <AlertCircle className="w-4 h-4 text-gray-600 mr-1" />
+                                                <span className="text-sm text-gray-700 font-medium">
+                                                    Source: {costData.data_source}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
+
+
+
+
+
                             </div>
                         </div>
                     </div>
