@@ -30,6 +30,8 @@ interface Institution {
     full_address: string;
     primary_image_url?: string;
     display_image_url?: string;
+    student_faculty_ratio?: number | null;
+    locale?: string | null;
 }
 
 interface CostData {
@@ -148,6 +150,67 @@ export default function InstitutionDetail() {
             'very_large': 'Very Large (20,000+)'
         };
         return sizes[sizeCategory as keyof typeof sizes] || sizeCategory;
+    };
+
+    const formatLocale = (locale?: string | null): string => {
+        if (!locale) return '';
+
+        // If already formatted text
+        if (locale.includes(':')) return locale.split(':')[1].trim();
+
+        // If numeric code, map it
+        const localeMap: Record<string, string> = {
+            '11': 'Large City', '12': 'Midsize City', '13': 'Small City',
+            '21': 'Large Suburb', '22': 'Midsize Suburb', '23': 'Small Suburb',
+            '31': 'Fringe Town', '32': 'Distant Town', '33': 'Remote Town',
+            '41': 'Fringe Rural', '42': 'Distant Rural', '43': 'Remote Rural',
+        };
+
+        return localeMap[locale] || locale;
+    };
+
+    const getLocaleHoverText = (locale?: string | null): string => {
+        if (!locale) return '';
+
+        const localeDescriptions: Record<string, string> = {
+            'Ill Big City Yo': 'Traffic jams, noise complaints, and a coffee shop every 10 feet. Living the dream! 🏙️',
+            'Mid Sized City Dawg': 'Big enough to have options, small enough to not get lost. The Goldilocks zone 👌',
+            'Enough City to Tickle the Itch': 'Just enough urban vibes without the full chaos. Perfect for city-curious folks 🌆',
+            'The Biggest of the Burbs': 'Mall culture meets soccer practice. Your parents would be proud 🏡',
+            'Mid Sized Burb Yo': 'Strip malls and chain restaurants as far as the eye can see. Welcome home! 🛒',
+            'Itty Bitty Burb': 'Everyone knows everyone. Privacy sold separately 👀',
+            'Fringe Town Dawg': 'College bars, late-night diners, and questionable life choices. Peak college experience 🎓🍻',
+            'We Getting Rustic Now': 'Population: 47 people and a gas station. But hey, the stars are pretty! ⭐',
+            'Straight Up Rustic': 'Where GPS gives up and you start using landmarks like "the old barn" 🌾',
+            'Woodsy kid': 'Trees everywhere. Like, EVERYWHERE. Hope you like nature 🌲',
+            'I see FORESTTTT': 'Seriously, it\'s just trees. Trees on trees on trees. Bring bug spray 🌳🦟',
+            'Straight Up Country Bro': 'Nearest Starbucks: 45 minutes. Nearest tractor: your neighbor\'s yard 🚜',
+            'Not Available': 'Location data said "nah fam, I\'m good" 🤷'
+        };
+
+        return localeDescriptions[locale] || locale;
+    };
+
+    const getLocaleEmoji = (locale?: string | null): string => {
+        if (!locale) return '📍';
+
+        const emojiMap: Record<string, string> = {
+            'Ill Big City Yo': '🏙️',
+            'Mid Sized City Dawg': '🌆',
+            'Enough City to Tickle the Itch': '🌃',
+            'The Biggest of the Burbs': '🏡',
+            'Mid Sized Burb Yo': '🏘️',
+            'Itty Bitty Burb': '🏠',
+            'Fringe Town Dawg': '🎓',
+            'We Getting Rustic Now': '⭐',
+            'Straight Up Rustic': '🌾',
+            'Woodsy kid': '🌲',
+            'I see FORESTTTT': '🌳',
+            'Straight Up Country Bro': '🚜',
+            'Not Available': '❓'
+        };
+
+        return emojiMap[locale] || '📍';
     };
 
     const getCurrentTuition = () => {
@@ -296,8 +359,7 @@ export default function InstitutionDetail() {
                                     </a>
                                 )}
 
-
-                                {/* Data Source Link - replaces Data Quality Badge */}
+                                {/* Data Source Link */}
                                 {costData?.data_source && (
                                     <div className="mt-4">
                                         {costData.data_source.startsWith('http') ? (
@@ -322,16 +384,13 @@ export default function InstitutionDetail() {
                                         )}
                                     </div>
                                 )}
-
-
-
-
-
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+
 
             {/* Cost Information */}
             <div className="max-w-4xl mx-auto px-4 pb-8">
@@ -459,6 +518,194 @@ export default function InstitutionDetail() {
                         </div>
                     </div>
                 )}
+            </div>
+
+
+            <div className="max-w-4xl mx-auto px-4 pb-6">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Admissions</h2>
+
+                    {/* Key Metrics Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        {/* Acceptance Rate */}
+                        <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                            <div className="text-4xl font-bold text-blue-600 mb-2">3.5%</div>
+                            <div className="text-sm font-semibold text-gray-700">Acceptance Rate</div>
+                            <div className="text-xs text-gray-500 mt-1">Highly selective</div>
+                        </div>
+
+                        {/* Applications */}
+                        <div className="text-center p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
+                            <div className="text-4xl font-bold text-purple-600 mb-2">56,937</div>
+                            <div className="text-sm font-semibold text-gray-700">Applications</div>
+                            <div className="text-xs text-gray-500 mt-1">2023-2024</div>
+                        </div>
+
+                        {/* Yield Rate */}
+                        <div className="text-center p-4 bg-green-50 rounded-xl border-2 border-green-200">
+                            <div className="text-4xl font-bold text-green-600 mb-2">83.7%</div>
+                            <div className="text-sm font-semibold text-gray-700">Yield Rate</div>
+                            <div className="text-xs text-gray-500 mt-1">Students who enroll</div>
+                        </div>
+                    </div>
+
+
+
+
+
+
+
+                    {/* SAT Scores */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            📊 SAT Scores
+                            <span className="ml-2 text-xs text-gray-500 font-normal">(52% of students submit SAT)</span>
+                        </h3>
+
+                        {/* SAT Reading */}
+                        <div className="mb-4 bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-gray-700">Evidence-Based Reading</span>
+                                <span className="text-xs text-gray-500">Middle 50% Range</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="text-center">
+                                    <div className="text-3xl font-bold text-blue-600">740</div>
+                                    <div className="text-xs text-gray-600 mt-1">Low</div>
+                                </div>
+                                <div className="flex-1 mx-4">
+                                    <div className="h-2 bg-blue-200 rounded-full relative">
+                                        <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-3xl font-bold text-blue-600">780</div>
+                                    <div className="text-xs text-gray-600 mt-1">High</div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2 text-center">
+                                Half of admitted students scored between 740-780
+                            </p>
+                        </div>
+
+                        {/* SAT Math */}
+                        <div className="bg-purple-50 p-4 rounded-xl border-2 border-purple-200">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-gray-700">Math</span>
+                                <span className="text-xs text-gray-500">Middle 50% Range</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="text-center">
+                                    <div className="text-3xl font-bold text-purple-600">760</div>
+                                    <div className="text-xs text-gray-600 mt-1">Low</div>
+                                </div>
+                                <div className="flex-1 mx-4">
+                                    <div className="h-2 bg-purple-200 rounded-full relative">
+                                        <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full"></div>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-3xl font-bold text-purple-600">800</div>
+                                    <div className="text-xs text-gray-600 mt-1">High</div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2 text-center">
+                                Half of admitted students scored between 760-800
+                            </p>
+                        </div>
+                    </div>
+
+
+
+
+
+
+
+
+                    {/* Info Note */}
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xs text-gray-600">
+                            <strong>Note:</strong> Score ranges represent the 25th-75th percentile of admitted students.
+                            50% of admitted students scored within these ranges. Test scores are just one factor in admissions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Quick Facts Section - WITH COOL EMOJIS */}
+            <div className="max-w-4xl mx-auto px-4 pb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 shadow-lg overflow-visible">
+                    <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center">
+                        <Star className="w-5 h-5 text-blue-600 mr-2" />
+                        Quick Facts
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
+                        {/* Student-Faculty Ratio */}
+                        {institution.student_faculty_ratio && (
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <div className="flex items-center mb-2">
+                                    <Users className="w-5 h-5 text-blue-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Student:Faculty</span>
+                                </div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    {Math.round(institution.student_faculty_ratio)}:1
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {institution.student_faculty_ratio < 15 ? '✓ Small class sizes' :
+                                        institution.student_faculty_ratio < 20 ? 'Moderate class sizes' :
+                                            'Larger class sizes'}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Location Type with EMOJI and Hover Tooltip */}
+                        {institution.locale && (
+                            <div
+                                className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-help relative group overflow-visible"
+                            >
+                                <div className="flex items-center mb-2">
+                                    <MapPin className="w-5 h-5 text-green-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Location Type</span>
+                                </div>
+                                <div className="text-5xl mb-1">
+                                    {getLocaleEmoji(institution.locale)}
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {institution.locale}
+                                </p>
+
+                                {/* Custom Tooltip - appears on hover */}
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-2xl w-72 text-center">
+                                    {getLocaleHoverText(institution.locale)}
+                                    {/* Tooltip arrow */}
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                                        <div className="border-8 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Student Population */}
+                        {institution.size_category && (
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <div className="flex items-center mb-2">
+                                    <GraduationCap className="w-5 h-5 text-purple-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Student Population</span>
+                                </div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    {Math.round(parseFloat(institution.size_category)).toLocaleString()}
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {Math.round(parseFloat(institution.size_category)) < 2000 ? 'Small campus' :
+                                        Math.round(parseFloat(institution.size_category)) < 10000 ? 'Medium campus' :
+                                            Math.round(parseFloat(institution.size_category)) < 20000 ? 'Large campus' :
+                                                'Very large campus'}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
