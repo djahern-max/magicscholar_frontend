@@ -12,7 +12,9 @@ import {
     ArrowLeft,
     DollarSign,
     Home,
-    Star
+    Star,
+    Award,
+    BookOpen
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -57,12 +59,31 @@ interface CostData {
     data_completeness_score?: number;
 }
 
+interface AdmissionsData {
+    id: number;
+    ipeds_id: number;
+    academic_year: string;
+    applications_total?: number | null;
+    admissions_total?: number | null;
+    enrolled_total?: number | null;
+    acceptance_rate?: number | null;
+    yield_rate?: number | null;
+    sat_reading_25th?: number | null;
+    sat_reading_50th?: number | null;
+    sat_reading_75th?: number | null;
+    sat_math_25th?: number | null;
+    sat_math_50th?: number | null;
+    sat_math_75th?: number | null;
+    percent_submitting_sat?: number | null;
+}
+
 export default function InstitutionDetail() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [institution, setInstitution] = useState<Institution | null>(null);
     const [costData, setCostData] = useState<CostData | null>(null);
+    const [admissionsData, setAdmissionsData] = useState<AdmissionsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedResidency, setSelectedResidency] = useState<'in_state' | 'out_of_state'>('in_state');
     const [imageError, setImageError] = useState(false);
@@ -99,7 +120,7 @@ export default function InstitutionDetail() {
                     const institutionData = await institutionResponse.json();
                     setInstitution(institutionData);
 
-                    // Fetch cost data using new costs endpoint
+                    // Fetch cost data
                     if (institutionData.ipeds_id) {
                         try {
                             const costsResponse = await fetch(`${API_BASE_URL}/api/v1/costs/institution/${institutionData.ipeds_id}`);
@@ -109,6 +130,17 @@ export default function InstitutionDetail() {
                             }
                         } catch (costError) {
                             console.log('Could not fetch cost data:', costError);
+                        }
+
+                        // Fetch admissions data
+                        try {
+                            const admissionsResponse = await fetch(`${API_BASE_URL}/api/v1/admissions/institution/${institutionData.ipeds_id}`);
+                            if (admissionsResponse.ok) {
+                                const admissionsResult = await admissionsResponse.json();
+                                setAdmissionsData(admissionsResult);
+                            }
+                        } catch (admissionsError) {
+                            console.log('Could not fetch admissions data:', admissionsError);
                         }
                     }
                 }
@@ -142,6 +174,15 @@ export default function InstitutionDetail() {
     };
 
     const getSizeCategoryDisplay = (sizeCategory: string) => {
+        const size = parseFloat(sizeCategory);
+        if (!isNaN(size)) {
+            if (size < 1000) return 'Very Small (<1,000)';
+            if (size < 3000) return 'Small (1,000-2,999)';
+            if (size < 10000) return 'Medium (3,000-9,999)';
+            if (size < 20000) return 'Large (10,000-19,999)';
+            return 'Very Large (20,000+)';
+        }
+
         const sizes = {
             'very_small': 'Very Small (<1,000)',
             'small': 'Small (1,000-2,999)',
@@ -152,65 +193,45 @@ export default function InstitutionDetail() {
         return sizes[sizeCategory as keyof typeof sizes] || sizeCategory;
     };
 
-    const formatLocale = (locale?: string | null): string => {
-        if (!locale) return '';
-
-        // If already formatted text
-        if (locale.includes(':')) return locale.split(':')[1].trim();
-
-        // If numeric code, map it
-        const localeMap: Record<string, string> = {
-            '11': 'Large City', '12': 'Midsize City', '13': 'Small City',
-            '21': 'Large Suburb', '22': 'Midsize Suburb', '23': 'Small Suburb',
-            '31': 'Fringe Town', '32': 'Distant Town', '33': 'Remote Town',
-            '41': 'Fringe Rural', '42': 'Distant Rural', '43': 'Remote Rural',
-        };
-
-        return localeMap[locale] || locale;
-    };
-
     const getLocaleHoverText = (locale?: string | null): string => {
         if (!locale) return '';
 
-        const localeDescriptions: Record<string, string> = {
-            'Ill Big City Yo': 'Traffic jams, noise complaints, and a coffee shop every 10 feet. Living the dream! 🏙️',
-            'Mid Sized City Dawg': 'Big enough to have options, small enough to not get lost. The Goldilocks zone 👌',
-            'Enough City to Tickle the Itch': 'Just enough urban vibes without the full chaos. Perfect for city-curious folks 🌆',
-            'The Biggest of the Burbs': 'Mall culture meets soccer practice. Your parents would be proud 🏡',
-            'Mid Sized Burb Yo': 'Strip malls and chain restaurants as far as the eye can see. Welcome home! 🛒',
-            'Itty Bitty Burb': 'Everyone knows everyone. Privacy sold separately 👀',
-            'Fringe Town Dawg': 'College bars, late-night diners, and questionable life choices. Peak college experience 🎓🍻',
-            'We Getting Rustic Now': 'Population: 47 people and a gas station. But hey, the stars are pretty! ⭐',
-            'Straight Up Rustic': 'Where GPS gives up and you start using landmarks like "the old barn" 🌾',
-            'Woodsy kid': 'Trees everywhere. Like, EVERYWHERE. Hope you like nature 🌲',
-            'I see FORESTTTT': 'Seriously, it\'s just trees. Trees on trees on trees. Bring bug spray 🌳🦟',
-            'Straight Up Country Bro': 'Nearest Starbucks: 45 minutes. Nearest tractor: your neighbor\'s yard 🚜',
-            'Not Available': 'Location data said "nah fam, I\'m good" 🤷'
+        const descriptions: Record<string, string> = {
+            'Urban Center': 'Major city with extensive amenities, culture, dining, and entertainment.',
+            'City': 'Urban area with restaurants, shops, and city conveniences.',
+            'Town': 'Smaller community with local character and essential services.',
+            'Metropolitan Suburb': 'Suburban area near major city.',
+            'Suburban': 'Residential community with local shops.',
+            'Campus Town': 'Vibrant college town with student-friendly businesses.',
+            'Village': 'Small community with tight-knit feel.',
+            'Countryside': 'Rural setting with open spaces.',
+            'Forest Area': 'Surrounded by forests.',
+            'Remote': 'Peaceful, isolated setting.',
+            'Wilderness': 'Pristine natural environment.'
         };
 
-        return localeDescriptions[locale] || locale;
+        return descriptions[locale] || locale;
     };
 
     const getLocaleEmoji = (locale?: string | null): string => {
-        if (!locale) return '📍';
+        if (!locale) return '🏫';
 
-        const emojiMap: Record<string, string> = {
-            'Ill Big City Yo': '🏙️',
-            'Mid Sized City Dawg': '🌆',
-            'Enough City to Tickle the Itch': '🌃',
-            'The Biggest of the Burbs': '🏡',
-            'Mid Sized Burb Yo': '🏘️',
-            'Itty Bitty Burb': '🏠',
-            'Fringe Town Dawg': '🎓',
-            'We Getting Rustic Now': '⭐',
-            'Straight Up Rustic': '🌾',
-            'Woodsy kid': '🌲',
-            'I see FORESTTTT': '🌳',
-            'Straight Up Country Bro': '🚜',
-            'Not Available': '❓'
+        const emojis: Record<string, string> = {
+            'Urban Center': '🏙️',
+            'City': '🌆',
+            'Town': '🏘️',
+            'Metropolitan Suburb': '🏡',
+            'Suburban': '🏘️',
+            'Residential Area': '🏠',
+            'Campus Town': '🎓',
+            'Village': '⭐',
+            'Countryside': '🌾',
+            'Forest Area': '🌲',
+            'Remote': '🏔️',
+            'Wilderness': '🌲'
         };
 
-        return emojiMap[locale] || '📍';
+        return emojis[locale] || '🏫';
     };
 
     const getCurrentTuition = () => {
@@ -358,39 +379,260 @@ export default function InstitutionDetail() {
                                         Visit Website
                                     </a>
                                 )}
-
-                                {/* Data Source Link */}
-                                {costData?.data_source && (
-                                    <div className="mt-4">
-                                        {costData.data_source.startsWith('http') ? (
-                                            <a
-                                                href={costData.data_source}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-3 py-1 hover:bg-blue-100 transition-colors"
-                                            >
-                                                <ExternalLink className="w-4 h-4 text-blue-600 mr-1" />
-                                                <span className="text-sm text-blue-700 font-medium">
-                                                    View Official Source
-                                                </span>
-                                            </a>
-                                        ) : (
-                                            <div className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
-                                                <AlertCircle className="w-4 h-4 text-gray-600 mr-1" />
-                                                <span className="text-sm text-gray-700 font-medium">
-                                                    Source: {costData.data_source}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {/* Quick Facts Section */}
+            <div className="max-w-4xl mx-auto px-4 pb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 shadow-lg">
+                    <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center">
+                        <Star className="w-5 h-5 text-blue-600 mr-2" />
+                        Quick Facts
+                    </h2>
 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {institution.student_faculty_ratio && (
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center">
+                                <div className="flex items-center justify-center mb-2">
+                                    <Users className="w-5 h-5 text-blue-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Student:Faculty</span>
+                                </div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    {Math.round(institution.student_faculty_ratio)}:1
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {institution.student_faculty_ratio < 15 ? '✓ Small class sizes' :
+                                        institution.student_faculty_ratio < 20 ? 'Moderate class sizes' :
+                                            'Larger class sizes'}
+                                </p>
+                            </div>
+                        )}
+
+                        {institution.locale && (
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-help relative group text-center">
+                                <div className="flex items-center justify-center mb-2">
+                                    <MapPin className="w-5 h-5 text-green-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Location Type</span>
+                                </div>
+                                <div className="text-5xl mb-1">
+                                    {getLocaleEmoji(institution.locale)}
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {institution.locale}
+                                </p>
+
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-2xl w-72 text-center">
+                                    {getLocaleHoverText(institution.locale)}
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                                        <div className="border-8 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {institution.size_category && (
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center">
+                                <div className="flex items-center justify-center mb-2">
+                                    <GraduationCap className="w-5 h-5 text-purple-600 mr-2" />
+                                    <span className="text-sm font-semibold text-gray-700">Student Population</span>
+                                </div>
+                                <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    {Math.round(parseFloat(institution.size_category)).toLocaleString()}
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                    {(() => {
+                                        const size = Math.round(parseFloat(institution.size_category));
+                                        if (size < 1000) return 'Very small campus';
+                                        if (size < 3000) return 'Small campus';
+                                        if (size < 10000) return 'Medium campus';
+                                        if (size < 20000) return 'Large campus';
+                                        return 'Very large campus';
+                                    })()}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Admissions Statistics */}
+            {admissionsData && (
+                <div className="max-w-4xl mx-auto px-4 pb-8">
+                    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">Admissions Statistics</h2>
+                            {admissionsData.academic_year && (
+                                <span className="text-sm text-gray-500">{admissionsData.academic_year}</span>
+                            )}
+                        </div>
+
+                        {/* Acceptance Rate Highlight */}
+                        {admissionsData.acceptance_rate !== null && admissionsData.acceptance_rate !== undefined && (
+                            <div className={`rounded-xl p-6 border-2 mb-6 ${admissionsData.acceptance_rate < 10 ? 'bg-red-50 border-red-200 text-red-700' :
+                                    admissionsData.acceptance_rate < 25 ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                                        admissionsData.acceptance_rate < 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                                            admissionsData.acceptance_rate < 75 ? 'bg-green-50 border-green-200 text-green-700' :
+                                                'bg-blue-50 border-blue-200 text-blue-700'
+                                }`}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium mb-1">Acceptance Rate</p>
+                                        <p className="text-4xl font-bold">
+                                            {admissionsData.acceptance_rate.toFixed(1)}%
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <Award className="w-8 h-8 mb-2 ml-auto" />
+                                        <p className="text-sm font-semibold">
+                                            {admissionsData.acceptance_rate < 10 ? 'Most Selective' :
+                                                admissionsData.acceptance_rate < 25 ? 'Highly Selective' :
+                                                    admissionsData.acceptance_rate < 50 ? 'Selective' :
+                                                        admissionsData.acceptance_rate < 75 ? 'Moderately Selective' :
+                                                            'Less Selective'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Application Statistics */}
+                            <div>
+                                <div className="flex items-center mb-4">
+                                    <Users className="w-5 h-5 text-blue-600 mr-2" />
+                                    <h3 className="text-lg font-semibold text-gray-900">Application Stats</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {admissionsData.applications_total && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Total Applicants</span>
+                                            <span className="font-medium">
+                                                {admissionsData.applications_total.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {admissionsData.admissions_total && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Total Admitted</span>
+                                            <span className="font-medium">
+                                                {admissionsData.admissions_total.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {admissionsData.enrolled_total && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Total Enrolled</span>
+                                            <span className="font-medium">
+                                                {admissionsData.enrolled_total.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {admissionsData.yield_rate !== null && admissionsData.yield_rate !== undefined && (
+                                        <div className="flex justify-between pt-2 border-t border-gray-200">
+                                            <span className="text-gray-700">Yield Rate</span>
+                                            <span className="font-semibold text-blue-600">
+                                                {admissionsData.yield_rate.toFixed(1)}%
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Test Scores */}
+                            <div>
+                                <div className="flex items-center mb-4">
+                                    <BookOpen className="w-5 h-5 text-purple-600 mr-2" />
+                                    <h3 className="text-lg font-semibold text-gray-900">Test Scores (SAT)</h3>
+                                </div>
+
+                                {(admissionsData.sat_math_25th || admissionsData.sat_reading_25th) ? (
+                                    <div className="space-y-4">
+                                        {admissionsData.sat_math_25th && (
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700 mb-2">Math</p>
+                                                <div className="space-y-1">
+                                                    {admissionsData.sat_math_25th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">25th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_math_25th}</span>
+                                                        </div>
+                                                    )}
+                                                    {admissionsData.sat_math_50th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">50th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_math_50th}</span>
+                                                        </div>
+                                                    )}
+                                                    {admissionsData.sat_math_75th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">75th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_math_75th}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {admissionsData.sat_reading_25th && (
+                                            <div className="pt-3 border-t border-gray-200">
+                                                <p className="text-sm font-medium text-gray-700 mb-2">Reading</p>
+                                                <div className="space-y-1">
+                                                    {admissionsData.sat_reading_25th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">25th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_reading_25th}</span>
+                                                        </div>
+                                                    )}
+                                                    {admissionsData.sat_reading_50th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">50th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_reading_50th}</span>
+                                                        </div>
+                                                    )}
+                                                    {admissionsData.sat_reading_75th && (
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="text-gray-600">75th percentile</span>
+                                                            <span className="font-medium">{admissionsData.sat_reading_75th}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {admissionsData.percent_submitting_sat !== null && admissionsData.percent_submitting_sat !== undefined && (
+                                            <div className="pt-3 border-t border-gray-200">
+                                                <div className="flex justify-between">
+                                                    <span className="text-sm text-gray-700">Students Submitting SAT</span>
+                                                    <span className="text-sm font-semibold text-purple-600">
+                                                        {admissionsData.percent_submitting_sat.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-xl">
+                                        <p className="text-sm text-gray-600">
+                                            SAT score data not available for this institution.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Info Note */}
+                        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-blue-900">
+                                <strong>Note:</strong> Admissions statistics reflect data from the {admissionsData.academic_year || 'most recent'} academic year.
+                                These numbers can vary year to year. For the most current information, visit the institution's admissions website.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Cost Information */}
             <div className="max-w-4xl mx-auto px-4 pb-8">
@@ -477,7 +719,7 @@ export default function InstitutionDetail() {
                                     ) : (
                                         <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
                                             <p className="text-sm text-yellow-800">
-                                                This institution doesn't provide on-campus housing data. Students typically commute or live off-campus.
+                                                This institution doesn't provide on-campus housing data.
                                             </p>
                                         </div>
                                     )}
@@ -501,11 +743,10 @@ export default function InstitutionDetail() {
                             </div>
                         )}
 
-                        {/* Disclaimer */}
                         <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <p className="text-xs text-gray-600">
                                 <strong>Note:</strong> Costs shown are estimates for the {getAcademicYear()} academic year.
-                                Actual costs may vary. Contact the institution directly for the most current information and details about financial aid opportunities.
+                                Contact the institution for current information and financial aid details.
                             </p>
                         </div>
                     </div>
@@ -518,194 +759,6 @@ export default function InstitutionDetail() {
                         </div>
                     </div>
                 )}
-            </div>
-
-
-            <div className="max-w-4xl mx-auto px-4 pb-6">
-                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Admissions</h2>
-
-                    {/* Key Metrics Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        {/* Acceptance Rate */}
-                        <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                            <div className="text-4xl font-bold text-blue-600 mb-2">3.5%</div>
-                            <div className="text-sm font-semibold text-gray-700">Acceptance Rate</div>
-                            <div className="text-xs text-gray-500 mt-1">Highly selective</div>
-                        </div>
-
-                        {/* Applications */}
-                        <div className="text-center p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
-                            <div className="text-4xl font-bold text-purple-600 mb-2">56,937</div>
-                            <div className="text-sm font-semibold text-gray-700">Applications</div>
-                            <div className="text-xs text-gray-500 mt-1">2023-2024</div>
-                        </div>
-
-                        {/* Yield Rate */}
-                        <div className="text-center p-4 bg-green-50 rounded-xl border-2 border-green-200">
-                            <div className="text-4xl font-bold text-green-600 mb-2">83.7%</div>
-                            <div className="text-sm font-semibold text-gray-700">Yield Rate</div>
-                            <div className="text-xs text-gray-500 mt-1">Students who enroll</div>
-                        </div>
-                    </div>
-
-
-
-
-
-
-
-                    {/* SAT Scores */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            📊 SAT Scores
-                            <span className="ml-2 text-xs text-gray-500 font-normal">(52% of students submit SAT)</span>
-                        </h3>
-
-                        {/* SAT Reading */}
-                        <div className="mb-4 bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-medium text-gray-700">Evidence-Based Reading</span>
-                                <span className="text-xs text-gray-500">Middle 50% Range</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-blue-600">740</div>
-                                    <div className="text-xs text-gray-600 mt-1">Low</div>
-                                </div>
-                                <div className="flex-1 mx-4">
-                                    <div className="h-2 bg-blue-200 rounded-full relative">
-                                        <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
-                                    </div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-blue-600">780</div>
-                                    <div className="text-xs text-gray-600 mt-1">High</div>
-                                </div>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-2 text-center">
-                                Half of admitted students scored between 740-780
-                            </p>
-                        </div>
-
-                        {/* SAT Math */}
-                        <div className="bg-purple-50 p-4 rounded-xl border-2 border-purple-200">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-medium text-gray-700">Math</span>
-                                <span className="text-xs text-gray-500">Middle 50% Range</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-purple-600">760</div>
-                                    <div className="text-xs text-gray-600 mt-1">Low</div>
-                                </div>
-                                <div className="flex-1 mx-4">
-                                    <div className="h-2 bg-purple-200 rounded-full relative">
-                                        <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full"></div>
-                                    </div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-purple-600">800</div>
-                                    <div className="text-xs text-gray-600 mt-1">High</div>
-                                </div>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-2 text-center">
-                                Half of admitted students scored between 760-800
-                            </p>
-                        </div>
-                    </div>
-
-
-
-
-
-
-
-
-                    {/* Info Note */}
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-xs text-gray-600">
-                            <strong>Note:</strong> Score ranges represent the 25th-75th percentile of admitted students.
-                            50% of admitted students scored within these ranges. Test scores are just one factor in admissions.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Facts Section - WITH COOL EMOJIS */}
-            <div className="max-w-4xl mx-auto px-4 pb-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 shadow-lg overflow-visible">
-                    <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center">
-                        <Star className="w-5 h-5 text-blue-600 mr-2" />
-                        Quick Facts
-                    </h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
-                        {/* Student-Faculty Ratio */}
-                        {institution.student_faculty_ratio && (
-                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                                <div className="flex items-center mb-2">
-                                    <Users className="w-5 h-5 text-blue-600 mr-2" />
-                                    <span className="text-sm font-semibold text-gray-700">Student:Faculty</span>
-                                </div>
-                                <div className="text-3xl font-bold text-gray-900 mb-1">
-                                    {Math.round(institution.student_faculty_ratio)}:1
-                                </div>
-                                <p className="text-xs text-gray-600">
-                                    {institution.student_faculty_ratio < 15 ? '✓ Small class sizes' :
-                                        institution.student_faculty_ratio < 20 ? 'Moderate class sizes' :
-                                            'Larger class sizes'}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Location Type with EMOJI and Hover Tooltip */}
-                        {institution.locale && (
-                            <div
-                                className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-help relative group overflow-visible"
-                            >
-                                <div className="flex items-center mb-2">
-                                    <MapPin className="w-5 h-5 text-green-600 mr-2" />
-                                    <span className="text-sm font-semibold text-gray-700">Location Type</span>
-                                </div>
-                                <div className="text-5xl mb-1">
-                                    {getLocaleEmoji(institution.locale)}
-                                </div>
-                                <p className="text-xs text-gray-600">
-                                    {institution.locale}
-                                </p>
-
-                                {/* Custom Tooltip - appears on hover */}
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-2xl w-72 text-center">
-                                    {getLocaleHoverText(institution.locale)}
-                                    {/* Tooltip arrow */}
-                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
-                                        <div className="border-8 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Student Population */}
-                        {institution.size_category && (
-                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                                <div className="flex items-center mb-2">
-                                    <GraduationCap className="w-5 h-5 text-purple-600 mr-2" />
-                                    <span className="text-sm font-semibold text-gray-700">Student Population</span>
-                                </div>
-                                <div className="text-3xl font-bold text-gray-900 mb-1">
-                                    {Math.round(parseFloat(institution.size_category)).toLocaleString()}
-                                </div>
-                                <p className="text-xs text-gray-600">
-                                    {Math.round(parseFloat(institution.size_category)) < 2000 ? 'Small campus' :
-                                        Math.round(parseFloat(institution.size_category)) < 10000 ? 'Medium campus' :
-                                            Math.round(parseFloat(institution.size_category)) < 20000 ? 'Large campus' :
-                                                'Very large campus'}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );
