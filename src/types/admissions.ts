@@ -19,23 +19,3 @@ export interface AdmissionsData {
     created_at?: string;
 }
 
-export interface AdmissionsStats {
-    has_data: boolean;
-    academic_year?: string;
-    acceptance_rate?: number | null;
-    yield_rate?: number | null;
-    total_applicants?: number | null;
-    total_admitted?: number | null;
-    total_enrolled?: number | null;
-    sat_math_range?: {
-        percentile_25: number;
-        percentile_50: number;
-        percentile_75: number;
-    } | null;
-    sat_reading_range?: {
-        percentile_25: number;
-        percentile_50: number;
-        percentile_75: number;
-    } | null;
-    percent_submitting_sat?: number | null;
-}
