@@ -472,16 +472,18 @@ export default function InstitutionDetail() {
                         {/* Acceptance Rate Highlight */}
                         {admissionsData.acceptance_rate !== null && admissionsData.acceptance_rate !== undefined && (
                             <div className={`rounded-xl p-6 border-2 mb-6 ${admissionsData.acceptance_rate < 10 ? 'bg-red-50 border-red-200 text-red-700' :
-                                    admissionsData.acceptance_rate < 25 ? 'bg-orange-50 border-orange-200 text-orange-700' :
-                                        admissionsData.acceptance_rate < 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
-                                            admissionsData.acceptance_rate < 75 ? 'bg-green-50 border-green-200 text-green-700' :
-                                                'bg-blue-50 border-blue-200 text-blue-700'
+                                admissionsData.acceptance_rate < 25 ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                                    admissionsData.acceptance_rate < 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                                        admissionsData.acceptance_rate < 75 ? 'bg-green-50 border-green-200 text-green-700' :
+                                            'bg-blue-50 border-blue-200 text-blue-700'
                                 }`}>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-medium mb-1">Acceptance Rate</p>
                                         <p className="text-4xl font-bold">
-                                            {admissionsData.acceptance_rate.toFixed(1)}%
+                                            {admissionsData.acceptance_rate != null
+                                                ? Number(admissionsData.acceptance_rate).toFixed(1)
+                                                : 'N/A'}%
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -534,7 +536,9 @@ export default function InstitutionDetail() {
                                         <div className="flex justify-between pt-2 border-t border-gray-200">
                                             <span className="text-gray-700">Yield Rate</span>
                                             <span className="font-semibold text-blue-600">
-                                                {admissionsData.yield_rate.toFixed(1)}%
+                                                {typeof admissionsData.yield_rate === 'number'
+                                                    ? admissionsData.yield_rate.toFixed(1)
+                                                    : Number(admissionsData.yield_rate).toFixed(1)}%
                                             </span>
                                         </div>
                                     )}
@@ -607,7 +611,7 @@ export default function InstitutionDetail() {
                                                 <div className="flex justify-between">
                                                     <span className="text-sm text-gray-700">Students Submitting SAT</span>
                                                     <span className="text-sm font-semibold text-purple-600">
-                                                        {admissionsData.percent_submitting_sat.toFixed(1)}%
+                                                        {Number(admissionsData.percent_submitting_sat).toFixed(1)}%
                                                     </span>
                                                 </div>
                                             </div>
