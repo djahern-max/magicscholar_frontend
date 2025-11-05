@@ -35,18 +35,20 @@ export default function SchoolMatches({ locationPreference, showPrompt = true }:
     const [totalSchools, setTotalSchools] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
+    const [showingAll, setShowingAll] = useState(false);
 
     useEffect(() => {
         if (locationPreference) {
-            loadSchools();
+            loadSchools(6); // Start with 6 schools
         } else {
             setSchools([]);
             setTotalSchools(0);
             setError('');
+            setShowingAll(false);
         }
     }, [locationPreference]);
 
-    const loadSchools = async () => {
+    const loadSchools = async (limit: number) => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
@@ -55,7 +57,7 @@ export default function SchoolMatches({ locationPreference, showPrompt = true }:
 
         try {
             const response = await axios.get<MatchingInstitutionsResponse>(
-                `${API_BASE_URL}/api/v1/profiles/me/matching-institutions?limit=6`,
+                `${API_BASE_URL}/api/v1/profiles/me/matching-institutions?limit=${limit}`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -76,6 +78,11 @@ export default function SchoolMatches({ locationPreference, showPrompt = true }:
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleViewAll = () => {
+        setShowingAll(true);
+        loadSchools(totalSchools); // Load all schools
     };
 
     if (!locationPreference && !showPrompt) {
@@ -184,9 +191,9 @@ export default function SchoolMatches({ locationPreference, showPrompt = true }:
                 ))}
             </div>
 
-            {totalSchools > 6 && (
+            {totalSchools > 6 && !showingAll && (
                 <button
-                    onClick={() => router.push(`/profiles/me/matching-institutions`)}
+                    onClick={handleViewAll}
                     className="w-full mt-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors"
                 >
                     View All {totalSchools} School{totalSchools !== 1 ? 's' : ''} in {locationPreference}
