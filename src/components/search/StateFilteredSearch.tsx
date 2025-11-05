@@ -62,8 +62,8 @@ const AVAILABLE_STATES = [
 ];
 
 // Dynamic items per page based on selection
-const ITEMS_PER_PAGE_ALL = 48; // Show many schools when viewing all (divisible by 2, 3, 4, 6)
-const ITEMS_PER_PAGE_STATE = 12; // Show all schools in a state at once
+const ITEMS_PER_PAGE_ALL = 48;
+const ITEMS_PER_PAGE_STATE = 12;
 
 interface Institution {
     id: number;
@@ -80,13 +80,16 @@ interface Institution {
 
 interface StateFilterSearchProps {
     onInstitutionClick?: (institutionId: number) => void;
-    initialState?: string;
+    initialState?: string; // ADD THIS
 }
 
-const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClick }) => {
+const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
+    onInstitutionClick,
+    initialState // USE THIS
+}) => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedState, setSelectedState] = useState('ALL');
+    const [selectedState, setSelectedState] = useState(initialState || 'ALL'); // USE initialState HERE
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -103,7 +106,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
         }
 
         try {
-            // Use different page sizes based on selection
             const itemsPerPage = selectedState === 'ALL' ? ITEMS_PER_PAGE_ALL : ITEMS_PER_PAGE_STATE;
             let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
 
@@ -112,11 +114,10 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                 url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${itemsPerPage}`;
             }
 
-            // Add state filter if not 'ALL'
+            // Add state filter if not 'ALL' - FIXED VERSION
             if (selectedState !== 'ALL') {
-                url = `${API_BASE_URL}/api/v1/institutions/by-state/${selectedState}`;
-            } else {
-                url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
+                const separator = url.includes('?') ? '&' : '?';
+                url += `${separator}state=${selectedState}`;
             }
 
             console.log('Fetching from URL:', url);
@@ -138,7 +139,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                 setTotalResults(total);
                 setCurrentPage(page);
 
-                // Check if there are more results
                 const loadedCount = append ? institutions.length + institutionsArray.length : institutionsArray.length;
                 setHasMore(loadedCount < total);
             } else {
@@ -160,11 +160,10 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
         }
     };
 
-    // Trigger search when filters change (reset to page 1)
     useEffect(() => {
         const delayedSearch = setTimeout(() => {
             searchInstitutions(1, false);
-        }, 300); // Debounce search
+        }, 300);
 
         return () => clearTimeout(delayedSearch);
     }, [searchQuery, selectedState]);
@@ -236,7 +235,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                     </div>
                 </div>
 
-                {/* State Filter Buttons with icons */}
+                {/* State Filter Buttons */}
                 <div className="overflow-x-auto pb-4 -mx-4 px-4">
                     <div className="flex flex-wrap justify-center gap-2 min-w-max">
                         {AVAILABLE_STATES.map((state) => (
@@ -244,8 +243,8 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                                 key={state.code}
                                 onClick={() => handleStateClick(state.code)}
                                 className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
-                                    ? 'bg-gray-400 text-white border-gray-400'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                                        ? 'bg-gray-400 text-white border-gray-400'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                                     }`}
                             >
                                 <span className="mr-2">{state.icon}</span>
@@ -271,7 +270,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                 </div>
             </div>
 
-            {/* Results - matching your page.tsx card design */}
+            {/* Results */}
             <div className="w-full">
                 {loading ? (
                     <div className="text-center py-12">
@@ -287,7 +286,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                                     className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
                                     onClick={() => handleInstitutionClick(institution.id)}
                                 >
-                                    {/* Institution Image */}
                                     <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                                         {institution.display_image_url || institution.primary_image_url ? (
                                             <img
@@ -305,7 +303,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                                         )}
                                     </div>
 
-                                    {/* Institution Info */}
                                     <div className="p-5">
                                         <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
                                             {institution.display_name || institution.name}
@@ -326,11 +323,11 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                                             </div>
                                         </div>
 
-                                        {/* Footer with stats */}
                                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                                             <span className="text-sm font-medium text-gray-900">
                                                 View details
                                             </span>
+
                                             {institution.website && (
                                                 <a
                                                     href={institution.website}
@@ -348,7 +345,6 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
                             ))}
                         </div>
 
-                        {/* Load More Button */}
                         {hasMore && (
                             <div className="mt-12 text-center">
                                 <button
