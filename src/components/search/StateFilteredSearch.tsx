@@ -80,6 +80,7 @@ interface Institution {
 
 interface StateFilterSearchProps {
     onInstitutionClick?: (institutionId: number) => void;
+    initialState?: string;
 }
 
 const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClick }) => {
@@ -113,8 +114,9 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({ onInstitutionClic
 
             // Add state filter if not 'ALL'
             if (selectedState !== 'ALL') {
-                const separator = url.includes('?') ? '&' : '?';
-                url += `${separator}state=${selectedState}`;
+                url = `${API_BASE_URL}/api/v1/institutions/by-state/${selectedState}`;
+            } else {
+                url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
             }
 
             console.log('Fetching from URL:', url);
