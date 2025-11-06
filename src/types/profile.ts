@@ -66,6 +66,12 @@ export interface ProfileUpdateData {
     career_goals?: string;
     volunteer_hours?: number;
     location_preference?: string;
+
+    // NEW: Allow updating extracurriculars
+    extracurriculars?: ExtracurricularActivity[];
+    work_experience?: WorkExperience[];
+    honors_awards?: string[];
+    skills?: string[];
 }
 
 export interface ParsedResumeData {

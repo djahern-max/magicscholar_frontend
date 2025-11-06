@@ -2,8 +2,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserProfile, ProfileUpdateData } from '@/types/profile';
+import { UserProfile, ProfileUpdateData, ExtracurricularActivity } from '@/types/profile';
 import SchoolMatches from './SchoolMatches';
+import { Plus, X } from 'lucide-react';
 
 interface ProfileFormProps {
     profile: UserProfile;
@@ -19,8 +20,8 @@ const US_STATES = [
     'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
 ];
 
-export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormProps) {
-    const [formData, setFormData] = useState<ProfileUpdateData>({
+export default function ProfileFormEnhanced({ profile, onSave, onCancel }: ProfileFormProps) {
+    const [formData, setFormData] = useState<any>({
         state: profile.state || '',
         city: profile.city || '',
         zip_code: profile.zip_code || '',
@@ -34,6 +35,7 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
         career_goals: profile.career_goals || '',
         volunteer_hours: profile.volunteer_hours || undefined,
         location_preference: profile.location_preference || '',
+        extracurriculars: profile.extracurriculars || [],
     });
 
     const [previewState, setPreviewState] = useState<string>('');
@@ -51,27 +53,57 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
             processedValue = value ? parseFloat(value) : undefined;
         }
 
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             [name]: processedValue
         }));
     };
 
+    // Extracurricular management
+    const addExtracurricular = () => {
+        setFormData((prev: any) => ({
+            ...prev,
+            extracurriculars: [
+                ...(prev.extracurriculars || []),
+                { name: '', role: '', description: '', years_active: '' }
+            ]
+        }));
+    };
+
+    const updateExtracurricular = (index: number, field: string, value: string) => {
+        const updated = [...(formData.extracurriculars || [])];
+        updated[index] = { ...updated[index], [field]: value };
+        setFormData((prev: any) => ({
+            ...prev,
+            extracurriculars: updated
+        }));
+    };
+
+    const removeExtracurricular = (index: number) => {
+        const updated = (formData.extracurriculars || []).filter((_: any, i: number) => i !== index);
+        setFormData((prev: any) => ({
+            ...prev,
+            extracurriculars: updated
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
         setSaving(true);
+        setError('');
 
         try {
             await onSave(formData);
         } catch (err: any) {
             setError(err.message || 'Failed to save profile');
+        } finally {
             setSaving(false);
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Display */}
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-red-800">{error}</p>
@@ -81,17 +113,17 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
             {/* Location Section */}
             <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            State <span className="text-red-500">*</span>
+                            State
                         </label>
                         <select
                             name="state"
                             value={formData.state}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
                         >
                             <option value="">Select State</option>
                             {US_STATES.map(state => (
@@ -154,7 +186,7 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Graduation Year <span className="text-red-500">*</span>
+                                Graduation Year
                             </label>
                             <input
                                 type="number"
@@ -164,8 +196,7 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                                 min="2020"
                                 max="2035"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="2026"
-                                required
+                                placeholder="2025"
                             />
                         </div>
 
@@ -184,22 +215,21 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                GPA <span className="text-red-500">*</span>
+                                GPA
                             </label>
                             <input
                                 type="number"
                                 name="gpa"
                                 value={formData.gpa || ''}
                                 onChange={handleChange}
-                                step="0.01"
                                 min="0"
                                 max="5"
+                                step="0.01"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="3.75"
-                                required
+                                placeholder="3.8"
                             />
                         </div>
 
@@ -213,11 +243,11 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
-                                <option value="4.0">4.0 (Unweighted)</option>
-                                <option value="5.0">5.0 (Weighted)</option>
+                                <option value="4.0">4.0</option>
+                                <option value="5.0">5.0</option>
+                                <option value="100">100</option>
                                 <option value="weighted">Weighted</option>
                                 <option value="unweighted">Unweighted</option>
-                                <option value="100">100 Point Scale</option>
                             </select>
                         </div>
                     </div>
@@ -295,6 +325,103 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                             placeholder="50"
                         />
                     </div>
+
+                    {/* Extracurriculars Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Extracurricular Activities
+                            </label>
+                            <button
+                                type="button"
+                                onClick={addExtracurricular}
+                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Activity
+                            </button>
+                        </div>
+
+                        {(!formData.extracurriculars || formData.extracurriculars.length === 0) && (
+                            <p className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                No extracurricular activities added yet. Click "Add Activity" to get started.
+                            </p>
+                        )}
+
+                        <div className="space-y-4">
+                            {formData.extracurriculars?.map((activity: any, index: number) => (
+                                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h4 className="text-sm font-medium text-gray-900">Activity {index + 1}</h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExtracurricular(index)}
+                                            className="text-red-600 hover:text-red-700"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Activity Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={activity.name || ''}
+                                                onChange={(e) => updateExtracurricular(index, 'name', e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                placeholder="e.g., Varsity Soccer, Debate Club"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Role/Position
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={activity.role || ''}
+                                                    onChange={(e) => updateExtracurricular(index, 'role', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    placeholder="e.g., Captain, Member"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Years Active
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={activity.years_active || ''}
+                                                    onChange={(e) => updateExtracurricular(index, 'years_active', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    placeholder="e.g., 2022-2025"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Description
+                                            </label>
+                                            <textarea
+                                                value={activity.description || ''}
+                                                onChange={(e) => updateExtracurricular(index, 'description', e.target.value)}
+                                                rows={2}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                placeholder="Brief description of your involvement and achievements"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -320,17 +447,18 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                             <option key={state} value={state}>{state}</option>
                         ))}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                        This helps us match you with colleges in your preferred location
+                    <p className="text-sm text-gray-500 mt-2">
+                        We'll show you colleges that match your preference
                     </p>
                 </div>
-            </div>
 
-            {previewState && (
-                <div className="mt-4">
-                    <SchoolMatches locationPreference={previewState} />
-                </div>
-            )}
+                {/* Preview matching schools */}
+                {(formData.location_preference || previewState) && (
+                    <div className="mt-6">
+                        <SchoolMatches locationPreference={formData.location_preference || previewState} />
+                    </div>
+                )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex gap-4">
@@ -338,7 +466,8 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                        disabled={saving}
+                        className="flex-1 py-3 px-6 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
                         Cancel
                     </button>
@@ -346,8 +475,7 @@ export default function ProfileForm({ profile, onSave, onCancel }: ProfileFormPr
                 <button
                     type="submit"
                     disabled={saving}
-                    className={`flex-1 px-6 py-3 rounded-lg font-medium text-white transition-colors ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
+                    className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                     {saving ? 'Saving...' : 'Save Profile'}
                 </button>
