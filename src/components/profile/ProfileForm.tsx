@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { UserProfile, ProfileUpdateData, ExtracurricularActivity } from '@/types/profile';
 import SchoolMatches from './SchoolMatches';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, AlertCircle } from 'lucide-react';
 
 interface ProfileFormProps {
     profile: UserProfile;
@@ -41,6 +41,7 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
     const [previewState, setPreviewState] = useState<string>('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -57,6 +58,11 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
             ...prev,
             [name]: processedValue
         }));
+
+        // Clear validation errors when user starts fixing them
+        if (validationErrors.length > 0) {
+            setValidationErrors([]);
+        }
     };
 
     // Extracurricular management
@@ -87,15 +93,102 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
         }));
     };
 
+    // Validate form before submission
+    const validateForm = (): boolean => {
+        const errors: string[] = [];
+
+        // High school is required
+        if (!formData.high_school_name || formData.high_school_name.trim() === '') {
+            errors.push('High School Name is required');
+        }
+
+        // Location preference must be either empty or a valid 2-char state code
+        // If empty string, convert to null for backend
+        if (formData.location_preference === '') {
+            // This is OK - will be sent as null
+        } else if (formData.location_preference && formData.location_preference.length !== 2) {
+            errors.push('College Preference must be a valid state or left blank');
+        }
+
+        // Extracurriculars with empty names should be filtered out
+        // (but don't show error - just filter them)
+
+        setValidationErrors(errors);
+        return errors.length === 0;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSaving(true);
+
+        // Clear previous errors
         setError('');
+        setValidationErrors([]);
+
+        // Validate form
+        if (!validateForm()) {
+            setError('Please fix the validation errors below');
+            return;
+        }
+
+        setSaving(true);
 
         try {
-            await onSave(formData);
+            // Prepare data for submission
+            const submitData = { ...formData };
+
+            // Convert empty location_preference to null (backend expects null, not empty string)
+            if (submitData.location_preference === '') {
+                submitData.location_preference = null;
+            }
+
+            // Filter out extracurriculars with empty names
+            if (submitData.extracurriculars) {
+                submitData.extracurriculars = submitData.extracurriculars.filter(
+                    (activity: any) => activity.name && activity.name.trim() !== ''
+                );
+            }
+
+            // Convert empty strings to null for optional numeric fields
+            if (submitData.graduation_year === undefined) {
+                submitData.graduation_year = null;
+            }
+            if (submitData.gpa === undefined) {
+                submitData.gpa = null;
+            }
+            if (submitData.sat_score === undefined) {
+                submitData.sat_score = null;
+            }
+            if (submitData.act_score === undefined) {
+                submitData.act_score = null;
+            }
+            if (submitData.volunteer_hours === undefined) {
+                submitData.volunteer_hours = null;
+            }
+
+            await onSave(submitData);
         } catch (err: any) {
-            setError(err.message || 'Failed to save profile');
+            console.error('Save error:', err);
+
+            // Parse backend validation errors
+            if (err.response?.data?.detail) {
+                const detail = err.response.data.detail;
+
+                if (Array.isArray(detail)) {
+                    // Pydantic validation errors
+                    const backendErrors = detail.map((e: any) => {
+                        const field = e.loc?.join(' > ') || 'Unknown field';
+                        return `${field}: ${e.msg}`;
+                    });
+                    setValidationErrors(backendErrors);
+                    setError('Validation failed. Please check the errors below.');
+                } else if (typeof detail === 'string') {
+                    setError(detail);
+                } else {
+                    setError('Failed to save profile');
+                }
+            } else {
+                setError(err.message || 'Failed to save profile');
+            }
         } finally {
             setSaving(false);
         }
@@ -104,9 +197,21 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Display */}
-            {error && (
+            {(error || validationErrors.length > 0) && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-800">{error}</p>
+                    {error && (
+                        <div className="flex items-start mb-2">
+                            <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+                            <p className="text-red-800 font-medium">{error}</p>
+                        </div>
+                    )}
+                    {validationErrors.length > 0 && (
+                        <ul className="list-disc list-inside text-red-700 text-sm space-y-1 mt-2">
+                            {validationErrors.map((err, idx) => (
+                                <li key={idx}>{err}</li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
 
@@ -181,6 +286,7 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
                             placeholder="Lincoln High School"
                             required
                         />
+                        <p className="text-xs text-gray-500 mt-1">Required to save your profile</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -373,7 +479,6 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
                                                 onChange={(e) => updateExtracurricular(index, 'name', e.target.value)}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                 placeholder="e.g., Varsity Soccer, Debate Club"
-                                                required
                                             />
                                         </div>
 
@@ -431,7 +536,7 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Preferred State for College
+                        Preferred State for College <span className="text-gray-400">(Optional)</span>
                     </label>
                     <select
                         name="location_preference"
@@ -442,13 +547,16 @@ export default function ProfileFormEnhanced({ profile, onSave, onCancel }: Profi
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                        <option value="">Any State</option>
+                        <option value="">Any State (No Preference)</option>
                         {US_STATES.map(state => (
                             <option key={state} value={state}>{state}</option>
                         ))}
                     </select>
                     <p className="text-sm text-gray-500 mt-2">
-                        We'll show you colleges that match your preference
+                        {formData.location_preference
+                            ? "We'll show you colleges in your preferred state"
+                            : "Leave blank to see colleges from all states"
+                        }
                     </p>
                 </div>
 
