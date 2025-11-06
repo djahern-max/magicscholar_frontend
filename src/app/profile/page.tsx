@@ -206,12 +206,20 @@ export default function ProfilePage() {
                                     ))}
                                 </div>
 
-                                <button
-                                    onClick={() => router.push('/scholarships')}
-                                    className="w-full mt-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors"
-                                >
-                                    View All Scholarships
-                                </button>
+                                <div className="flex gap-2 mt-4">
+                                    <button
+                                        onClick={() => router.push('/scholarships')}
+                                        className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                                    >
+                                        Browse Scholarships
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/scholarships/dashboard')}
+                                        className="flex-1 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
+                                    >
+                                        My Dashboard
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
