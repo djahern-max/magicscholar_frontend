@@ -1,7 +1,6 @@
-// src/app/colleges/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Calendar,
@@ -21,36 +20,39 @@ import {
     ApplicationType,
 } from '@/types/college-tracking';
 
-const STATUS_COLORS = {
-    researching: { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' },
-    planning: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
-    in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
-    submitted: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
-    accepted: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
-    waitlisted: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
-    rejected: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' },
-    declined: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-300' },
-    enrolled: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
+// ——————————————————————————————————————————————————————
+// Status pills (aligned to app theme; keeps your states)
+// ——————————————————————————————————————————————————————
+const STATUS_STYLES = {
+    researching: 'bg-gray-50 text-gray-800 border border-gray-200',
+    planning: 'bg-blue-50 text-blue-800 border border-blue-200',
+    in_progress: 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+    submitted: 'bg-purple-50 text-purple-800 border border-purple-200',
+    accepted: 'bg-green-50 text-green-800 border border-green-200',
+    waitlisted: 'bg-orange-50 text-orange-800 border border-orange-200',
+    rejected: 'bg-red-50 text-red-800 border border-red-200',
+    declined: 'bg-gray-50 text-gray-600 border border-gray-200',
+    enrolled: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
 } as const;
 
-const STATUS_LABELS = {
-    researching: '🔍 Researching',
-    planning: '📋 Planning',
-    in_progress: '✍️ In Progress',
-    submitted: '📤 Submitted',
-    accepted: '🎉 Accepted',
-    waitlisted: '⏳ Waitlisted',
-    rejected: '❌ Rejected',
-    declined: '⛔ Declined',
-    enrolled: '🎓 Enrolled',
-} as const;
+const STATUS_LABELS: Record<keyof typeof STATUS_STYLES, string> = {
+    researching: 'Researching',
+    planning: 'Planning',
+    in_progress: 'In Progress',
+    submitted: 'Submitted',
+    accepted: 'Accepted',
+    waitlisted: 'Waitlisted',
+    rejected: 'Rejected',
+    declined: 'Declined',
+    enrolled: 'Enrolled',
+};
 
-const APP_TYPE_LABELS = {
+const APP_TYPE_LABELS: Record<ApplicationType, string> = {
     early_decision: 'ED',
     early_action: 'EA',
     regular_decision: 'RD',
     rolling: 'Rolling',
-} as const;
+};
 
 export default function CollegeDashboard() {
     const router = useRouter();
@@ -61,10 +63,11 @@ export default function CollegeDashboard() {
 
     useEffect(() => {
         loadDashboard();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadDashboard = async () => {
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) {
             router.push('/');
             return;
@@ -92,18 +95,19 @@ export default function CollegeDashboard() {
 
     const formatDate = (dateString: string | null): string => {
         if (!dateString) return 'Not set';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
     };
 
     const updateStatus = async (applicationId: number, newStatus: ApplicationStatus) => {
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) return;
 
         try {
-            await collegeTrackingService.updateApplication(token, applicationId, {
-                status: newStatus,
-            });
+            await collegeTrackingService.updateApplication(token, applicationId, { status: newStatus });
             loadDashboard();
         } catch (err: any) {
             console.error('Error updating status:', err);
@@ -112,11 +116,9 @@ export default function CollegeDashboard() {
     };
 
     const deleteApplication = async (applicationId: number, collegeName: string) => {
-        if (!confirm(`Remove "${collegeName}" from your tracking?`)) {
-            return;
-        }
+        if (!confirm(`Remove "${collegeName}" from your tracking?`)) return;
 
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) return;
 
         try {
@@ -141,24 +143,19 @@ export default function CollegeDashboard() {
 
     if (error && !data) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-                    <p className="text-red-800">{error}</p>
-                    <button
-                        onClick={loadDashboard}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Try Again
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <div className="max-w-md w-full bg-white border border-gray-200 rounded-lg p-6 text-center shadow-sm">
+                    <AlertCircle className="h-10 w-10 text-red-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-700">{error}</p>
+                    <button onClick={loadDashboard} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Try again
                     </button>
                 </div>
             </div>
         );
     }
 
-    if (!data) {
-        return null;
-    }
+    if (!data) return null;
 
     const filteredApplications = data.applications.filter(
         (app) => filterStatus === 'all' || app.status === filterStatus
@@ -168,121 +165,92 @@ export default function CollegeDashboard() {
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">College Application Dashboard</h1>
-                    <p className="text-gray-600">Track your college applications in one place</p>
+                <div className="mb-6 flex items-end justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">College Application Dashboard</h1>
+                        <p className="text-gray-600">Track your college applications in one place</p>
+                    </div>
+                    <button
+                        onClick={() => router.push('/institutions')}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                        Explore Colleges
+                    </button>
                 </div>
 
+                {/* Inline error */}
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-red-800">{error}</p>
+                    <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                        {error}
                     </div>
                 )}
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard
-                        icon={<School className="h-6 w-6 text-blue-600" />}
-                        label="Total Applications"
-                        value={data.summary.total_applications}
-                        color="blue"
-                    />
-                    <StatCard
-                        icon={<Clock className="h-6 w-6 text-yellow-600" />}
-                        label="In Progress"
-                        value={data.summary.in_progress}
-                        color="yellow"
-                    />
-                    <StatCard
-                        icon={<CheckCircle className="h-6 w-6 text-green-600" />}
-                        label="Accepted"
-                        value={data.summary.accepted}
-                        color="green"
-                    />
-                    <StatCard
-                        icon={<Award className="h-6 w-6 text-purple-600" />}
-                        label="Awaiting Decision"
-                        value={data.summary.awaiting_decision}
-                        color="emerald"
-                    />
-                </div>
+                <section className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <StatCard icon={<School className="h-5 w-5 text-blue-700" />} label="Total Applications" value={data.summary.total_applications} />
+                    <StatCard icon={<Clock className="h-5 w-5 text-yellow-700" />} label="In Progress" value={data.summary.in_progress} />
+                    <StatCard icon={<CheckCircle className="h-5 w-5 text-green-700" />} label="Accepted" value={data.summary.accepted} />
+                    <StatCard icon={<Award className="h-5 w-5 text-purple-700" />} label="Awaiting Decision" value={data.summary.awaiting_decision} />
+                </section>
 
                 {/* Upcoming Deadlines */}
                 {data.upcoming_deadlines.length > 0 && (
-                    <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Calendar className="h-5 w-5 text-blue-600" />
-                            <h2 className="text-xl font-semibold text-gray-900">
-                                Upcoming Deadlines (Next 30 Days)
-                            </h2>
-                        </div>
+                    <section className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                        <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-gray-900">
+                            <Calendar className="h-5 w-5 text-blue-600" /> Upcoming Deadlines (Next 30 Days)
+                        </h2>
                         <div className="space-y-3">
                             {data.upcoming_deadlines.map((app) => {
-                                const daysUntil = getDaysUntilDeadline(app.deadline);
+                                const days = getDaysUntilDeadline(app.deadline);
+                                const urgent = days <= 7;
                                 return (
                                     <div
                                         key={app.id}
-                                        className="bg-white border-2 border-blue-200 rounded-lg p-4"
+                                        className={`rounded-lg border p-4 ${urgent ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}`}
                                     >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg text-gray-900">
-                                                    {app.institution.name}
-                                                </h3>
-                                                <p className="text-sm text-gray-600">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <div className="font-medium text-gray-900">{app.institution.name}</div>
+                                                <div className="text-sm text-gray-600">
                                                     {app.institution.city}, {app.institution.state}
-                                                </p>
-                                                <div className="flex gap-4 mt-2">
-                                                    <span className="text-sm">
-                                                        <strong>Deadline:</strong> {formatDate(app.deadline)}
-                                                    </span>
+                                                </div>
+                                                <div className="mt-1 text-xs text-gray-600">
+                                                    <strong>Deadline:</strong> {formatDate(app.deadline)}{' '}
                                                     {app.application_type && (
-                                                        <span className="text-sm">
-                                                            <strong>Type:</strong>{' '}
-                                                            {APP_TYPE_LABELS[app.application_type]}
-                                                        </span>
+                                                        <>
+                                                            • <strong>Type:</strong> {APP_TYPE_LABELS[app.application_type]}
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-2xl font-bold text-blue-600">
-                                                    {daysUntil}
-                                                </p>
-                                                <p className="text-xs text-gray-600">days left</p>
+                                                <div className={`text-sm font-semibold ${urgent ? 'text-red-700' : 'text-blue-700'}`}>{days} days left</div>
                                             </div>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
-                    </div>
+                    </section>
                 )}
 
                 {/* Overdue Applications */}
                 {data.overdue.length > 0 && (
-                    <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-4">
-                            <AlertCircle className="h-5 w-5 text-red-600" />
-                            <h2 className="text-xl font-semibold text-gray-900">Overdue Applications</h2>
-                        </div>
+                    <section className="mb-8 rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
+                        <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-red-800">
+                            <AlertCircle className="h-5 w-5" /> Overdue Applications
+                        </h2>
                         <div className="space-y-3">
                             {data.overdue.map((app) => (
-                                <div
-                                    key={app.id}
-                                    className="bg-red-50 border-2 border-red-300 rounded-lg p-4"
-                                >
-                                    <div className="flex justify-between items-start">
+                                <div key={app.id} className="rounded-md border border-red-200 bg-white/60 p-4">
+                                    <div className="flex items-start justify-between">
                                         <div>
-                                            <h3 className="font-semibold text-lg text-gray-900">
-                                                {app.institution.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">
-                                                Deadline was: {formatDate(app.deadline)}
-                                            </p>
+                                            <div className="font-medium text-gray-900">{app.institution.name}</div>
+                                            <div className="text-sm text-gray-600">Deadline was: {formatDate(app.deadline)}</div>
                                         </div>
                                         <button
                                             onClick={() => updateStatus(app.id, ApplicationStatus.SUBMITTED)}
-                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                                            className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
                                         >
                                             Mark Submitted
                                         </button>
@@ -290,195 +258,158 @@ export default function CollegeDashboard() {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </section>
                 )}
 
-                {/* All Applications */}
+                {/* Empty state */}
                 {data.applications.length === 0 ? (
-                    <div className="text-center py-12">
-                        <School className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                            No Colleges Saved Yet
-                        </h3>
-                        <p className="text-gray-600 mb-6">
-                            Start by searching for colleges and saving them to your dashboard
-                        </p>
+                    <section className="rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm">
+                        <School className="mx-auto mb-4 h-14 w-14 text-gray-400" />
+                        <h3 className="mb-1 text-lg font-semibold text-gray-900">No Colleges Saved Yet</h3>
+                        <p className="mb-6 text-sm text-gray-600">Start by searching for colleges and saving them to your dashboard.</p>
                         <button
                             onClick={() => router.push('/institutions')}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                         >
-                            Search Colleges
+                            Explore Colleges
                         </button>
-                    </div>
+                    </section>
                 ) : (
                     <>
-                        {/* Filter Bar */}
-                        <div className="mb-6 flex items-center gap-4">
-                            <Filter className="h-5 w-5 text-gray-500" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">All Applications</option>
-                                <option value={ApplicationStatus.RESEARCHING}>Researching</option>
-                                <option value={ApplicationStatus.PLANNING}>Planning</option>
-                                <option value={ApplicationStatus.IN_PROGRESS}>In Progress</option>
-                                <option value={ApplicationStatus.SUBMITTED}>Submitted</option>
-                                <option value={ApplicationStatus.ACCEPTED}>Accepted</option>
-                                <option value={ApplicationStatus.WAITLISTED}>Waitlisted</option>
-                                <option value={ApplicationStatus.REJECTED}>Rejected</option>
-                            </select>
-                        </div>
+                        {/* Filters */}
+                        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="flex flex-wrap items-center gap-4">
+                                <Filter className="h-4 w-4 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-700">Filter</span>
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="rounded-lg border border-gray-300 px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="all">All Applications</option>
+                                    {Object.entries(ApplicationStatus).map(([key, value]) => (
+                                        <option key={key} value={value as string}>
+                                            {STATUS_LABELS[value as keyof typeof STATUS_LABELS]}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </section>
 
-                        {/* Applications Grid */}
-                        <div className="space-y-4">
-                            {filteredApplications.map((app) => {
-                                const daysUntil = getDaysUntilDeadline(app.deadline);
-                                const colors = STATUS_COLORS[app.status];
+                        {/* Applications List */}
+                        <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
+                            <div className="border-b border-gray-200 p-6">
+                                <h2 className="text-lg font-semibold text-gray-900">All Applications ({filteredApplications.length})</h2>
+                            </div>
 
-                                return (
-                                    <div
-                                        key={app.id}
-                                        className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow"
-                                    >
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-xl font-semibold text-gray-900">
-                                                        {app.institution.name}
-                                                    </h3>
-                                                    <span
-                                                        className={`px-3 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
-                                                    >
-                                                        {STATUS_LABELS[app.status]}
-                                                    </span>
-                                                    {app.application_type && (
-                                                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                                                            {APP_TYPE_LABELS[app.application_type]}
+                            <div className="divide-y divide-gray-200">
+                                {filteredApplications.map((app) => {
+                                    const days = getDaysUntilDeadline(app.deadline);
+                                    const pill = STATUS_STYLES[app.status as keyof typeof STATUS_STYLES];
+
+                                    return (
+                                        <div key={app.id} className="p-6 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-start justify-between gap-6">
+                                                <div className="flex-1">
+                                                    <div className="mb-1 flex items-center gap-2">
+                                                        <h3 className="text-base font-semibold text-gray-900">{app.institution.name}</h3>
+                                                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${pill}`}>
+                                                            {STATUS_LABELS[app.status as keyof typeof STATUS_LABELS]}
                                                         </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-gray-600 mb-3">
-                                                    {app.institution.city}, {app.institution.state} •{' '}
-                                                    {app.institution.control_type}
-                                                </p>
+                                                        {app.application_type && (
+                                                            <span className="rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                                                {APP_TYPE_LABELS[app.application_type]}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600">
+                                                        {app.institution.city}, {app.institution.state} • {app.institution.control_type}
+                                                    </div>
 
-                                                {/* Application Details */}
-                                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <span className="text-gray-600">Deadline:</span>
-                                                        <span className="ml-2 font-medium">
-                                                            {formatDate(app.deadline)}
-                                                            {app.deadline && daysUntil > 0 && daysUntil < 999 && (
-                                                                <span className="text-blue-600 ml-1">
-                                                                    ({daysUntil} days)
-                                                                </span>
+                                                    <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+                                                        <span className="inline-flex items-center text-gray-700">
+                                                            <Calendar className="mr-1 h-4 w-4 text-blue-700" />
+                                                            Deadline: {formatDate(app.deadline)}{' '}
+                                                            {app.deadline && days > 0 && days < 999 && (
+                                                                <span className="ml-1 text-blue-700">({days} days)</span>
                                                             )}
                                                         </span>
                                                     </div>
-                                                    {app.application_fee && (
-                                                        <div>
-                                                            <span className="text-gray-600">App Fee:</span>
-                                                            <span className="ml-2 font-medium">
-                                                                ${app.application_fee}
-                                                                {app.fee_waiver_obtained && (
-                                                                    <span className="text-green-600 ml-1">
-                                                                        (Waived)
-                                                                    </span>
-                                                                )}
-                                                            </span>
-                                                        </div>
+
+                                                    {app.notes && (
+                                                        <p className="mt-2 text-sm italic text-gray-600">{app.notes}</p>
                                                     )}
                                                 </div>
 
-                                                {app.notes && (
-                                                    <p className="mt-3 text-sm text-gray-600 italic">
-                                                        {app.notes}
-                                                    </p>
-                                                )}
-                                            </div>
+                                                {/* Actions */}
+                                                <div className="flex shrink-0 flex-col items-end gap-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={() => router.push(`/institution/${app.institution.id}`)}
+                                                            className="text-sm text-blue-600 hover:text-blue-700"
+                                                            title="View college details"
+                                                        >
+                                                            <ExternalLink className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteApplication(app.id, app.institution.name)}
+                                                            className="text-sm text-red-600 hover:text-red-700"
+                                                            title="Remove from tracking"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
 
-                                            {/* Action Buttons */}
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        router.push(`/institution/${app.institution.id}`)
-                                                    }
-                                                    className="text-sm text-blue-600 hover:text-blue-700"
-                                                    title="View college details"
-                                                >
-                                                    <ExternalLink className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        deleteApplication(app.id, app.institution.name)
-                                                    }
-                                                    className="text-sm text-red-600 hover:text-red-700"
-                                                    title="Remove from tracking"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                    {/* Status quick actions */}
+                                                    {app.status !== ApplicationStatus.ENROLLED && (
+                                                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                                                            {app.status !== ApplicationStatus.SUBMITTED && (
+                                                                <button
+                                                                    onClick={() => updateStatus(app.id, ApplicationStatus.SUBMITTED)}
+                                                                    className="rounded-md bg-purple-100 px-3 py-1 text-sm text-purple-700 hover:bg-purple-200"
+                                                                >
+                                                                    Mark Submitted
+                                                                </button>
+                                                            )}
+                                                            {app.status === ApplicationStatus.SUBMITTED && (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => updateStatus(app.id, ApplicationStatus.ACCEPTED)}
+                                                                        className="rounded-md bg-green-100 px-3 py-1 text-sm text-green-700 hover:bg-green-200"
+                                                                    >
+                                                                        Accepted
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => updateStatus(app.id, ApplicationStatus.WAITLISTED)}
+                                                                        className="rounded-md bg-orange-100 px-3 py-1 text-sm text-orange-700 hover:bg-orange-200"
+                                                                    >
+                                                                        Waitlisted
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => updateStatus(app.id, ApplicationStatus.REJECTED)}
+                                                                        className="rounded-md bg-red-100 px-3 py-1 text-sm text-red-700 hover:bg-red-200"
+                                                                    >
+                                                                        Rejected
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {app.status === ApplicationStatus.ACCEPTED && (
+                                                                <button
+                                                                    onClick={() => updateStatus(app.id, ApplicationStatus.ENROLLED)}
+                                                                    className="rounded-md bg-emerald-100 px-3 py-1 text-sm text-emerald-700 hover:bg-emerald-200"
+                                                                >
+                                                                    Enroll Here
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Status Actions */}
-                                        {app.status !== ApplicationStatus.ENROLLED && (
-                                            <div className="flex gap-2 mt-4 pt-4 border-t">
-                                                {app.status !== ApplicationStatus.SUBMITTED && (
-                                                    <button
-                                                        onClick={() =>
-                                                            updateStatus(app.id, ApplicationStatus.SUBMITTED)
-                                                        }
-                                                        className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200"
-                                                    >
-                                                        Mark Submitted
-                                                    </button>
-                                                )}
-                                                {app.status === ApplicationStatus.SUBMITTED && (
-                                                    <>
-                                                        <button
-                                                            onClick={() =>
-                                                                updateStatus(app.id, ApplicationStatus.ACCEPTED)
-                                                            }
-                                                            className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200"
-                                                        >
-                                                            Accepted
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                updateStatus(app.id, ApplicationStatus.WAITLISTED)
-                                                            }
-                                                            className="px-3 py-1 bg-orange-100 text-orange-700 rounded text-sm hover:bg-orange-200"
-                                                        >
-                                                            Waitlisted
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                updateStatus(app.id, ApplicationStatus.REJECTED)
-                                                            }
-                                                            className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
-                                                        >
-                                                            Rejected
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {app.status === ApplicationStatus.ACCEPTED && (
-                                                    <button
-                                                        onClick={() =>
-                                                            updateStatus(app.id, ApplicationStatus.ENROLLED)
-                                                        }
-                                                        className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-sm hover:bg-emerald-200"
-                                                    >
-                                                        🎓 Enroll Here!
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
                     </>
                 )}
             </div>
@@ -486,27 +417,25 @@ export default function CollegeDashboard() {
     );
 }
 
-// Helper Component
-interface StatCardProps {
+// ——————————————————————————————————————————————————————
+// Components
+// ——————————————————————————————————————————————————————
+function StatCard({
+    icon,
+    label,
+    value,
+}: {
     icon: React.ReactNode;
     label: string;
     value: string | number;
-    color: 'blue' | 'yellow' | 'green' | 'emerald';
-}
-
-function StatCard({ icon, label, value, color }: StatCardProps) {
-    const colorClasses = {
-        blue: 'bg-blue-50 border-blue-200',
-        yellow: 'bg-yellow-50 border-yellow-200',
-        green: 'bg-green-50 border-green-200',
-        emerald: 'bg-emerald-50 border-emerald-200',
-    };
-
+}) {
     return (
-        <div className={`p-6 rounded-lg border-2 ${colorClasses[color]}`}>
-            <div className="flex items-center justify-between mb-2">{icon}</div>
-            <p className="text-sm text-gray-600 mb-1">{label}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-md bg-blue-50 px-2.5 py-1 text-blue-700">
+                {icon}
+                <span className="text-xs font-medium">{label}</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{value}</div>
         </div>
     );
 }
