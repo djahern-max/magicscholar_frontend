@@ -8,7 +8,7 @@ import SchoolMatches from '@/components/profile/SchoolMatches';
 import HeadshotUpload from '@/components/profile/HeadshotUpload';
 import { UserProfile } from '@/types/profile';
 import { profileService } from '@/lib/profileService';
-import { Award, Upload } from 'lucide-react';
+import { Award, Upload, LayoutDashboard } from 'lucide-react';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -120,19 +120,28 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">
-                {/* Header with Upload Resume Button */}
+                {/* Header with Actions */}
                 <div className="mb-8 flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
                         <p className="text-gray-600">View and manage your profile information</p>
                     </div>
-                    <button
-                        onClick={() => router.push('/profile/setup')}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                        <Upload className="h-4 w-4" />
-                        {profile.resume_url ? 'Update Resume' : 'Upload Resume'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => router.push('/dashboard')}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                            <LayoutDashboard className="h-4 w-4" />
+                            My Dashboard
+                        </button>
+                        <button
+                            onClick={() => router.push('/profile/setup')}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                        >
+                            <Upload className="h-4 w-4" />
+                            {profile.resume_url ? 'Update Resume' : 'Upload Resume'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Headshot Upload */}
@@ -211,13 +220,13 @@ export default function ProfilePage() {
                                         onClick={() => router.push('/scholarships')}
                                         className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
                                     >
-                                        Browse Scholarships
+                                        Browse More Scholarships
                                     </button>
                                     <button
-                                        onClick={() => router.push('/scholarships/dashboard')}
+                                        onClick={() => router.push('/dashboard')}
                                         className="flex-1 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
                                     >
-                                        My Dashboard
+                                        Go to Dashboard
                                     </button>
                                 </div>
                             </div>
