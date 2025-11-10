@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import {
     Award,
     GraduationCap,
-    Target,
-    Trophy,
+    TrendingUp,
     CheckCircle2,
     Clock,
     Send,
-    Zap,
-    ArrowRight,
     Sparkles,
+    ArrowRight,
+    AlertCircle,
+    Target,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -38,7 +39,6 @@ export default function DashboardHub() {
 
     useEffect(() => {
         loadDashboardStats();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadDashboardStats = async () => {
@@ -74,174 +74,227 @@ export default function DashboardHub() {
         }
     };
 
-    const s = stats?.scholarships;
-    const c = stats?.colleges;
-    const totalApplications = (c?.total ?? 0) + (s?.total ?? 0);
-    const totalInProgress = (c?.in_progress ?? 0) + (s?.in_progress ?? 0);
-    const totalSubmitted = (c?.submitted ?? 0) + (s?.submitted ?? 0);
-    const totalAccepted = (c?.accepted ?? 0) + (s?.accepted ?? 0);
-    const progressPercentage = totalApplications > 0 ? Math.round(((totalSubmitted + totalAccepted) / totalApplications) * 100) : 0;
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-                    <p className="mt-4 text-gray-600">Loading dashboard...</p>
-                </div>
-            </div>
-        );
-    }
-
     if (authMissing) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-                <div className="max-w-md w-full bg-white border border-gray-200 rounded-lg p-6 text-center shadow-sm">
-                    <div className="mx-auto mb-4 h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
-                        <Sparkles className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <h1 className="text-xl font-semibold text-gray-900">You’re signed out</h1>
-                    <p className="mt-1 text-sm text-gray-600">Please log in to view your progress and manage applications.</p>
+            <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
+                <div className="text-center max-w-md">
+                    <AlertCircle className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to continue</h2>
+                    <p className="text-gray-600 mb-6">
+                        You need to be signed in to view your dashboard
+                    </p>
                     <button
                         onClick={() => router.push('/')}
-                        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
-                        Go to Login <ArrowRight className="h-4 w-4" />
+                        Go to Home
                     </button>
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4">
-                {/* Header with Actions (mirror profile style) */}
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">My Dashboard</h1>
-                        <p className="text-gray-600">Overview of your applications and progress</p>
-                    </div>
-                    {totalAccepted > 0 && (
-                        <div className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-3 py-1.5 text-green-800 border border-green-200">
-                            <Trophy className="h-4 w-4" />
-                            <span className="text-sm font-medium">{totalAccepted} accepted</span>
-                        </div>
-                    )}
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading your dashboard...</p>
                 </div>
+            </div>
+        );
+    }
 
-                {/* Overall progress card */}
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Target className="h-5 w-5 text-blue-600" />
-                            <span className="text-sm font-semibold text-gray-900">Overall Progress</span>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-900">{progressPercentage}%</span>
-                    </div>
-                    <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
-                        <div
-                            className="h-2 rounded-full bg-blue-600 transition-[width] duration-500"
-                            style={{ width: `${progressPercentage}%` }}
-                        />
-                    </div>
-                    <p className="mt-2 text-sm text-gray-600">
-                        {totalSubmitted + totalAccepted} of {totalApplications} applications completed
+    const s = stats?.scholarships;
+    const c = stats?.colleges;
+    const totalApplications = (c?.total ?? 0) + (s?.total ?? 0);
+    const totalInProgress = (c?.in_progress ?? 0) + (s?.in_progress ?? 0);
+    const totalSubmitted = (c?.submitted ?? 0) + (s?.submitted ?? 0);
+    const totalAccepted = (c?.accepted ?? 0) + (s?.accepted ?? 0);
+    const progressPercentage = totalApplications > 0
+        ? Math.round(((totalSubmitted + totalAccepted) / totalApplications) * 100)
+        : 0;
+
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+            <div className="max-w-6xl mx-auto px-4">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                        Your Dashboard
+                    </h1>
+                    <p className="text-lg text-gray-600">
+                        Track your journey to college and scholarships
                     </p>
                 </div>
 
-                {/* KPIs */}
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-6">
-                    <KpiCard icon={<Zap className="h-5 w-5" />} label="Total Applications" value={totalApplications} />
-                    <KpiCard icon={<Clock className="h-5 w-5" />} label="In Progress" value={totalInProgress} />
-                    <KpiCard icon={<Send className="h-5 w-5" />} label="Submitted" value={totalSubmitted} />
-                    <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} label="Accepted" value={totalAccepted} />
+                {/* Overall Progress Card */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="h-6 w-6 text-blue-600" />
+                            <h2 className="text-xl font-semibold text-gray-900">Overall Progress</h2>
+                        </div>
+                        <span className="text-3xl font-bold text-blue-600">{progressPercentage}%</span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
+                        <div
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercentage}%` }}
+                        />
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <StatItem
+                            icon={<Target className="h-5 w-5 text-gray-600" />}
+                            label="Total Tracked"
+                            value={totalApplications}
+                        />
+                        <StatItem
+                            icon={<Clock className="h-5 w-5 text-orange-600" />}
+                            label="In Progress"
+                            value={totalInProgress}
+                        />
+                        <StatItem
+                            icon={<Send className="h-5 w-5 text-blue-600" />}
+                            label="Submitted"
+                            value={totalSubmitted}
+                        />
+                        <StatItem
+                            icon={<CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            label="Accepted"
+                            value={totalAccepted}
+                        />
+                    </div>
                 </div>
 
-                {/* Panels (mirror profile card look) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <Panel
-                        icon={<Award className="h-6 w-6" />}
+                {/* Main Dashboard Panels */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* Scholarships Panel */}
+                    <DashboardPanel
+                        icon={<Award className="h-8 w-8" />}
                         title="Scholarships"
                         subtitle="Fund your education"
                         summary={s}
                         primaryLabel="Manage Scholarships"
                         primaryAction={() => router.push('/scholarships/dashboard')}
-                        secondaryLabel="Browse Scholarships"
+                        secondaryLabel="Browse More"
                         secondaryAction={() => router.push('/scholarships')}
-                        accent="blue"
+                        accentColor="blue"
                     />
-                    <Panel
-                        icon={<GraduationCap className="h-6 w-6" />}
-                        title="Colleges"
+
+                    {/* Colleges Panel */}
+                    <DashboardPanel
+                        icon={<GraduationCap className="h-8 w-8" />}
+                        title="College Applications"
                         subtitle="Your future awaits"
                         summary={c}
                         primaryLabel="Manage Applications"
                         primaryAction={() => router.push('/colleges/dashboard')}
                         secondaryLabel="Explore Colleges"
                         secondaryAction={() => router.push('/institutions')}
-                        accent="indigo"
+                        accentColor="indigo"
                     />
                 </div>
 
-                {/* Quick actions matches profile tone */}
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                    <div className="mb-4 flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                {/* Quick Actions */}
+                <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Sparkles className="h-5 w-5 text-purple-600" />
+                        <h3 className="text-xl font-semibold text-gray-900">Quick Actions</h3>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <QuickAction
-                            icon={<Zap className="h-5 w-5" />}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <QuickActionCard
                             title="Update Profile"
                             description="Keep your info current"
-                            onClick={() => router.push('/profile')}
+                            onClick={() => router.push('/profile/edit')}
+                            iconBg="bg-blue-100"
+                            iconColor="text-blue-600"
                         />
-                        <QuickAction
-                            icon={<Award className="h-5 w-5" />}
-                            title="New Scholarships"
-                            description="Find opportunities"
+                        <QuickActionCard
+                            title="Find Scholarships"
+                            description="Discover new opportunities"
                             onClick={() => router.push('/scholarships')}
+                            iconBg="bg-green-100"
+                            iconColor="text-green-600"
                         />
-                        <QuickAction
-                            icon={<GraduationCap className="h-5 w-5" />}
-                            title="Discover Schools"
-                            description="Explore colleges"
+                        <QuickActionCard
+                            title="Browse Colleges"
+                            description="Explore your options"
                             onClick={() => router.push('/institutions')}
+                            iconBg="bg-purple-100"
+                            iconColor="text-purple-600"
                         />
                     </div>
                 </div>
+
+                {/* Empty State */}
+                {totalApplications === 0 && (
+                    <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 text-center border border-blue-200">
+                        <Target className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                            Start Your Journey
+                        </h3>
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                            You haven't started tracking any applications yet. Browse colleges and scholarships to get started!
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => router.push('/scholarships')}
+                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                Find Scholarships
+                            </button>
+                            <button
+                                onClick={() => router.push('/institutions')}
+                                className="px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                            >
+                                Browse Colleges
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-/* ———————————————————————————————— */
-/* Components                                                          */
-/* ———————————————————————————————— */
+// Component: StatItem
+interface StatItemProps {
+    icon: React.ReactNode;
+    label: string;
+    value: number;
+}
 
-function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function StatItem({ icon, label, value }: StatItemProps) {
     return (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-md bg-blue-50 px-2.5 py-1 text-blue-700">
+        <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
                 {icon}
-                <span className="text-xs font-medium">{label}</span>
+                <span className="text-2xl font-bold text-gray-900">{value}</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
+            <span className="text-sm text-gray-600 text-center">{label}</span>
         </div>
     );
 }
 
-function Metric({ value, label }: { value: number; label: string }) {
-    return (
-        <div className="rounded-md border border-gray-200 p-3 text-center bg-white">
-            <div className="text-lg font-semibold text-gray-900">{value}</div>
-            <div className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-gray-500">{label}</div>
-        </div>
-    );
+// Component: DashboardPanel
+interface DashboardPanelProps {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    summary: Summary | undefined;
+    primaryLabel: string;
+    primaryAction: () => void;
+    secondaryLabel: string;
+    secondaryAction: () => void;
+    accentColor: 'blue' | 'indigo';
 }
 
-function Panel({
+function DashboardPanel({
     icon,
     title,
     subtitle,
@@ -250,93 +303,110 @@ function Panel({
     primaryAction,
     secondaryLabel,
     secondaryAction,
-    accent,
-}: {
-    icon: React.ReactNode;
-    title: string;
-    subtitle: string;
-    summary?: Summary | null;
-    primaryLabel: string;
-    primaryAction: () => void;
-    secondaryLabel: string;
-    secondaryAction: () => void;
-    accent: 'blue' | 'indigo';
-}) {
-    const accepted = summary?.accepted ?? 0;
-    const total = summary?.total ?? 0;
-    const inProgress = summary?.in_progress ?? 0;
-    const submitted = summary?.submitted ?? 0;
+    accentColor,
+}: DashboardPanelProps) {
+    const colors = {
+        blue: {
+            bg: 'from-blue-500 to-blue-600',
+            light: 'bg-blue-50',
+            text: 'text-blue-600',
+            border: 'border-blue-200',
+            hover: 'hover:bg-blue-700',
+        },
+        indigo: {
+            bg: 'from-indigo-500 to-indigo-600',
+            light: 'bg-indigo-50',
+            text: 'text-indigo-600',
+            border: 'border-indigo-200',
+            hover: 'hover:bg-indigo-700',
+        },
+    };
 
-    const iconBg = accent === 'blue' ? 'bg-blue-600' : 'bg-indigo-600';
+    const color = colors[accentColor];
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <div className="mb-5 flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg ${iconBg} text-white inline-flex items-center justify-center`}>
-                        {icon}
-                    </div>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+            {/* Header with Gradient */}
+            <div className={`bg-gradient-to-r ${color.bg} p-6 text-white`}>
+                <div className="flex items-center gap-3 mb-2">
+                    {icon}
                     <div>
-                        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-                        <p className="text-xs text-gray-600">{subtitle}</p>
+                        <h3 className="text-2xl font-bold">{title}</h3>
+                        <p className="text-blue-100 text-sm">{subtitle}</p>
                     </div>
                 </div>
-                {accepted > 0 && (
-                    <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 border border-green-200">
-                        <Trophy className="h-3.5 w-3.5" /> {accepted}
+            </div>
+
+            {/* Stats */}
+            <div className="p-6">
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className={`${color.light} rounded-lg p-4 border ${color.border}`}>
+                        <div className="text-3xl font-bold text-gray-900 mb-1">
+                            {summary?.total ?? 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Total Tracked</div>
                     </div>
-                )}
-            </div>
+                    <div className={`${color.light} rounded-lg p-4 border ${color.border}`}>
+                        <div className="text-3xl font-bold text-green-600 mb-1">
+                            {summary?.accepted ?? 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Accepted</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-900 mb-1">
+                            {summary?.in_progress ?? 0}
+                        </div>
+                        <div className="text-sm text-gray-600">In Progress</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-900 mb-1">
+                            {summary?.submitted ?? 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Submitted</div>
+                    </div>
+                </div>
 
-            <div className="mb-5 grid grid-cols-4 gap-2">
-                <Metric value={total} label="Saved" />
-                <Metric value={inProgress} label="Working" />
-                <Metric value={submitted} label="Submitted" />
-                <Metric value={accepted} label="Accepted" />
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                    onClick={primaryAction}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                >
-                    {primaryLabel}
-                    <ArrowRight className="h-4 w-4" />
-                </button>
-                <button
-                    onClick={secondaryAction}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                >
-                    {secondaryLabel}
-                </button>
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                    <button
+                        onClick={primaryAction}
+                        className={`w-full py-3 px-4 bg-gradient-to-r ${color.bg} text-white rounded-lg ${color.hover} transition-colors font-medium flex items-center justify-center gap-2`}
+                    >
+                        {primaryLabel}
+                        <ArrowRight className="h-4 w-4" />
+                    </button>
+                    <button
+                        onClick={secondaryAction}
+                        className={`w-full py-3 px-4 ${color.text} border-2 ${color.border} rounded-lg hover:${color.light} transition-colors font-medium`}
+                    >
+                        {secondaryLabel}
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
 
-function QuickAction({
-    icon,
-    title,
-    description,
-    onClick,
-}: {
-    icon: React.ReactNode;
+// Component: QuickActionCard
+interface QuickActionCardProps {
     title: string;
     description: string;
     onClick: () => void;
-}) {
+    iconBg: string;
+    iconColor: string;
+}
+
+function QuickActionCard({ title, description, onClick, iconBg, iconColor }: QuickActionCardProps) {
     return (
         <button
             onClick={onClick}
-            className="group flex w-full items-start gap-3 rounded-lg border border-gray-200 p-4 text-left bg-white hover:bg-blue-50/40"
+            className="text-left p-4 rounded-lg border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all group"
         >
-            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md bg-blue-50 text-blue-700">
-                {icon}
+            <div className={`${iconBg} ${iconColor} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                <ArrowRight className="h-5 w-5" />
             </div>
-            <div>
-                <div className="text-sm font-semibold text-gray-900">{title}</div>
-                <div className="mt-0.5 text-xs text-gray-600">{description}</div>
-            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">{title}</h4>
+            <p className="text-sm text-gray-600">{description}</p>
         </button>
     );
 }
