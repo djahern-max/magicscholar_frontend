@@ -6,15 +6,16 @@ import { useRouter } from 'next/navigation';
 import {
     Award,
     Calendar,
-    CheckCircle2,
+    CheckCircle,
     Clock,
-    XCircle,
+    Send,
     DollarSign,
     TrendingUp,
     AlertTriangle,
     Filter,
     Plus,
     Target,
+    XCircle,
 } from 'lucide-react';
 import axios from 'axios';
 import {
@@ -109,7 +110,7 @@ export default function ScholarshipDashboardPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading your scholarships...</p>
@@ -120,7 +121,7 @@ export default function ScholarshipDashboardPage() {
 
     if (!dashboard) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-gray-600">Failed to load dashboard</p>
                 </div>
@@ -133,8 +134,8 @@ export default function ScholarshipDashboardPage() {
         : dashboard.applications.filter(app => app.status === filterStatus);
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
-            <div className="max-w-7xl mx-auto px-4">
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
                 {/* Header */}
                 <div className="mb-8">
                     <button
@@ -143,415 +144,393 @@ export default function ScholarshipDashboardPage() {
                     >
                         ← Back to Dashboard
                     </button>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                                Scholarship Tracker
-                            </h1>
-                            <p className="text-lg text-gray-600">
-                                Fund your education and track your progress
-                            </p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Scholarship Tracker</h1>
+                    <p className="text-gray-600">Fund your education and track your progress</p>
+                </div>
+
+                {/* Financial Summary Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <DollarSign className="h-6 w-6 text-green-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">Financial Summary</h2>
                         </div>
-                        <button
-                            onClick={() => router.push('/scholarships')}
-                            className="hidden md:flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md"
-                        >
-                            <Plus className="h-5 w-5" />
-                            Find Scholarships
-                        </button>
+
+                        <p className="text-gray-600 mb-4">
+                            Your scholarship earnings and potential funding
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Total Won */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Total Won</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            From {dashboard.summary.accepted} scholarship{dashboard.summary.accepted !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            ${dashboard.summary.total_awarded_value.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Potential Value */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Target className="h-5 w-5 text-blue-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Potential Value</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            From {dashboard.summary.total_applications} tracked scholarship{dashboard.summary.total_applications !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            ${dashboard.summary.total_potential_value.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
+                            <button
+                                onClick={() => router.push('/scholarships')}
+                                className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                            >
+                                Find More Scholarships
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Financial Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold">Total Won</h3>
-                            <DollarSign className="h-8 w-8" />
+                {/* Application Progress Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <TrendingUp className="h-6 w-6 text-blue-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">Application Progress</h2>
                         </div>
-                        <p className="text-4xl font-bold mb-1">
-                            ${dashboard.summary.total_awarded_value.toLocaleString()}
-                        </p>
-                        <p className="text-green-100 text-sm">
-                            From {dashboard.summary.accepted} scholarship{dashboard.summary.accepted !== 1 ? 's' : ''}
-                        </p>
-                    </div>
 
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold">Potential Value</h3>
-                            <Target className="h-8 w-8" />
+                        <p className="text-gray-600 mb-4">
+                            Track your scholarship application status
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Interested */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Award className="h-5 w-5 text-indigo-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Interested</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you're considering
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-indigo-600">
+                                            {dashboard.applications.filter(a => a.status === 'interested').length}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* In Progress */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-cyan-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Clock className="h-5 w-5 text-cyan-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">In Progress</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Applications you're working on
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-cyan-600">
+                                            {dashboard.summary.in_progress}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submitted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Send className="h-5 w-5 text-purple-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Submitted</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Waiting for responses
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-purple-600">
+                                            {dashboard.summary.submitted}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Accepted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Won</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you've won
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            {dashboard.summary.accepted}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-4xl font-bold mb-1">
-                            ${dashboard.summary.total_potential_value.toLocaleString()}
-                        </p>
-                        <p className="text-blue-100 text-sm">
-                            From {dashboard.summary.total_applications} tracked scholarship{dashboard.summary.total_applications !== 1 ? 's' : ''}
-                        </p>
                     </div>
                 </div>
 
-                {/* Summary Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard
-                        label="Interested"
-                        value={dashboard.applications.filter(a => a.status === 'interested').length}
-                        icon={<Award className="h-5 w-5" />}
-                        color="bg-gray-100 text-gray-600"
-                    />
-                    <StatCard
-                        label="In Progress"
-                        value={dashboard.summary.in_progress}
-                        icon={<Clock className="h-5 w-5" />}
-                        color="bg-orange-100 text-orange-600"
-                    />
-                    <StatCard
-                        label="Submitted"
-                        value={dashboard.summary.submitted}
-                        icon={<TrendingUp className="h-5 w-5" />}
-                        color="bg-blue-100 text-blue-600"
-                    />
-                    <StatCard
-                        label="Won"
-                        value={dashboard.summary.accepted}
-                        icon={<CheckCircle2 className="h-5 w-5" />}
-                        color="bg-green-100 text-green-600"
-                    />
-                </div>
-
-                {/* Deadlines Section */}
+                {/* Upcoming Deadlines Section */}
                 {dashboard.upcoming_deadlines.length > 0 && (
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Calendar className="h-6 w-6 text-blue-600" />
-                            Upcoming Deadlines
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {dashboard.upcoming_deadlines.map(app => (
-                                <DeadlineCard
-                                    key={app.id}
-                                    application={app}
-                                    onUpdate={handleStatusUpdate}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
+                    <div className="mb-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div className="flex items-center mb-4">
+                                <Calendar className="h-6 w-6 text-orange-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Upcoming Deadlines ({dashboard.upcoming_deadlines.length})
+                                </h2>
+                            </div>
+
+                            <p className="text-gray-600 mb-4">
+                                Scholarships with approaching deadlines
+                            </p>
+
+                            <div className="space-y-3">
+                                {dashboard.upcoming_deadlines.map(app => {
+                                    const daysUntilDeadline = app.scholarship.deadline
+                                        ? Math.ceil((new Date(app.scholarship.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                                        : null;
+
+                                    const minAmount = app.scholarship.amount_min ?? 0;
+                                    const maxAmount = app.scholarship.amount_max ?? 0;
+                                    const amount = minAmount === maxAmount
+                                        ? `$${minAmount.toLocaleString()}`
+                                        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
+
+                                    return (
+                                        <div
+                                            key={app.id}
+                                            className="border border-orange-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer bg-orange-50"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                                        {app.scholarship.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1">{app.scholarship.organization}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <p className="text-sm font-bold text-green-600">
+                                                            {amount}
+                                                        </p>
+                                                        {daysUntilDeadline !== null && (
+                                                            <p className="text-xs text-orange-600 font-medium">
+                                                                {daysUntilDeadline >= 0
+                                                                    ? `${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''} left`
+                                                                    : 'Overdue'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    {app.scholarship.deadline && (
+                                                        <p className="text-xs text-gray-500">
+                                                            Due: {new Date(app.scholarship.deadline).toLocaleDateString()}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Overdue Section */}
                 {dashboard.overdue.length > 0 && (
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                            Overdue Applications
-                        </h2>
-                        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-4">
-                            <p className="text-red-800 font-medium">
-                                You have {dashboard.overdue.length} overdue application{dashboard.overdue.length !== 1 ? 's' : ''}.
-                                Update the status to keep your tracker organized!
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {dashboard.overdue.map(app => (
-                                <ScholarshipCard
-                                    key={app.id}
-                                    application={app}
-                                    onUpdate={handleStatusUpdate}
-                                    onMarkAccepted={handleMarkAccepted}
-                                    onDelete={handleDelete}
-                                    isOverdue
-                                />
-                            ))}
+                    <div className="mb-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div className="flex items-center mb-4">
+                                <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Overdue Applications ({dashboard.overdue.length})
+                                </h2>
+                            </div>
+
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                <p className="text-red-800 font-medium">
+                                    You have {dashboard.overdue.length} overdue application{dashboard.overdue.length !== 1 ? 's' : ''}.
+                                    Update the status to keep your tracker organized!
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {dashboard.overdue.map(app => {
+                                    const minAmount = app.scholarship.amount_min ?? 0;
+                                    const maxAmount = app.scholarship.amount_max ?? 0;
+                                    const amount = minAmount === maxAmount
+                                        ? `$${minAmount.toLocaleString()}`
+                                        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
+
+                                    return (
+                                        <div
+                                            key={app.id}
+                                            className="border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all bg-red-50"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900">
+                                                        {app.scholarship.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1">{app.scholarship.organization}</p>
+                                                    <p className="text-sm font-bold text-green-600 mt-2">
+                                                        {amount}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    <span className="inline-block px-2 py-1 bg-red-200 text-red-800 text-xs font-bold rounded">
+                                                        OVERDUE
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* All Scholarships */}
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <Award className="h-6 w-6 text-blue-600" />
-                            All Scholarships
-                        </h2>
-                        <div className="flex items-center gap-2">
-                            <Filter className="h-5 w-5 text-gray-500" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value as ApplicationStatus | 'all')}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="all">All Statuses</option>
-                                <option value="interested">Interested</option>
-                                <option value="planning">Planning</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="submitted">Submitted</option>
-                                <option value="accepted">Won</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
+                {/* All Scholarships Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center">
+                                <Award className="h-6 w-6 text-yellow-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    All Scholarships ({filteredApplications.length})
+                                </h2>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4 text-gray-500" />
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value as ApplicationStatus | 'all')}
+                                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="all">All</option>
+                                    <option value="interested">Interested</option>
+                                    <option value="planning">Planning</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="submitted">Submitted</option>
+                                    <option value="accepted">Won</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    {filteredApplications.length === 0 ? (
-                        <div className="bg-white rounded-lg shadow-md p-12 text-center border border-gray-200">
-                            <Award className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                No Scholarships Yet
-                            </h3>
-                            <p className="text-gray-600 mb-6">
-                                Start tracking scholarships to fund your education
-                            </p>
-                            <button
-                                onClick={() => router.push('/scholarships')}
-                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                            >
-                                Find Scholarships
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredApplications.map(app => (
-                                <ScholarshipCard
-                                    key={app.id}
-                                    application={app}
-                                    onUpdate={handleStatusUpdate}
-                                    onMarkAccepted={handleMarkAccepted}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        {filteredApplications.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Award className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 mb-4">No scholarships found</p>
+                                <button
+                                    onClick={() => router.push('/scholarships')}
+                                    className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
+                                >
+                                    Find Scholarships
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {filteredApplications.map(app => {
+                                    const minAmount = app.scholarship.amount_min ?? 0;
+                                    const maxAmount = app.scholarship.amount_max ?? 0;
+                                    const amount = minAmount === maxAmount
+                                        ? `$${minAmount.toLocaleString()}`
+                                        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
 
-                {/* Mobile Add Button */}
-                <button
-                    onClick={() => router.push('/scholarships')}
-                    className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
-                >
-                    <Plus className="h-6 w-6" />
-                </button>
-            </div>
-        </div>
-    );
-}
+                                    const statusConfig = {
+                                        interested: { label: 'Interested', color: 'text-gray-600' },
+                                        planning: { label: 'Planning', color: 'text-blue-600' },
+                                        in_progress: { label: 'In Progress', color: 'text-cyan-600' },
+                                        submitted: { label: 'Submitted', color: 'text-purple-600' },
+                                        accepted: { label: 'Won', color: 'text-green-600' },
+                                        rejected: { label: 'Rejected', color: 'text-red-600' },
+                                        not_pursuing: { label: 'Not Pursuing', color: 'text-gray-600' },
+                                    };
 
-// Component: StatCard
-interface StatCardProps {
-    label: string;
-    value: number;
-    icon: React.ReactNode;
-    color: string;
-}
+                                    const status = statusConfig[app.status];
 
-function StatCard({ label, value, icon, color }: StatCardProps) {
-    return (
-        <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
-            <div className={`${color} w-10 h-10 rounded-lg flex items-center justify-center mb-2`}>
-                {icon}
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
-            <div className="text-sm text-gray-600">{label}</div>
-        </div>
-    );
-}
-
-// Component: DeadlineCard
-interface DeadlineCardProps {
-    application: ScholarshipApplication;
-    onUpdate: (id: number, status: ApplicationStatus) => void;
-    onDelete: (id: number) => void;
-}
-
-function DeadlineCard({ application, onUpdate, onDelete }: DeadlineCardProps) {
-    const daysUntilDeadline = application.scholarship.deadline
-        ? Math.ceil((new Date(application.scholarship.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-
-    // Handle null amounts
-    const minAmount = application.scholarship.amount_min ?? 0;
-    const maxAmount = application.scholarship.amount_max ?? 0;
-    const amount = minAmount === maxAmount
-        ? `$${minAmount.toLocaleString()}`
-        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
-
-    return (
-        <div className="bg-white rounded-lg shadow-md p-4 border-2 border-orange-200 hover:shadow-lg transition-shadow">
-            <div className="mb-3">
-                <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
-                    {application.scholarship.title}
-                </h3>
-                <p className="text-sm text-gray-600">{application.scholarship.organization}</p>
-            </div>
-
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
-                <div className="flex items-center gap-2 text-green-700">
-                    <DollarSign className="h-4 w-4" />
-                    <span className="text-sm font-semibold">{amount}</span>
-                </div>
-            </div>
-
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-3">
-                <div className="flex items-center gap-2 text-orange-700">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                        {daysUntilDeadline !== null && daysUntilDeadline >= 0
-                            ? `${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''} left`
-                            : 'Overdue'}
-                    </span>
-                </div>
-                <p className="text-xs text-gray-600 mt-1">
-                    {application.scholarship.deadline ? new Date(application.scholarship.deadline).toLocaleDateString() : 'No deadline'}
-                </p>
-            </div>
-
-            <button
-                onClick={() => onUpdate(application.id, 'submitted' as ApplicationStatus)}
-                className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-                Mark Submitted
-            </button>
-        </div>
-    );
-}
-
-// Component: ScholarshipCard
-interface ScholarshipCardProps {
-    application: ScholarshipApplication;
-    onUpdate: (id: number, status: ApplicationStatus) => void;
-    onMarkAccepted: (id: number, awardAmount?: number) => void;
-    onDelete: (id: number) => void;
-    isOverdue?: boolean;
-}
-
-function ScholarshipCard({ application, onUpdate, onMarkAccepted, onDelete, isOverdue }: ScholarshipCardProps) {
-    const [showActions, setShowActions] = useState(false);
-    const [awardAmount, setAwardAmount] = useState('');
-
-    const statusConfig = {
-        interested: { label: 'Interested', color: 'bg-gray-100 text-gray-700 border-gray-300' },
-        planning: { label: 'Planning', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-        in_progress: { label: 'In Progress', color: 'bg-orange-100 text-orange-700 border-orange-300' },
-        submitted: { label: 'Submitted', color: 'bg-purple-100 text-purple-700 border-purple-300' },
-        accepted: { label: 'Won', color: 'bg-green-100 text-green-700 border-green-300' },
-        rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300' },
-        not_pursuing: { label: 'Not Pursuing', color: 'bg-gray-100 text-gray-700 border-gray-300' },
-    };
-
-    const status = statusConfig[application.status];
-
-    // Handle null amounts
-    const minAmount = application.scholarship.amount_min ?? 0;
-    const maxAmount = application.scholarship.amount_max ?? 0;
-    const amount = minAmount === maxAmount
-        ? `$${minAmount.toLocaleString()}`
-        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
-
-    const handleMarkWon = () => {
-        const amount = awardAmount ? parseInt(awardAmount.replace(/[^0-9]/g, '')) : undefined;
-        onMarkAccepted(application.id, amount);
-        setAwardAmount('');
-        setShowActions(false);
-    };
-
-    return (
-        <div className={`bg-white rounded-lg shadow-md p-4 border-2 hover:shadow-lg transition-all ${isOverdue ? 'border-red-300' : 'border-gray-200'}`}>
-            {isOverdue && (
-                <div className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold mb-3 inline-block">
-                    OVERDUE
-                </div>
-            )}
-
-            <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
-                {application.scholarship.title}
-            </h3>
-
-            <p className="text-sm text-gray-600 mb-3">
-                {application.scholarship.organization}
-            </p>
-
-            {/* Amount */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                <div className="flex items-center gap-2 text-green-700">
-                    <DollarSign className="h-5 w-5" />
-                    <span className="font-semibold">{amount}</span>
-                </div>
-            </div>
-
-            {/* Status Badge */}
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border mb-3 ${status.color}`}>
-                {status.label}
-            </div>
-
-            {/* Deadline */}
-            {application.scholarship.deadline && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                    <Calendar className="h-4 w-4" />
-                    <span>Due: {new Date(application.scholarship.deadline).toLocaleDateString()}</span>
-                </div>
-            )}
-
-            {/* Award Amount (if won) */}
-            {application.status === 'accepted' && application.award_amount && (
-                <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-3">
-                    <div className="text-sm text-green-800 font-medium">
-                        Won: ${application.award_amount.toLocaleString()}
+                                    return (
+                                        <div
+                                            key={app.id}
+                                            className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                                        {app.scholarship.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1">{app.scholarship.organization}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <p className="text-sm font-bold text-green-600">
+                                                            {amount}
+                                                        </p>
+                                                        <p className={`text-xs font-medium ${status.color}`}>
+                                                            {status.label}
+                                                        </p>
+                                                    </div>
+                                                    {app.award_amount && app.status === 'accepted' && (
+                                                        <p className="text-xs text-green-700 font-medium mt-1">
+                                                            Won: ${app.award_amount.toLocaleString()}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    {app.scholarship.deadline && (
+                                                        <p className="text-xs text-gray-500">
+                                                            Due: {new Date(app.scholarship.deadline).toLocaleDateString()}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
-
-            {/* Actions */}
-            <div className="space-y-2">
-                <button
-                    onClick={() => setShowActions(!showActions)}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                >
-                    {showActions ? 'Hide Actions' : 'Update Status'}
-                </button>
-
-                {showActions && (
-                    <div className="space-y-2 pt-2 border-t border-gray-200">
-                        <button
-                            onClick={() => onUpdate(application.id, 'submitted' as ApplicationStatus)}
-                            className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Mark Submitted
-                        </button>
-
-                        {/* Mark as Won with Award Amount */}
-                        <div className="space-y-2">
-                            <input
-                                type="text"
-                                placeholder="Award amount (optional)"
-                                value={awardAmount}
-                                onChange={(e) => {
-                                    const value = e.target.value.replace(/[^0-9]/g, '');
-                                    setAwardAmount(value ? `$${parseInt(value).toLocaleString()}` : '');
-                                }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            />
-                            <button
-                                onClick={handleMarkWon}
-                                className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                Mark Won
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={() => onUpdate(application.id, 'rejected' as ApplicationStatus)}
-                            className="w-full px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                        >
-                            Mark Rejected
-                        </button>
-
-                        <button
-                            onClick={() => onDelete(application.id)}
-                            className="w-full px-3 py-2 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-colors"
-                        >
-                            Remove
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
     );

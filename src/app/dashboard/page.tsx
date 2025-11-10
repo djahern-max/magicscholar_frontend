@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation';
 import {
     Award,
     GraduationCap,
-    ArrowRight,
     AlertCircle,
+    TrendingUp,
+    CheckCircle,
+    Clock,
+    Send,
 } from 'lucide-react';
 import axios from 'axios';
 import UserProfileCard from '@/components/profile/UserProfileCard';
@@ -104,156 +107,259 @@ export default function DashboardHub() {
     const c = stats?.colleges;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8">
-            <div className="max-w-4xl w-full mx-auto px-4">
-                {/* Profile Card */}
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                {/* Header */}
                 <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">My Dashboard</h1>
+                    <p className="text-gray-600">Track your college applications and scholarship progress</p>
+                </div>
+
+                {/* Profile Card */}
+                <div className="mb-6">
                     <UserProfileCard variant="compact" />
                 </div>
 
-                {/* Main Dashboard Panels */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Scholarships Panel */}
-                    <DashboardPanel
-                        icon={<Award className="h-6 w-6" />}
-                        title="Scholarships"
-                        subtitle="Fund your education"
-                        summary={s}
-                        primaryLabel="Manage Scholarships"
-                        primaryAction={() => router.push('/scholarships/dashboard')}
-                        secondaryLabel="Browse More"
-                        secondaryAction={() => router.push('/scholarships')}
-                        accentColor="blue"
-                    />
-
-                    {/* Colleges Panel */}
-                    <DashboardPanel
-                        icon={<GraduationCap className="h-6 w-6" />}
-                        title="College Applications"
-                        subtitle="Your future awaits"
-                        summary={c}
-                        primaryLabel="Manage Applications"
-                        primaryAction={() => router.push('/colleges/dashboard')}
-                        secondaryLabel="Explore Colleges"
-                        secondaryAction={() => router.push('/institutions')}
-                        accentColor="indigo"
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Component: DashboardPanel
-interface DashboardPanelProps {
-    icon: React.ReactNode;
-    title: string;
-    subtitle: string;
-    summary: Summary | undefined;
-    primaryLabel: string;
-    primaryAction: () => void;
-    secondaryLabel: string;
-    secondaryAction: () => void;
-    accentColor: 'blue' | 'indigo';
-}
-
-function DashboardPanel({
-    icon,
-    title,
-    subtitle,
-    summary,
-    primaryLabel,
-    primaryAction,
-    secondaryLabel,
-    secondaryAction,
-    accentColor,
-}: DashboardPanelProps) {
-    const colors = {
-        blue: {
-            border: 'border-blue-200',
-            iconBg: 'bg-blue-50',
-            iconText: 'text-blue-600',
-            accentText: 'text-blue-600',
-            primaryBg: 'bg-blue-600',
-            primaryHover: 'hover:bg-blue-700',
-            secondaryBorder: 'border-blue-600',
-            secondaryText: 'text-blue-600',
-            secondaryHover: 'hover:bg-blue-50',
-        },
-        indigo: {
-            border: 'border-indigo-200',
-            iconBg: 'bg-indigo-50',
-            iconText: 'text-indigo-600',
-            accentText: 'text-indigo-600',
-            primaryBg: 'bg-indigo-600',
-            primaryHover: 'hover:bg-indigo-700',
-            secondaryBorder: 'border-indigo-600',
-            secondaryText: 'text-indigo-600',
-            secondaryHover: 'hover:bg-indigo-50',
-        },
-    };
-
-    const color = colors[accentColor];
-
-    return (
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className={`${color.iconBg} p-2 rounded-lg`}>
-                        {icon}
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                        <p className="text-sm text-gray-500">{subtitle}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="p-6">
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-2xl font-bold text-gray-900 mb-1">
-                            {summary?.total ?? 0}
+                {/* Scholarships Section */}
+                <div className="mt-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <Award className="h-6 w-6 text-yellow-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Scholarships
+                            </h2>
                         </div>
-                        <div className="text-xs text-gray-600">Total Tracked</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <div className="text-2xl font-bold text-green-600 mb-1">
-                            {summary?.accepted ?? 0}
+
+                        <p className="text-gray-600 mb-4">
+                            Track your scholarship applications and funding opportunities
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Total Tracked */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Total Tracked
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you're monitoring
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            {s?.total ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Accepted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Accepted
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you've won
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            {s?.accepted ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* In Progress */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-cyan-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Clock className="h-5 w-5 text-cyan-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                In Progress
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Applications you're working on
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-cyan-600">
+                                            {s?.in_progress ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submitted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Send className="h-5 w-5 text-purple-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Submitted
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Waiting for responses
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-purple-600">
+                                            {s?.submitted ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="text-xs text-gray-600">Accepted</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-xl font-bold text-gray-900 mb-1">
-                            {summary?.in_progress ?? 0}
+
+                        <div className="flex gap-2 mt-4">
+                            <button
+                                onClick={() => router.push('/scholarships')}
+                                className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                            >
+                                Browse More Scholarships
+                            </button>
+                            <button
+                                onClick={() => router.push('/scholarships/dashboard')}
+                                className="flex-1 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
+                            >
+                                Manage Scholarships
+                            </button>
                         </div>
-                        <div className="text-xs text-gray-600">In Progress</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-xl font-bold text-gray-900 mb-1">
-                            {summary?.submitted ?? 0}
-                        </div>
-                        <div className="text-xs text-gray-600">Submitted</div>
                     </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                    <button
-                        onClick={primaryAction}
-                        className={`w-full py-2.5 px-4 ${color.primaryBg} text-white rounded-lg ${color.primaryHover} transition-colors font-medium text-sm flex items-center justify-center gap-2`}
-                    >
-                        {primaryLabel}
-                        <ArrowRight className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={secondaryAction}
-                        className={`w-full py-2.5 px-4 ${color.secondaryText} border-2 ${color.secondaryBorder} rounded-lg ${color.secondaryHover} transition-colors font-medium text-sm`}
-                    >
-                        {secondaryLabel}
-                    </button>
+                {/* College Applications Section */}
+                <div className="mt-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <GraduationCap className="h-6 w-6 text-indigo-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">
+                                College Applications
+                            </h2>
+                        </div>
+
+                        <p className="text-gray-600 mb-4">
+                            Monitor your college application journey and decisions
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Total Tracked */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <TrendingUp className="h-5 w-5 text-orange-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Total Tracked
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Colleges you're considering
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-orange-500">
+                                            {c?.total ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Accepted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Accepted
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Admission offers received
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            {c?.accepted ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* In Progress */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Clock className="h-5 w-5 text-red-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                In Progress
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Applications being completed
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-red-600">
+                                            {c?.in_progress ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submitted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Send className="h-5 w-5 text-blue-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">
+                                                Submitted
+                                            </h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Awaiting admission decisions
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            {c?.submitted ?? 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
+                            <button
+                                onClick={() => router.push('/institutions')}
+                                className="flex-1 py-2 text-indigo-600 font-medium hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200"
+                            >
+                                Explore Colleges
+                            </button>
+                            <button
+                                onClick={() => router.push('/colleges/dashboard')}
+                                className="flex-1 py-2 bg-indigo-600 text-white font-medium hover:bg-indigo-700 rounded-lg transition-colors"
+                            >
+                                Manage Applications
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
