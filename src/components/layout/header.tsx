@@ -3,14 +3,21 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, User } from 'lucide-react';
 import AuthModal from '../auth/AuthModal';
 import { UserData } from '@/types/user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+interface UserProfile {
+  profile_image_url?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export default function Header() {
   const [user, setUser] = useState<UserData | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -22,8 +29,6 @@ export default function Header() {
     mode: 'login',
   });
 
-
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -32,13 +37,18 @@ export default function Header() {
     if (!mounted) return;
     const token = localStorage.getItem('token');
     if (token) {
+      // Fetch user data
       fetch(`${API_BASE_URL}/api/v1/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       })
         .then((res) => (res.ok ? res.json() : null))
         .then((data: UserData | null) => {
-          if (data) setUser(data);
+          if (data) {
+            setUser(data);
+            // Fetch profile data to get headshot
+            fetchProfile(token);
+          }
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -46,19 +56,30 @@ export default function Header() {
     }
   }, [mounted]);
 
-
+  const fetchProfile = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/profiles/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setProfile(null);
     window.location.reload();
   };
 
   const openLoginModal = () => {
     setAuthModal({ isOpen: true, mode: 'login' });
   };
-
-
 
   if (!mounted) return null;
 
@@ -117,15 +138,35 @@ export default function Header() {
               )}
             </nav>
 
-            {/* Right Side - Auth + Mobile Menu */}
+            {/* Right Side - Auth + Profile Photo + Mobile Menu */}
             <div className="flex items-center gap-3">
               {/* Auth - Desktop */}
               <div className="hidden md:flex items-center gap-3">
                 {user ? (
                   <>
-                    <span className="text-sm text-gray-700">
-                      <span className="font-medium">{user.username}</span>
-                    </span>
+                    {/* User Info with Headshot */}
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {/* Profile Photo */}
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                        {profile?.profile_image_url ? (
+                          <img
+                            src={profile.profile_image_url}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-gray-500" />
+                        )}
+                      </div>
+                      {/* Username */}
+                      <span className="text-sm text-gray-700">
+                        <span className="font-medium">{user.username}</span>
+                      </span>
+                    </Link>
+
                     <button
                       onClick={handleLogout}
                       className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors rounded"
@@ -189,12 +230,32 @@ export default function Header() {
               <div className="pt-4 border-t border-gray-200">
                 {user ? (
                   <>
-                    <div className="px-4 py-2 text-sm text-gray-600">
-                      Logged in as{' '}
-                      <span className="font-medium text-gray-900">
-                        {user.username}
-                      </span>
-                    </div>
+                    {/* User Profile Info with Headshot - Mobile */}
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 mb-2"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                        {profile?.profile_image_url ? (
+                          <img
+                            src={profile.profile_image_url}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-gray-500" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {profile?.first_name && profile?.last_name
+                            ? `${profile.first_name} ${profile.last_name}`
+                            : user.username}
+                        </div>
+                        <div className="text-sm text-gray-600">View profile</div>
+                      </div>
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded font-medium"

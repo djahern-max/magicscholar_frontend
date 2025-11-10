@@ -3,8 +3,11 @@
 
 import React, { useState } from 'react';
 import { MapPin, ExternalLink, Users, GraduationCap } from 'lucide-react';
+import AddToTrackingButton from './AddToTrackingButton';
+import { useRouter } from 'next/navigation';
 
 interface Institution {
+    id: number;
     name: string;
     city: string;
     state: string;
@@ -20,6 +23,7 @@ interface InstitutionHeaderProps {
 }
 
 export default function InstitutionHeader({ institution }: InstitutionHeaderProps) {
+    const router = useRouter();
     const [imageError, setImageError] = useState(false);
 
     const getControlTypeDisplay = (controlType: string) => {
@@ -87,9 +91,29 @@ export default function InstitutionHeader({ institution }: InstitutionHeaderProp
 
                     {/* Institution Details */}
                     <div className="flex-1">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            {institution.name}
-                        </h1>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                {institution.name}
+                            </h1>
+
+                            {/* Track This College Button */}
+                            <div className="flex-shrink-0">
+                                <AddToTrackingButton
+                                    institutionId={institution.id}
+                                    institutionName={institution.name}
+                                    variant="button"
+                                    onSuccess={() => {
+                                        const goToDashboard = confirm(
+                                            'Added to your college dashboard! Would you like to view your applications now?'
+                                        );
+                                        if (goToDashboard) {
+                                            router.push('/colleges/dashboard');
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </div>
+
                         <div className="flex items-center text-gray-600 mb-4">
                             <MapPin className="w-4 h-4 mr-2" />
                             <span>{institution.city}, {institution.state}</span>

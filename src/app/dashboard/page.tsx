@@ -16,6 +16,7 @@ import {
     Target,
 } from 'lucide-react';
 import axios from 'axios';
+import UserProfileCard from '@/components/profile/UserProfileCard';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -118,6 +119,11 @@ export default function DashboardHub() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
             <div className="max-w-6xl mx-auto px-4">
+                {/* Add Profile Card at top */}
+                <div className="mb-6">
+                    <UserProfileCard variant="compact" />
+                </div>
+
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-gray-900 mb-2">
