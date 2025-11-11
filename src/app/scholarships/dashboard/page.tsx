@@ -1,347 +1,498 @@
-// src/components/scholarships/ScholarshipApplicationCard.tsx
+// src/app/scholarships/dashboard/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    Lightbulb,
-    ClipboardList,
+    Award,
+    Calendar,
+    CheckCircle,
     Clock,
     Send,
-    CheckCircle,
+    DollarSign,
+    TrendingUp,
+    AlertTriangle,
+    Filter,
+    Lightbulb,
+    ClipboardList,
     XCircle,
     EyeOff,
-    MoreVertical,
-    Trash2,
 } from 'lucide-react';
+import ScholarshipApplicationCard from '@/components/scholarships/ScholarshipApplicationCard';
+import { getScholarshipDashboard } from '@/lib/scholarshipTrackingService';
+import {
+    ScholarshipDashboard,
+    ScholarshipApplication,
+    ApplicationStatus,
+} from '@/types/scholarship-tracking';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-interface ScholarshipApplication {
-    id: number;
-    user_id: number;
-    scholarship_id: number;
-    status: 'interested' | 'planning' | 'in_progress' | 'submitted' | 'accepted' | 'rejected' | 'not_pursuing';
-    saved_at: string;
-    notes?: string | null;
-    award_amount?: number | null;
-    scholarship: {
-        id: number;
-        title: string;
-        organization: string;
-        amount_min: number | null;
-        amount_max: number | null;
-        deadline: string | null;
-    };
-}
-
-interface Props {
-    application: ScholarshipApplication;
-    onUpdate: () => void; // Callback to refresh the list
-}
-
-export default function ScholarshipApplicationCard({ application, onUpdate }: Props) {
+export default function ScholarshipDashboardPage() {
     const router = useRouter();
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [dashboard, setDashboard] = useState<ScholarshipDashboard | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [filterStatus, setFilterStatus] = useState<ApplicationStatus | 'all'>('all');
 
-    const { scholarship, status } = application;
+    useEffect(() => {
+        loadDashboard();
+    }, []);
 
-    // Status configuration
-    const statusConfig = {
-        interested: {
-            label: 'Interested',
-            icon: Lightbulb,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
-            borderColor: 'border-blue-200',
-        },
-        planning: {
-            label: 'Planning',
-            icon: ClipboardList,
-            color: 'text-yellow-600',
-            bgColor: 'bg-yellow-50',
-            borderColor: 'border-yellow-200',
-        },
-        in_progress: {
-            label: 'In Progress',
-            icon: Clock,
-            color: 'text-cyan-600',
-            bgColor: 'bg-cyan-50',
-            borderColor: 'border-cyan-200',
-        },
-        submitted: {
-            label: 'Submitted',
-            icon: Send,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50',
-            borderColor: 'border-purple-200',
-        },
-        accepted: {
-            label: 'Accepted',
-            icon: CheckCircle,
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
-            borderColor: 'border-green-200',
-        },
-        rejected: {
-            label: 'Rejected',
-            icon: XCircle,
-            color: 'text-red-600',
-            bgColor: 'bg-red-50',
-            borderColor: 'border-red-200',
-        },
-        not_pursuing: {
-            label: 'Not Pursuing',
-            icon: EyeOff,
-            color: 'text-gray-600',
-            bgColor: 'bg-gray-50',
-            borderColor: 'border-gray-200',
-        },
-    };
-
-    const currentStatus = statusConfig[status];
-    const StatusIcon = currentStatus.icon;
-
-    // Quick action buttons based on current status
-    const getQuickActions = () => {
-        switch (status) {
-            case 'interested':
-                return [
-                    { label: 'Start Planning', newStatus: 'planning', color: 'yellow' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
-                ];
-            case 'planning':
-                return [
-                    { label: 'Start Application', newStatus: 'in_progress', color: 'cyan' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
-                ];
-            case 'in_progress':
-                return [
-                    { label: 'Mark Submitted', newStatus: 'submitted', color: 'purple' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
-                ];
-            case 'submitted':
-                return [
-                    { label: 'Accepted!', newStatus: 'accepted', color: 'green' },
-                    { label: 'Rejected', newStatus: 'rejected', color: 'red' },
-                ];
-            case 'accepted':
-            case 'rejected':
-            case 'not_pursuing':
-                return [];
-            default:
-                return [];
-        }
-    };
-
-    const quickActions = getQuickActions();
-
-    const updateStatus = async (newStatus: string) => {
-        setIsUpdating(true);
-        setError(null);
-
+    const loadDashboard = async () => {
         try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-
-            const response = await fetch(
-                `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${application.id}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ status: newStatus }),
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to update status');
-            }
-
-            // Refresh the list
-            onUpdate();
-            setShowMenu(false);
-        } catch (err) {
-            console.error('Error updating status:', err);
-            setError(err instanceof Error ? err.message : 'Failed to update');
+            setLoading(true);
+            const data = await getScholarshipDashboard();
+            setDashboard(data);
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
         } finally {
-            setIsUpdating(false);
+            setLoading(false);
         }
     };
 
-    const deleteApplication = async () => {
-        if (!confirm('Are you sure you want to remove this scholarship from tracking?')) {
-            return;
-        }
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading your scholarships...</p>
+                </div>
+            </div>
+        );
+    }
 
-        setIsUpdating(true);
-        setError(null);
+    if (!dashboard) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-gray-600">Failed to load dashboard</p>
+                </div>
+            </div>
+        );
+    }
 
-        try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-
-            const response = await fetch(
-                `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${application.id}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to delete');
-            }
-
-            // Refresh the list
-            onUpdate();
-        } catch (err) {
-            console.error('Error deleting application:', err);
-            setError(err instanceof Error ? err.message : 'Failed to delete');
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'No deadline';
-        try {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
-        } catch {
-            return dateString;
-        }
-    };
-
-    const formatAmount = (min: number | null, max: number | null) => {
-        const minVal = min ?? 0;
-        const maxVal = max ?? 0;
-
-        if (minVal === maxVal) {
-            return `$${minVal.toLocaleString()}`;
-        }
-        return `$${minVal.toLocaleString()} - $${maxVal.toLocaleString()}`;
-    };
+    const filteredApplications = filterStatus === 'all'
+        ? dashboard.applications
+        : dashboard.applications.filter(app => app.status === filterStatus);
 
     return (
-        <div className={`bg-white border-2 ${currentStatus.borderColor} rounded-lg p-4 hover:shadow-md transition-all relative`}>
-            {/* Header */}
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                {/* Header */}
+                <div className="mb-8">
                     <button
-                        onClick={() => router.push(`/scholarship/${scholarship.id}`)}
-                        className="text-left"
+                        onClick={() => router.push('/dashboard')}
+                        className="text-blue-600 hover:text-blue-700 mb-4 flex items-center gap-2 font-medium"
                     >
-                        <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-                            {scholarship.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">{scholarship.organization}</p>
+                        ← Back to Dashboard
                     </button>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Scholarship Tracker</h1>
+                    <p className="text-gray-600">Fund your education and track your progress</p>
                 </div>
 
-                {/* Menu Button */}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        <MoreVertical className="w-5 h-5 text-gray-500" />
-                    </button>
+                {/* Financial Summary Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <DollarSign className="h-6 w-6 text-green-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">Financial Summary</h2>
+                        </div>
 
-                    {/* Dropdown Menu */}
-                    {showMenu && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        <p className="text-gray-600 mb-4">
+                            Your scholarship earnings and potential funding
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Total Won */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Total Won</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            From {dashboard.summary.accepted} scholarship{dashboard.summary.accepted !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            ${dashboard.summary.total_awarded_value.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Potential Value */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Potential Value</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            From active scholarships
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            ${dashboard.summary.total_potential_value.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
                             <button
-                                onClick={deleteApplication}
-                                className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 rounded-lg flex items-center"
+                                onClick={() => router.push('/scholarships')}
+                                className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
                             >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Remove
+                                Find More Scholarships
                             </button>
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
 
-            {/* Amount and Deadline */}
-            <div className="flex items-center justify-between text-sm mb-3">
-                <span className="font-semibold text-green-600">
-                    {formatAmount(scholarship.amount_min, scholarship.amount_max)}
-                </span>
-                {scholarship.deadline && (
-                    <span className="text-gray-600">
-                        Due: <span className="font-medium">{formatDate(scholarship.deadline)}</span>
-                    </span>
+                {/* Application Progress Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center mb-4">
+                            <TrendingUp className="h-6 w-6 text-blue-500 mr-2" />
+                            <h2 className="text-xl font-bold text-gray-900">Application Progress</h2>
+                        </div>
+
+                        <p className="text-gray-600 mb-4">
+                            Track your scholarship application status
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Interested */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Lightbulb className="h-5 w-5 text-blue-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Interested</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you're considering
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            {dashboard.summary.interested}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Planning */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <ClipboardList className="h-5 w-5 text-indigo-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Planning</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Gathering requirements and materials
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-indigo-600">
+                                            {dashboard.summary.planning}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* In Progress */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-cyan-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Clock className="h-5 w-5 text-cyan-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">In Progress</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Applications you're working on
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-cyan-600">
+                                            {dashboard.summary.in_progress}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submitted */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <Send className="h-5 w-5 text-purple-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Submitted</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Waiting for responses
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-purple-600">
+                                            {dashboard.summary.submitted}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Accepted (Won) */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Won</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you've won
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            {dashboard.summary.accepted}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Rejected */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Rejected</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Applications not awarded
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-red-600">
+                                            {dashboard.summary.rejected}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Not Pursuing */}
+                            <div className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <EyeOff className="h-5 w-5 text-gray-500 mr-2" />
+                                            <h3 className="font-medium text-gray-900">Not Pursuing</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Scholarships you've decided not to pursue
+                                        </p>
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="text-2xl font-bold text-gray-600">
+                                            {dashboard.summary.not_pursuing}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Upcoming Deadlines Section */}
+                {dashboard.upcoming_deadlines.length > 0 && (
+                    <div className="mb-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div className="flex items-center mb-4">
+                                <Calendar className="h-6 w-6 text-orange-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Upcoming Deadlines ({dashboard.upcoming_deadlines.length})
+                                </h2>
+                            </div>
+
+                            <p className="text-gray-600 mb-4">
+                                Scholarships with approaching deadlines
+                            </p>
+
+                            <div className="space-y-3">
+                                {dashboard.upcoming_deadlines.map(app => {
+                                    const daysUntilDeadline = app.scholarship.deadline
+                                        ? Math.ceil((new Date(app.scholarship.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                                        : null;
+
+                                    const minAmount = app.scholarship.amount_min ?? 0;
+                                    const maxAmount = app.scholarship.amount_max ?? 0;
+                                    const amount = minAmount === maxAmount
+                                        ? `$${minAmount.toLocaleString()}`
+                                        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
+
+                                    return (
+                                        <div
+                                            key={app.id}
+                                            onClick={() => router.push(`/scholarship/${app.scholarship.id}`)}
+                                            className="border border-orange-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer bg-orange-50"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                                        {app.scholarship.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1">{app.scholarship.organization}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <p className="text-sm font-bold text-green-600">
+                                                            {amount}
+                                                        </p>
+                                                        {daysUntilDeadline !== null && (
+                                                            <p className="text-xs text-orange-600 font-medium">
+                                                                {daysUntilDeadline >= 0
+                                                                    ? `${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''} left`
+                                                                    : 'Overdue'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    {app.scholarship.deadline && (
+                                                        <p className="text-xs text-gray-500">
+                                                            Due: {new Date(app.scholarship.deadline).toLocaleDateString()}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
                 )}
+
+                {/* Overdue Section */}
+                {dashboard.overdue.length > 0 && (
+                    <div className="mb-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div className="flex items-center mb-4">
+                                <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Overdue Applications ({dashboard.overdue.length})
+                                </h2>
+                            </div>
+
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                <p className="text-red-800 font-medium">
+                                    You have {dashboard.overdue.length} overdue application{dashboard.overdue.length !== 1 ? 's' : ''}.
+                                    Update the status to keep your tracker organized!
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {dashboard.overdue.map(app => {
+                                    const minAmount = app.scholarship.amount_min ?? 0;
+                                    const maxAmount = app.scholarship.amount_max ?? 0;
+                                    const amount = minAmount === maxAmount
+                                        ? `$${minAmount.toLocaleString()}`
+                                        : `$${minAmount.toLocaleString()}-$${maxAmount.toLocaleString()}`;
+
+                                    return (
+                                        <div
+                                            key={app.id}
+                                            onClick={() => router.push(`/scholarship/${app.scholarship.id}`)}
+                                            className="border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all bg-red-50 cursor-pointer"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium text-gray-900">
+                                                        {app.scholarship.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1">{app.scholarship.organization}</p>
+                                                    <p className="text-sm font-bold text-green-600 mt-2">
+                                                        {amount}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    <span className="inline-block px-2 py-1 bg-red-200 text-red-800 text-xs font-bold rounded">
+                                                        OVERDUE
+                                                    </span>
+                                                    {app.scholarship.deadline && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Was: {new Date(app.scholarship.deadline).toLocaleDateString()}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* All Scholarships Section */}
+                <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center">
+                                <Award className="h-6 w-6 text-yellow-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    All Scholarships ({filteredApplications.length})
+                                </h2>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4 text-gray-500" />
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value as ApplicationStatus | 'all')}
+                                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="all">All</option>
+                                    <option value="interested">Interested</option>
+                                    <option value="planning">Planning</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="submitted">Submitted</option>
+                                    <option value="accepted">Won</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="not_pursuing">Not Pursuing</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {filteredApplications.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Award className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600 mb-4">No scholarships found</p>
+                                <button
+                                    onClick={() => router.push('/scholarships')}
+                                    className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
+                                >
+                                    Find Scholarships
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {filteredApplications.map(app => (
+                                    <ScholarshipApplicationCard
+                                        key={app.id}
+                                        application={app}
+                                        onUpdate={loadDashboard}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-
-            {/* Current Status Badge */}
-            <div className={`inline-flex items-center px-3 py-1 rounded-full ${currentStatus.bgColor} ${currentStatus.color} text-sm font-medium mb-3`}>
-                <StatusIcon className="w-4 h-4 mr-1" />
-                {currentStatus.label}
-            </div>
-
-            {/* Award Amount (if accepted) */}
-            {status === 'accepted' && application.award_amount && (
-                <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                        <strong>Awarded:</strong> ${application.award_amount.toLocaleString()}
-                    </p>
-                </div>
-            )}
-
-            {/* Quick Action Buttons */}
-            {quickActions.length > 0 && (
-                <div className="flex gap-2">
-                    {quickActions.map((action) => (
-                        <button
-                            key={action.newStatus}
-                            onClick={() => updateStatus(action.newStatus)}
-                            disabled={isUpdating}
-                            className={`
-                                flex-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors
-                                ${action.color === 'yellow' && 'bg-yellow-500 text-white hover:bg-yellow-600'}
-                                ${action.color === 'cyan' && 'bg-cyan-500 text-white hover:bg-cyan-600'}
-                                ${action.color === 'purple' && 'bg-purple-500 text-white hover:bg-purple-600'}
-                                ${action.color === 'green' && 'bg-green-500 text-white hover:bg-green-600'}
-                                ${action.color === 'red' && 'bg-red-500 text-white hover:bg-red-600'}
-                                ${action.color === 'gray' && 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                            `}
-                        >
-                            {isUpdating ? 'Updating...' : action.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Error Message */}
-            {error && (
-                <div className="mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                    {error}
-                </div>
-            )}
-
-            {/* Click outside to close menu */}
-            {showMenu && (
-                <div
-                    className="fixed inset-0 z-0"
-                    onClick={() => setShowMenu(false)}
-                />
-            )}
         </div>
     );
 }

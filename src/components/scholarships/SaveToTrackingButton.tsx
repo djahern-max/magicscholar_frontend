@@ -19,60 +19,122 @@ export default function SaveToTrackingButton({
     const router = useRouter();
 
     const handleSaveScholarship = async () => {
+        console.log("=== Save Scholarship Debug ===");
+        console.log("Scholarship ID:", scholarshipId);
+        console.log("Scholarship Title:", scholarshipTitle);
+
         setIsLoading(true);
         setError(null);
 
         try {
-            const token = localStorage.getItem("access_token");
+            // Get and validate token
+            const token = localStorage.getItem("token");
+            console.log("Token exists:", !!token);
+            console.log("Token (first 20 chars):", token?.substring(0, 20));
 
             if (!token) {
-                // Redirect to login or show auth modal
+                console.error("No token found - redirecting to login");
                 router.push("/");
                 return;
             }
 
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/scholarship-tracking/applications`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        scholarship_id: scholarshipId,
-                        status: "interested",
-                        notes: null,
-                    }),
+            // Prepare request body
+            const requestBody = {
+                scholarship_id: scholarshipId,
+                status: "interested",
+                notes: null,
+            };
+            console.log("Request body:", JSON.stringify(requestBody, null, 2));
+
+            // Prepare URL
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const fullUrl = `${apiUrl}/api/v1/scholarship-tracking/applications`;
+            console.log("API URL:", apiUrl);
+            console.log("Full URL:", fullUrl);
+
+            // Make request
+            console.log("Making POST request...");
+            const response = await fetch(fullUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            console.log("Response status:", response.status);
+            console.log("Response ok:", response.ok);
+
+            // Try to get response body (even for errors)
+            const responseText = await response.text();
+            console.log("Response body (raw):", responseText);
+
+            // Parse JSON if not empty
+            let data;
+            if (responseText) {
+                try {
+                    data = JSON.parse(responseText);
+                    console.log("Response body (parsed):", data);
+                } catch (e) {
+                    console.error("Failed to parse response:", e);
                 }
-            );
-
-            if (!response.ok) {
-                const errorData = await response.json();
-
-                // Handle "already saved" error
-                if (response.status === 400 && errorData.detail?.includes("already saved")) {
-                    setError("You've already saved this scholarship!");
-                    return;
-                }
-
-                throw new Error(errorData.detail || "Failed to save scholarship");
             }
 
-            const data = await response.json();
-            console.log("Scholarship saved:", data);
+            // Handle different status codes
+            if (response.status === 201) {
+                // Success!
+                console.log("✅ Scholarship saved successfully:", data);
+                setIsSaved(true);
 
-            setIsSaved(true);
+                // Show success message briefly, then redirect
+                setTimeout(() => {
+                    router.push("/scholarships/dashboard");
+                }, 1500);
+            } else if (response.status === 400) {
+                // Bad request - check for duplicate
+                const errorMessage = data?.detail || "Bad request";
+                console.error("❌ Bad request:", errorMessage);
 
-            // Show success message briefly, then redirect
-            setTimeout(() => {
-                router.push("/scholarships/dashboard");
-            }, 1500);
+                if (errorMessage.toLowerCase().includes("already") ||
+                    errorMessage.toLowerCase().includes("duplicate") ||
+                    errorMessage.toLowerCase().includes("saved")) {
+                    setError("You've already saved this scholarship!");
+                } else {
+                    setError(errorMessage);
+                }
+            } else if (response.status === 401) {
+                // Unauthorized - token expired or invalid
+                console.error("❌ Unauthorized - token may be expired");
+                setError("Your session has expired. Please log in again.");
+                setTimeout(() => {
+                    localStorage.removeItem("token");
+                    router.push("/");
+                }, 2000);
+            } else if (response.status === 404) {
+                // Not found - scholarship doesn't exist
+                console.error("❌ Scholarship not found");
+                setError("This scholarship no longer exists");
+            } else if (response.status === 422) {
+                // Validation error
+                console.error("❌ Validation error:", data);
+                setError("Invalid data. Please try again.");
+            } else {
+                // Other error
+                console.error("❌ Unexpected error:", response.status, data);
+                throw new Error(data?.detail || `Request failed with status ${response.status}`);
+            }
         } catch (err) {
-            console.error("Error saving scholarship:", err);
-            setError(err instanceof Error ? err.message : "Failed to save scholarship");
+            console.error("❌ Catch block error:", err);
+
+            if (err instanceof TypeError && err.message.includes("fetch")) {
+                setError("Network error. Please check your connection and try again.");
+            } else {
+                setError(err instanceof Error ? err.message : "Failed to save scholarship");
+            }
         } finally {
             setIsLoading(false);
+            console.log("=== End Debug ===");
         }
     };
 

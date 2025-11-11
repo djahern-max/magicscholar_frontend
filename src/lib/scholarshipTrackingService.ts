@@ -22,7 +22,7 @@ interface UpdateScholarshipParams {
  */
 function getAuthToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("access_token");
+    return localStorage.getItem("token"); // CHANGED from "access_token" to "token"
 }
 
 /**

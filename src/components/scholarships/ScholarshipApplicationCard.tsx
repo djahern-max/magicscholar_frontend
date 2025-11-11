@@ -14,36 +14,21 @@ import {
     MoreVertical,
     Trash2,
 } from 'lucide-react';
+import { ScholarshipApplication, ApplicationStatus } from '@/types/scholarship-tracking';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-interface ScholarshipApplication {
-    id: number;
-    user_id: number;
-    scholarship_id: number;
-    status: 'interested' | 'planning' | 'in_progress' | 'submitted' | 'accepted' | 'rejected' | 'not_pursuing';
-    saved_at: string;
-    notes?: string;
-    award_amount?: number;
-    scholarship: {
-        id: number;
-        title: string;
-        organization: string;
-        amount_min: number;
-        amount_max: number;
-        deadline: string;
-    };
-}
-
 interface Props {
     application: ScholarshipApplication;
-    onUpdate: () => void; // Callback to refresh the list
+    onUpdate: () => void;
 }
 
 export default function ScholarshipApplicationCard({ application, onUpdate }: Props) {
     const router = useRouter();
     const [isUpdating, setIsUpdating] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAwardPrompt, setShowAwardPrompt] = useState(false);
+    const [awardAmount, setAwardAmount] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const { scholarship, status } = application;
@@ -56,13 +41,17 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             color: 'text-blue-600',
             bgColor: 'bg-blue-50',
             borderColor: 'border-blue-200',
+            buttonBg: 'bg-blue-500',
+            buttonHover: 'hover:bg-blue-600',
         },
         planning: {
             label: 'Planning',
             icon: ClipboardList,
-            color: 'text-yellow-600',
-            bgColor: 'bg-yellow-50',
-            borderColor: 'border-yellow-200',
+            color: 'text-indigo-600',
+            bgColor: 'bg-indigo-50',
+            borderColor: 'border-indigo-200',
+            buttonBg: 'bg-indigo-500',
+            buttonHover: 'hover:bg-indigo-600',
         },
         in_progress: {
             label: 'In Progress',
@@ -70,6 +59,8 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             color: 'text-cyan-600',
             bgColor: 'bg-cyan-50',
             borderColor: 'border-cyan-200',
+            buttonBg: 'bg-cyan-500',
+            buttonHover: 'hover:bg-cyan-600',
         },
         submitted: {
             label: 'Submitted',
@@ -77,13 +68,17 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             color: 'text-purple-600',
             bgColor: 'bg-purple-50',
             borderColor: 'border-purple-200',
+            buttonBg: 'bg-purple-500',
+            buttonHover: 'hover:bg-purple-600',
         },
         accepted: {
-            label: 'Accepted',
+            label: 'Won',
             icon: CheckCircle,
             color: 'text-green-600',
             bgColor: 'bg-green-50',
             borderColor: 'border-green-200',
+            buttonBg: 'bg-green-500',
+            buttonHover: 'hover:bg-green-600',
         },
         rejected: {
             label: 'Rejected',
@@ -91,6 +86,8 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             color: 'text-red-600',
             bgColor: 'bg-red-50',
             borderColor: 'border-red-200',
+            buttonBg: 'bg-red-500',
+            buttonHover: 'hover:bg-red-600',
         },
         not_pursuing: {
             label: 'Not Pursuing',
@@ -98,52 +95,103 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             color: 'text-gray-600',
             bgColor: 'bg-gray-50',
             borderColor: 'border-gray-200',
+            buttonBg: 'bg-gray-400',
+            buttonHover: 'hover:bg-gray-500',
         },
     };
 
     const currentStatus = statusConfig[status];
     const StatusIcon = currentStatus.icon;
 
-    // Quick action buttons based on current status
-    const getQuickActions = () => {
+    // Get progression-based quick actions (main workflow)
+    const getMainActions = (): Array<{ label: string; newStatus: ApplicationStatus; config: typeof statusConfig[ApplicationStatus]; requiresAmount?: boolean }> => {
         switch (status) {
             case 'interested':
                 return [
-                    { label: 'Start Planning', newStatus: 'planning', color: 'yellow' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
+                    { label: 'Start Planning', newStatus: 'planning', config: statusConfig.planning },
                 ];
             case 'planning':
                 return [
-                    { label: 'Start Application', newStatus: 'in_progress', color: 'cyan' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
+                    { label: 'Start Application', newStatus: 'in_progress', config: statusConfig.in_progress },
                 ];
             case 'in_progress':
                 return [
-                    { label: 'Mark Submitted', newStatus: 'submitted', color: 'purple' },
-                    { label: 'Not Pursuing', newStatus: 'not_pursuing', color: 'gray' },
+                    { label: 'Mark Submitted', newStatus: 'submitted', config: statusConfig.submitted },
                 ];
             case 'submitted':
                 return [
-                    { label: 'Accepted!', newStatus: 'accepted', color: 'green' },
-                    { label: 'Rejected', newStatus: 'rejected', color: 'red' },
+                    { label: 'Won!', newStatus: 'accepted', config: statusConfig.accepted, requiresAmount: true },
+                    { label: 'Rejected', newStatus: 'rejected', config: statusConfig.rejected },
                 ];
-            case 'accepted':
-            case 'rejected':
-            case 'not_pursuing':
-                return [];
             default:
                 return [];
         }
     };
 
-    const quickActions = getQuickActions();
+    const mainActions = getMainActions();
 
-    const updateStatus = async (newStatus: string) => {
+    const handleActionClick = (action: typeof mainActions[0]) => {
+        if (action.requiresAmount) {
+            // Show award amount prompt
+            setShowAwardPrompt(true);
+        } else {
+            // Directly update status
+            updateStatus(action.newStatus);
+        }
+    };
+
+    const handleWonWithAmount = async () => {
+        const amount = awardAmount ? parseInt(awardAmount.replace(/[^0-9]/g, '')) : null;
+
+        if (!amount || amount <= 0) {
+            setError('Please enter a valid award amount');
+            return;
+        }
+
+        setShowAwardPrompt(false);
+        await markAsAccepted(amount);
+        setAwardAmount('');
+    };
+
+    const markAsAccepted = async (amount: number) => {
         setIsUpdating(true);
         setError(null);
 
         try {
-            const token = localStorage.getItem('access_token');
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Not authenticated');
+            }
+
+            // Use the special mark-accepted endpoint with award_amount query param
+            const url = `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${application.id}/mark-accepted?award_amount=${amount}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to mark as accepted');
+            }
+
+            onUpdate();
+        } catch (err) {
+            console.error('Error marking as accepted:', err);
+            setError(err instanceof Error ? err.message : 'Failed to update');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const updateStatus = async (newStatus: ApplicationStatus) => {
+        setIsUpdating(true);
+        setError(null);
+
+        try {
+            const token = localStorage.getItem('token');
             if (!token) {
                 throw new Error('Not authenticated');
             }
@@ -164,7 +212,6 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 throw new Error('Failed to update status');
             }
 
-            // Refresh the list
             onUpdate();
             setShowMenu(false);
         } catch (err) {
@@ -184,7 +231,7 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
         setError(null);
 
         try {
-            const token = localStorage.getItem('access_token');
+            const token = localStorage.getItem('token');
             if (!token) {
                 throw new Error('Not authenticated');
             }
@@ -203,7 +250,6 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 throw new Error('Failed to delete');
             }
 
-            // Refresh the list
             onUpdate();
         } catch (err) {
             console.error('Error deleting application:', err);
@@ -213,7 +259,8 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
         }
     };
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | null): string => {
+        if (!dateString) return 'No deadline';
         try {
             return new Date(dateString).toLocaleDateString('en-US', {
                 month: 'short',
@@ -225,15 +272,68 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
         }
     };
 
-    const formatAmount = (min: number, max: number) => {
-        if (min === max) {
-            return `$${min.toLocaleString()}`;
+    const formatAmount = (min: number | null, max: number | null): string => {
+        const minVal = min ?? 0;
+        const maxVal = max ?? 0;
+
+        if (minVal === maxVal) {
+            return `$${minVal.toLocaleString()}`;
         }
-        return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
+        return `$${minVal.toLocaleString()} - $${maxVal.toLocaleString()}`;
+    };
+
+    const formatCurrency = (value: string): string => {
+        const numbers = value.replace(/[^0-9]/g, '');
+        if (!numbers) return '';
+        return `$${parseInt(numbers).toLocaleString()}`;
     };
 
     return (
-        <div className={`bg-white border-2 ${currentStatus.borderColor} rounded-lg p-4 hover:shadow-md transition-all relative`}>
+        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all relative">
+            {/* Award Amount Prompt Modal */}
+            {showAwardPrompt && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            🎉 Congratulations!
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                            How much did you win for <strong>{scholarship.title}</strong>?
+                        </p>
+                        <input
+                            type="text"
+                            value={awardAmount}
+                            onChange={(e) => setAwardAmount(formatCurrency(e.target.value))}
+                            placeholder="$5,000"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 mb-4"
+                            autoFocus
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setShowAwardPrompt(false);
+                                    setAwardAmount('');
+                                    setError(null);
+                                }}
+                                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleWonWithAmount}
+                                disabled={!awardAmount || isUpdating}
+                                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isUpdating ? 'Saving...' : 'Confirm'}
+                            </button>
+                        </div>
+                        {error && (
+                            <p className="mt-2 text-sm text-red-600">{error}</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
@@ -278,7 +378,9 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                     {formatAmount(scholarship.amount_min, scholarship.amount_max)}
                 </span>
                 <span className="text-gray-600">
-                    Due: <span className="font-medium">{formatDate(scholarship.deadline)}</span>
+                    Due: <span className="font-medium">
+                        {formatDate(scholarship.deadline)}
+                    </span>
                 </span>
             </div>
 
@@ -288,7 +390,7 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 {currentStatus.label}
             </div>
 
-            {/* Award Amount (if accepted) */}
+            {/* Award Amount (if won) */}
             {status === 'accepted' && application.award_amount && (
                 <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
@@ -297,22 +399,17 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 </div>
             )}
 
-            {/* Quick Action Buttons */}
-            {quickActions.length > 0 && (
-                <div className="flex gap-2">
-                    {quickActions.map((action) => (
+            {/* Main Action Buttons */}
+            {mainActions.length > 0 && (
+                <div className="flex gap-2 mb-2">
+                    {mainActions.map((action) => (
                         <button
                             key={action.newStatus}
-                            onClick={() => updateStatus(action.newStatus)}
+                            onClick={() => handleActionClick(action)}
                             disabled={isUpdating}
                             className={`
-                                flex-1 px-3 py-2 rounded-lg font-medium text-sm transition-colors
-                                ${action.color === 'yellow' && 'bg-yellow-500 text-white hover:bg-yellow-600'}
-                                ${action.color === 'cyan' && 'bg-cyan-500 text-white hover:bg-cyan-600'}
-                                ${action.color === 'purple' && 'bg-purple-500 text-white hover:bg-purple-600'}
-                                ${action.color === 'green' && 'bg-green-500 text-white hover:bg-green-600'}
-                                ${action.color === 'red' && 'bg-red-500 text-white hover:bg-red-600'}
-                                ${action.color === 'gray' && 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
+                                flex-1 px-3 py-2 rounded-lg font-medium text-sm text-white transition-colors
+                                ${action.config.buttonBg} ${action.config.buttonHover}
                                 disabled:opacity-50 disabled:cursor-not-allowed
                             `}
                         >
@@ -322,8 +419,19 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 </div>
             )}
 
+            {/* Not Pursuing Button (always available except when already not pursuing) */}
+            {status !== 'not_pursuing' && status !== 'accepted' && status !== 'rejected' && (
+                <button
+                    onClick={() => updateStatus('not_pursuing')}
+                    disabled={isUpdating}
+                    className="w-full px-3 py-2 rounded-lg font-medium text-sm bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isUpdating ? 'Updating...' : 'Not Pursuing'}
+                </button>
+            )}
+
             {/* Error Message */}
-            {error && (
+            {error && !showAwardPrompt && (
                 <div className="mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                     {error}
                 </div>
