@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti';
 import {
     Lightbulb,
     ClipboardList,
@@ -103,6 +104,74 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
     const currentStatus = statusConfig[status];
     const StatusIcon = currentStatus.icon;
 
+    // 🎉 CONFETTI CELEBRATIONS - Different style for each milestone!
+    const celebrateStartPlanning = () => {
+        // Indigo sparkles - organized and ready!
+        confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#6366f1', '#818cf8', '#a5b4fc'], // Indigo shades
+        });
+    };
+
+    const celebrateStartApplication = () => {
+        // Cyan burst - you're doing it!
+        confetti({
+            particleCount: 75,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#06b6d4', '#22d3ee', '#67e8f9'], // Cyan shades
+            startVelocity: 30,
+        });
+    };
+
+    const celebrateSubmitted = () => {
+        // Purple fireworks - major milestone!
+        const count = 100;
+        const defaults = {
+            origin: { y: 0.7 },
+            colors: ['#9333ea', '#a855f7', '#c084fc'], // Purple shades
+        };
+
+        function fire(particleRatio: number, opts: any) {
+            confetti({
+                ...defaults,
+                ...opts,
+                particleCount: Math.floor(count * particleRatio),
+            });
+        }
+
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91 });
+    };
+
+    const celebrateWon = () => {
+        // MASSIVE GOLD CELEBRATION - YOU WON!!!
+        const count = 200;
+        const defaults = {
+            origin: { y: 0.7 },
+            colors: ['#ffd700', '#ffed4e', '#fbbf24', '#f59e0b'], // Gold shades
+            zIndex: 9999,
+        };
+
+        function fire(particleRatio: number, opts: any) {
+            confetti({
+                ...defaults,
+                ...opts,
+                particleCount: Math.floor(count * particleRatio),
+            });
+        }
+
+        // Multiple bursts for maximum celebration!
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+    };
+
     // Get progression-based quick actions (main workflow)
     const getMainActions = (): Array<{ label: string; newStatus: ApplicationStatus; config: typeof statusConfig[ApplicationStatus]; requiresAmount?: boolean }> => {
         switch (status) {
@@ -132,10 +201,17 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
 
     const handleActionClick = (action: typeof mainActions[0]) => {
         if (action.requiresAmount) {
-            // Show award amount prompt
             setShowAwardPrompt(true);
         } else {
-            // Directly update status
+            // Celebrate before updating!
+            if (action.newStatus === 'planning') {
+                celebrateStartPlanning();
+            } else if (action.newStatus === 'in_progress') {
+                celebrateStartApplication();
+            } else if (action.newStatus === 'submitted') {
+                celebrateSubmitted();
+            }
+
             updateStatus(action.newStatus);
         }
     };
@@ -147,6 +223,9 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
             setError('Please enter a valid award amount');
             return;
         }
+
+        // 🎉 BIGGEST CELEBRATION - YOU WON!!!
+        celebrateWon();
 
         setShowAwardPrompt(false);
         await markAsAccepted(amount);
@@ -163,7 +242,6 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 throw new Error('Not authenticated');
             }
 
-            // Use the special mark-accepted endpoint with award_amount query param
             const url = `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${application.id}/mark-accepted?award_amount=${amount}`;
 
             const response = await fetch(url, {
@@ -307,6 +385,11 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                             placeholder="$5,000"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 mb-4"
                             autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && awardAmount && !isUpdating) {
+                                    handleWonWithAmount();
+                                }
+                            }}
                         />
                         <div className="flex gap-2">
                             <button
@@ -419,7 +502,7 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 </div>
             )}
 
-            {/* Not Pursuing Button (always available except when already not pursuing) */}
+            {/* Not Pursuing Button */}
             {status !== 'not_pursuing' && status !== 'accepted' && status !== 'rejected' && (
                 <button
                     onClick={() => updateStatus('not_pursuing')}

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Sparkles, Brain } from 'lucide-react';
 
 interface ResumeUploadProps {
     onUploadSuccess: (data: any) => void;
@@ -140,45 +140,73 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
                     onClick={handleUpload}
                     disabled={uploading}
                     className={`
-            w-full py-3 px-6 rounded-lg font-medium text-white transition-colors
-            ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+            w-full py-4 px-6 rounded-lg font-medium transition-all duration-200
+            ${uploading
+                            ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white cursor-not-allowed animate-gradient'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-[1.02]'
+                        }
           `}
                 >
                     {uploading ? (
-                        <span className="flex items-center justify-center">
-                            <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                            </svg>
-                            <span className="flex flex-col items-start">
-                                <span className="font-semibold">Analyzing with Claude AI...</span>
-                                <span className="text-sm text-gray-100">Extracting your achievements and qualifications</span>
+                        <span className="flex items-center justify-center gap-3">
+                            {/* Animated AI Brain Icon */}
+                            <div className="relative">
+                                <Brain className="h-6 w-6 animate-pulse" />
+                                <Sparkles className="h-4 w-4 absolute -top-1 -right-1 animate-ping" />
+                            </div>
+
+                            <span className="flex flex-col items-start text-left">
+                                <span className="text-lg font-bold text-white">
+                                    ✨ Analyzing with Claude AI...
+                                </span>
+                                <span className="text-sm font-medium text-white/90">
+                                    Extracting your achievements and qualifications
+                                </span>
                             </span>
                         </span>
                     ) : (
-                        'Upload Resume & Create Profile'
+                        <span className="flex items-center justify-center gap-2">
+                            <Sparkles className="h-5 w-5" />
+                            <span>Upload Resume & Create Profile with AI</span>
+                        </span>
                     )}
                 </button>
             )}
 
             {/* Info Text */}
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg p-4">
                 <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                    <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Powered by Claude AI:</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
-                            <li>Advanced AI analyzes your resume with 90%+ accuracy</li>
-                            <li>Automatically extracts academics, activities, and achievements</li>
-                            <li>Instantly matches you with relevant scholarships</li>
-                            <li>Review and refine your AI-generated profile</li>
+                    <div className="flex-shrink-0 mr-3">
+                        <div className="relative">
+                            <Brain className="h-6 w-6 text-blue-600" />
+                            <Sparkles className="h-3 w-3 text-purple-600 absolute -top-1 -right-1" />
+                        </div>
+                    </div>
+                    <div className="text-sm">
+                        <p className="font-bold text-blue-900 mb-2 text-base">
+                            🚀 Powered by Claude AI
+                        </p>
+                        <ul className="space-y-1.5 text-blue-800">
+                            <li className="flex items-start">
+                                <span className="text-green-600 font-bold mr-2">✓</span>
+                                <span><strong>90%+ accuracy</strong> - Advanced AI analyzes your resume</span>
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-600 font-bold mr-2">✓</span>
+                                <span><strong>Auto-extracts</strong> academics, activities, and achievements</span>
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-600 font-bold mr-2">✓</span>
+                                <span><strong>Instant matching</strong> with relevant scholarships</span>
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-600 font-bold mr-2">✓</span>
+                                <span><strong>Review & refine</strong> your AI-generated profile</span>
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }
