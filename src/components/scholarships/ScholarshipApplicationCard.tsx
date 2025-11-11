@@ -23,15 +23,15 @@ interface ScholarshipApplication {
     scholarship_id: number;
     status: 'interested' | 'planning' | 'in_progress' | 'submitted' | 'accepted' | 'rejected' | 'not_pursuing';
     saved_at: string;
-    notes?: string | null;
-    award_amount?: number | null;
+    notes?: string;
+    award_amount?: number;
     scholarship: {
         id: number;
         title: string;
         organization: string;
-        amount_min: number | null;
-        amount_max: number | null;
-        deadline: string | null;
+        amount_min: number;
+        amount_max: number;
+        deadline: string;
     };
 }
 
@@ -213,8 +213,7 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
         }
     };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'No deadline';
+    const formatDate = (dateString: string) => {
         try {
             return new Date(dateString).toLocaleDateString('en-US', {
                 month: 'short',
@@ -226,14 +225,11 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
         }
     };
 
-    const formatAmount = (min: number | null, max: number | null) => {
-        const minVal = min ?? 0;
-        const maxVal = max ?? 0;
-
-        if (minVal === maxVal) {
-            return `$${minVal.toLocaleString()}`;
+    const formatAmount = (min: number, max: number) => {
+        if (min === max) {
+            return `$${min.toLocaleString()}`;
         }
-        return `$${minVal.toLocaleString()} - $${maxVal.toLocaleString()}`;
+        return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
     };
 
     return (
@@ -281,11 +277,9 @@ export default function ScholarshipApplicationCard({ application, onUpdate }: Pr
                 <span className="font-semibold text-green-600">
                     {formatAmount(scholarship.amount_min, scholarship.amount_max)}
                 </span>
-                {scholarship.deadline && (
-                    <span className="text-gray-600">
-                        Due: <span className="font-medium">{formatDate(scholarship.deadline)}</span>
-                    </span>
-                )}
+                <span className="text-gray-600">
+                    Due: <span className="font-medium">{formatDate(scholarship.deadline)}</span>
+                </span>
             </div>
 
             {/* Current Status Badge */}

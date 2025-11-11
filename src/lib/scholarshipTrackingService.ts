@@ -1,210 +1,245 @@
 // src/lib/scholarshipTrackingService.ts
+// Helper functions for scholarship tracking API calls
 
-import {
-    ScholarshipDashboard,
-    ScholarshipApplication,
-    ScholarshipApplicationCreate,
-    ScholarshipApplicationUpdate,
-    ApplicationStatus,
-} from '@/types/scholarship-tracking';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+interface SaveScholarshipParams {
+    scholarship_id: number;
+    status?: "interested" | "planning" | "in_progress" | "submitted" | "accepted" | "rejected" | "not_pursuing";
+    notes?: string | null;
+}
 
-export const scholarshipTrackingService = {
-    /**
-     * Get user's scholarship dashboard
-     */
-    async getDashboard(token: string): Promise<ScholarshipDashboard> {
-        const response = await fetch(`${API_BASE_URL}/api/v1/scholarship-tracking/dashboard`, {
+interface UpdateScholarshipParams {
+    status?: "interested" | "planning" | "in_progress" | "submitted" | "accepted" | "rejected" | "not_pursuing";
+    notes?: string | null;
+    essay_draft?: string | null;
+    documents_needed?: string | null;
+    award_amount?: number | null;
+}
+
+/**
+ * Get authentication token from localStorage
+ */
+function getAuthToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("access_token");
+}
+
+/**
+ * Save/bookmark a scholarship to user's dashboard
+ */
+export async function saveScholarship(params: SaveScholarshipParams) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications`,
+        {
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${token}`,
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
             },
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to load dashboard');
+            body: JSON.stringify({
+                scholarship_id: params.scholarship_id,
+                status: params.status || "interested",
+                notes: params.notes || null,
+            }),
         }
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to save scholarship");
+    }
 
-    /**
-     * Save a scholarship to tracking
-     */
-    async saveScholarship(
-        token: string,
-        data: ScholarshipApplicationCreate
-    ): Promise<ScholarshipApplication> {
-        const response = await fetch(`${API_BASE_URL}/api/v1/scholarship-tracking/applications`, {
-            method: 'POST',
+    return response.json();
+}
+
+/**
+ * Get user's scholarship dashboard
+ */
+export async function getScholarshipDashboard() {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/dashboard`,
+        {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to save scholarship');
         }
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+        throw new Error("Failed to fetch dashboard");
+    }
 
-    /**
-     * Get all applications with filters
-     */
-    async getApplications(
-        token: string,
-        options?: {
-            status?: ApplicationStatus;
-            sort_by?: 'deadline' | 'amount' | 'saved_at' | 'status';
-            sort_order?: 'asc' | 'desc';
+    return response.json();
+}
+
+/**
+ * Get all user's scholarship applications with optional filtering
+ */
+export async function getScholarshipApplications(
+    status?: string,
+    sortBy: string = "deadline",
+    sortOrder: string = "asc"
+) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    params.append("sort_by", sortBy);
+    params.append("sort_order", sortOrder);
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications?${params}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         }
-    ): Promise<ScholarshipApplication[]> {
-        const params = new URLSearchParams();
-        if (options?.status) params.append('status', options.status);
-        if (options?.sort_by) params.append('sort_by', options.sort_by);
-        if (options?.sort_order) params.append('sort_order', options.sort_order);
+    );
 
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications?${params}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }
-        );
+    if (!response.ok) {
+        throw new Error("Failed to fetch applications");
+    }
 
-        if (!response.ok) {
-            throw new Error('Failed to load applications');
+    return response.json();
+}
+
+/**
+ * Update a scholarship application
+ */
+export async function updateScholarshipApplication(
+    applicationId: number,
+    updates: UpdateScholarshipParams
+) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications/${applicationId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updates),
         }
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to update application");
+    }
 
-    /**
-     * Update an application
-     */
-    async updateApplication(
-        token: string,
-        applicationId: number,
-        updates: ScholarshipApplicationUpdate
-    ): Promise<ScholarshipApplication> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${applicationId}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updates),
-            }
-        );
+    return response.json();
+}
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to update application');
+/**
+ * Delete a scholarship application
+ */
+export async function deleteScholarshipApplication(applicationId: number) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications/${applicationId}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         }
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+        throw new Error("Failed to delete application");
+    }
 
-    /**
-     * Delete an application
-     */
-    async deleteApplication(token: string, applicationId: number): Promise<void> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${applicationId}`,
-            {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }
-        );
+    return true;
+}
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to delete application');
+/**
+ * Quick action: Mark scholarship as submitted
+ */
+export async function markScholarshipAsSubmitted(applicationId: number) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-submitted`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         }
-    },
+    );
 
-    /**
-     * Mark application as submitted
-     */
-    async markAsSubmitted(
-        token: string,
-        applicationId: number
-    ): Promise<ScholarshipApplication> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-submitted`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }
-        );
+    if (!response.ok) {
+        throw new Error("Failed to mark as submitted");
+    }
 
-        if (!response.ok) {
-            throw new Error('Failed to mark as submitted');
+    return response.json();
+}
+
+/**
+ * Quick action: Mark scholarship as accepted
+ */
+export async function markScholarshipAsAccepted(
+    applicationId: number,
+    awardAmount?: number
+) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const url = new URL(
+        `${API_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-accepted`
+    );
+    if (awardAmount) {
+        url.searchParams.append("award_amount", awardAmount.toString());
+    }
+
+    const response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to mark as accepted");
+    }
+
+    return response.json();
+}
+
+/**
+ * Quick action: Mark scholarship as rejected
+ */
+export async function markScholarshipAsRejected(applicationId: number) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(
+        `${API_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-rejected`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         }
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+        throw new Error("Failed to mark as rejected");
+    }
 
-    /**
-     * Mark application as accepted
-     */
-    async markAsAccepted(
-        token: string,
-        applicationId: number,
-        awardAmount?: number
-    ): Promise<ScholarshipApplication> {
-        const params = new URLSearchParams();
-        if (awardAmount) params.append('award_amount', awardAmount.toString());
-
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-accepted?${params}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error('Failed to mark as accepted');
-        }
-
-        return response.json();
-    },
-
-    /**
-     * Mark application as rejected
-     */
-    async markAsRejected(
-        token: string,
-        applicationId: number
-    ): Promise<ScholarshipApplication> {
-        const response = await fetch(
-            `${API_BASE_URL}/api/v1/scholarship-tracking/applications/${applicationId}/mark-rejected`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error('Failed to mark as rejected');
-        }
-
-        return response.json();
-    },
-};
+    return response.json();
+}

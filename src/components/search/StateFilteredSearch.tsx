@@ -72,7 +72,7 @@ interface Institution {
     state: string;
     display_name: string;
     control_type: string;
-    size_category: string;
+    size_category: string; // sometimes numeric like "5189.0"
     display_image_url?: string;
     primary_image_url?: string;
     website?: string;
@@ -80,16 +80,16 @@ interface Institution {
 
 interface StateFilterSearchProps {
     onInstitutionClick?: (institutionId: number) => void;
-    initialState?: string; // ADD THIS
+    initialState?: string;
 }
 
 const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
     onInstitutionClick,
-    initialState // USE THIS
+    initialState
 }) => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedState, setSelectedState] = useState(initialState || 'ALL'); // USE initialState HERE
+    const [selectedState, setSelectedState] = useState(initialState || 'ALL');
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -109,23 +109,18 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
             const itemsPerPage = selectedState === 'ALL' ? ITEMS_PER_PAGE_ALL : ITEMS_PER_PAGE_STATE;
             let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
 
-            // Add search query if provided
             if (searchQuery.trim()) {
                 url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${itemsPerPage}`;
             }
 
-            // Add state filter if not 'ALL' - FIXED VERSION
             if (selectedState !== 'ALL') {
                 const separator = url.includes('?') ? '&' : '?';
                 url += `${separator}state=${selectedState}`;
             }
 
-            console.log('Fetching from URL:', url);
-
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
-                console.log('Search results:', data);
 
                 const institutionsArray = data.institutions || data;
                 const total = data.total || institutionsArray.length;
@@ -142,14 +137,12 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
                 const loadedCount = append ? institutions.length + institutionsArray.length : institutionsArray.length;
                 setHasMore(loadedCount < total);
             } else {
-                console.error('Search failed:', response.status);
                 if (!append) {
                     setInstitutions([]);
                     setTotalResults(0);
                 }
             }
         } catch (error) {
-            console.error('Search error:', error);
             if (!append) {
                 setInstitutions([]);
                 setTotalResults(0);
@@ -191,24 +184,30 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
 
     const getControlTypeDisplay = (controlType: string) => {
         const types = {
-            'public': 'Public',
-            'private': 'Private',
-            'private_nonprofit': 'Private Non-Profit',
-            'private_for_profit': 'Private For-Profit'
+            public: 'Public',
+            private: 'Private',
+            private_nonprofit: 'Private Non-Profit',
+            private_for_profit: 'Private For-Profit'
         };
         return types[controlType.toLowerCase() as keyof typeof types] || controlType;
     };
 
     const getSizeCategoryDisplay = (sizeCategory: string) => {
         const sizes = {
-            'very_small': 'Very Small (<1,000)',
-            'small': 'Small (1,000-2,999)',
-            'medium': 'Medium (3,000-9,999)',
-            'large': 'Large (10,000-19,999)',
-            'very_large': 'Very Large (20,000+)'
+            very_small: 'Very Small (<1,000)',
+            small: 'Small (1,000-2,999)',
+            medium: 'Medium (3,000-9,999)',
+            large: 'Large (10,000-19,999)',
+            very_large: 'Very Large (20,000+)'
         };
         return sizes[sizeCategory as keyof typeof sizes] || sizeCategory;
     };
+
+    // NEW: format numeric strings like "5189.0" -> "5,189"; else show category label.
+    function formatSizeCategory(value: string) {
+        const n = Number(value);
+        return Number.isFinite(n) ? Math.round(n).toLocaleString() : getSizeCategoryDisplay(value);
+    }
 
     return (
         <div className="w-full">
@@ -283,7 +282,7 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
                             {institutions.map((institution) => (
                                 <div
                                     key={institution.id}
-                                    className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
+                                    className="group bg-white border border-gray-2 00 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
                                     onClick={() => handleInstitutionClick(institution.id)}
                                 >
                                     <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
@@ -315,7 +314,8 @@ const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
                                             </div>
                                             <div className="flex items-center">
                                                 <Users className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
-                                                <span className="text-xs">{getSizeCategoryDisplay(institution.size_category)}</span>
+                                                {/* HERE: show whole number with comma when numeric */}
+                                                <span className="text-xs">{formatSizeCategory(institution.size_category)}</span>
                                             </div>
                                             <div className="flex items-center">
                                                 <GraduationCap className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />

@@ -1,14 +1,13 @@
 // src/types/scholarship-tracking.ts
 
-export enum ApplicationStatus {
-    INTERESTED = "interested",
-    PLANNING = "planning",
-    IN_PROGRESS = "in_progress",
-    SUBMITTED = "submitted",
-    ACCEPTED = "accepted",
-    REJECTED = "rejected",
-    NOT_PURSUING = "not_pursuing",
-}
+export type ApplicationStatus =
+    | 'interested'
+    | 'planning'
+    | 'in_progress'
+    | 'submitted'
+    | 'accepted'
+    | 'rejected'
+    | 'not_pursuing';
 
 export interface ScholarshipBasicInfo {
     id: number;
@@ -32,14 +31,18 @@ export interface ScholarshipApplication {
     essay_draft: string | null;
     documents_needed: string | null;
     award_amount: number | null;
-    scholarship: ScholarshipBasicInfo;
+    scholarship: ScholarshipBasicInfo;  // CHANGED: Removed Optional - always present in dashboard responses
 }
 
 export interface DashboardSummary {
     total_applications: number;
-    submitted: number;
+    interested: number;  // NEW
+    planning: number;  // NEW
     in_progress: number;
+    submitted: number;
     accepted: number;
+    rejected: number;  // NEW
+    not_pursuing: number;  // NEW
     total_potential_value: number;
     total_awarded_value: number;
 }
@@ -49,18 +52,4 @@ export interface ScholarshipDashboard {
     upcoming_deadlines: ScholarshipApplication[];
     overdue: ScholarshipApplication[];
     applications: ScholarshipApplication[];
-}
-
-export interface ScholarshipApplicationCreate {
-    scholarship_id: number;
-    status?: ApplicationStatus;
-    notes?: string;
-}
-
-export interface ScholarshipApplicationUpdate {
-    status?: ApplicationStatus;
-    notes?: string;
-    essay_draft?: string;
-    documents_needed?: string;
-    award_amount?: number;
 }

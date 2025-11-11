@@ -1,4 +1,4 @@
-// src/app/scholarship/[id]/page.tsx - MATCHING SCHOOL DETAIL PAGE DESIGN
+// src/app/scholarship/[id]/page.tsx - COMPLETE FILE WITH TRACKING BUTTON
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,6 +14,7 @@ import {
     Star,
     Users
 } from 'lucide-react';
+import SaveToTrackingButton from "@/components/scholarships/SaveToTrackingButton";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -153,7 +154,7 @@ export default function ScholarshipDetailPage() {
 
     return (
         <div className="min-h-screen bg-page-bg">
-            {/* Back Button - Matching school detail page */}
+            {/* Back Button */}
             <div className="bg-page-bg border-b-2 border-gray-300">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <button
@@ -166,7 +167,7 @@ export default function ScholarshipDetailPage() {
                 </div>
             </div>
 
-            {/* Header - Matching school detail page */}
+            {/* Header Section */}
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
                     <div className="p-6">
@@ -199,7 +200,7 @@ export default function ScholarshipDetailPage() {
                                     <span>{scholarship.organization}</span>
                                 </div>
 
-                                <div className="flex flex-wrap gap-4 mb-4">
+                                <div className="flex flex-wrap gap-4 mb-6">
                                     <div className="flex items-center text-sm text-gray-600">
                                         <Award className="w-4 h-4 mr-2 text-gray-400" />
                                         {getScholarshipTypeDisplay(scholarship.scholarship_type)}
@@ -210,6 +211,15 @@ export default function ScholarshipDetailPage() {
                                     </div>
                                 </div>
 
+                                {/* ADDED: Save to Dashboard Button */}
+                                <div className="mb-4">
+                                    <SaveToTrackingButton
+                                        scholarshipId={scholarship.id}
+                                        scholarshipTitle={scholarship.title}
+                                    />
+                                </div>
+
+                                {/* Visit Website Link */}
                                 {scholarship.website_url && (
                                     <a
                                         href={scholarship.website_url}
@@ -227,7 +237,7 @@ export default function ScholarshipDetailPage() {
                 </div>
             </div>
 
-            {/* Award Information - Matching school cost section */}
+            {/* Award Information Section */}
             <div className="max-w-4xl mx-auto px-4 pb-8">
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                     <div className="flex justify-between items-center mb-6">
@@ -310,7 +320,7 @@ export default function ScholarshipDetailPage() {
                         </div>
                     </div>
 
-                    {/* Description Section - matching school cost disclaimer */}
+                    {/* Description Section */}
                     {scholarship.description && (
                         <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <h3 className="font-semibold text-gray-900 mb-2">About This Scholarship</h3>
@@ -318,7 +328,7 @@ export default function ScholarshipDetailPage() {
                         </div>
                     )}
 
-                    {/* Note section - matching school disclaimer */}
+                    {/* Note section */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="text-xs text-gray-600">
                             <strong>Note:</strong> Information shown is subject to change. Please visit the scholarship website for the most current details and to verify all requirements before applying.

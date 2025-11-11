@@ -78,7 +78,11 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
 
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            <span>{getSizeCategoryDisplay(institution.size_category)}</span>
+            <span>
+              {isNaN(Number(institution.size_category))
+                ? getSizeCategoryDisplay(institution.size_category)
+                : Math.round(Number(institution.size_category)).toLocaleString()}
+            </span>
           </div>
 
           <div className="text-xs text-gray-500">
