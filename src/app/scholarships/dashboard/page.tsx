@@ -389,7 +389,7 @@ export default function ScholarshipDashboardPage() {
                                 </h2>
                             </div>
 
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
                                 <p className="text-red-800 font-medium">
                                     You have {dashboard.overdue.length} overdue application{dashboard.overdue.length !== 1 ? 's' : ''}.
                                     Update the status to keep your tracker organized!
@@ -408,8 +408,9 @@ export default function ScholarshipDashboardPage() {
                                         <div
                                             key={app.id}
                                             onClick={() => router.push(`/scholarship/${app.scholarship.id}`)}
-                                            className="border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all bg-red-50 cursor-pointer"
+                                            className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all bg-white hover:bg-blue-50 cursor-pointer"
                                         >
+
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1">
                                                     <h3 className="font-medium text-gray-900">

@@ -176,7 +176,7 @@ export default function CollegeDashboardPage() {
 
                 {/* Overdue Alert */}
                 {dashboard.overdue.length > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
                             <div>

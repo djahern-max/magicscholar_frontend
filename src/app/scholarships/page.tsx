@@ -171,7 +171,7 @@ export default function ScholarshipsPage() {
             {/* Error Message */}
             {error && (
                 <div className="max-w-6xl mx-auto px-4 py-4">
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
                         <p className="text-red-800">{error}</p>
                         <button
                             onClick={() => window.location.reload()}

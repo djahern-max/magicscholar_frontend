@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti"; // ✅ add this
 
 interface SaveToTrackingButtonProps {
     scholarshipId: number;
@@ -18,42 +19,46 @@ export default function SaveToTrackingButton({
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const handleSaveScholarship = async () => {
-        console.log("=== Save Scholarship Debug ===");
-        console.log("Scholarship ID:", scholarshipId);
-        console.log("Scholarship Title:", scholarshipTitle);
+    // 🎉 quick celebration while we redirect
+    const celebrateSave = () => {
+        const duration = 1200; // ms
+        const end = Date.now() + duration;
 
+        const defaults = {
+            origin: { y: 0.7 },
+            scalar: 0.9,
+            spread: 70,
+            startVelocity: 40,
+            zIndex: 9999,
+            colors: ["#22c55e", "#60a5fa", "#a78bfa"], // green/blue/purple to match the app
+        };
+
+        (function frame() {
+            confetti({ ...defaults, particleCount: 28 });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+    };
+
+    const handleSaveScholarship = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
-            // Get and validate token
             const token = localStorage.getItem("token");
-            console.log("Token exists:", !!token);
-            console.log("Token (first 20 chars):", token?.substring(0, 20));
-
             if (!token) {
-                console.error("No token found - redirecting to login");
                 router.push("/");
                 return;
             }
 
-            // Prepare request body
             const requestBody = {
                 scholarship_id: scholarshipId,
                 status: "interested",
                 notes: null,
             };
-            console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
-            // Prepare URL
             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
             const fullUrl = `${apiUrl}/api/v1/scholarship-tracking/applications`;
-            console.log("API URL:", apiUrl);
-            console.log("Full URL:", fullUrl);
 
-            // Make request
-            console.log("Making POST request...");
             const response = await fetch(fullUrl, {
                 method: "POST",
                 headers: {
@@ -63,70 +68,61 @@ export default function SaveToTrackingButton({
                 body: JSON.stringify(requestBody),
             });
 
-            console.log("Response status:", response.status);
-            console.log("Response ok:", response.ok);
-
-            // Try to get response body (even for errors)
             const responseText = await response.text();
-            console.log("Response body (raw):", responseText);
-
-            // Parse JSON if not empty
-            let data;
+            let data: any;
             if (responseText) {
                 try {
                     data = JSON.parse(responseText);
-                    console.log("Response body (parsed):", data);
-                } catch (e) {
-                    console.error("Failed to parse response:", e);
+                } catch {
+                    /* ignore */
                 }
             }
 
-            // Handle different status codes
             if (response.status === 201) {
-                // Success!
-                console.log("✅ Scholarship saved successfully:", data);
+                // ✅ Success
                 setIsSaved(true);
-
-                // Show success message briefly, then redirect
+                celebrateSave(); // 🎉 fire now
                 setTimeout(() => {
                     router.push("/scholarships/dashboard");
-                }, 1500);
-            } else if (response.status === 400) {
-                // Bad request - check for duplicate
-                const errorMessage = data?.detail || "Bad request";
-                console.error("❌ Bad request:", errorMessage);
+                }, 1200); // match confetti duration
+                return;
+            }
 
-                if (errorMessage.toLowerCase().includes("already") ||
+            if (response.status === 400) {
+                const errorMessage = data?.detail || "Bad request";
+                if (
+                    errorMessage.toLowerCase().includes("already") ||
                     errorMessage.toLowerCase().includes("duplicate") ||
-                    errorMessage.toLowerCase().includes("saved")) {
+                    errorMessage.toLowerCase().includes("saved")
+                ) {
                     setError("You've already saved this scholarship!");
                 } else {
                     setError(errorMessage);
                 }
-            } else if (response.status === 401) {
-                // Unauthorized - token expired or invalid
-                console.error("❌ Unauthorized - token may be expired");
+                return;
+            }
+
+            if (response.status === 401) {
                 setError("Your session has expired. Please log in again.");
                 setTimeout(() => {
                     localStorage.removeItem("token");
                     router.push("/");
                 }, 2000);
-            } else if (response.status === 404) {
-                // Not found - scholarship doesn't exist
-                console.error("❌ Scholarship not found");
-                setError("This scholarship no longer exists");
-            } else if (response.status === 422) {
-                // Validation error
-                console.error("❌ Validation error:", data);
-                setError("Invalid data. Please try again.");
-            } else {
-                // Other error
-                console.error("❌ Unexpected error:", response.status, data);
-                throw new Error(data?.detail || `Request failed with status ${response.status}`);
+                return;
             }
-        } catch (err) {
-            console.error("❌ Catch block error:", err);
 
+            if (response.status === 404) {
+                setError("This scholarship no longer exists");
+                return;
+            }
+
+            if (response.status === 422) {
+                setError("Invalid data. Please try again.");
+                return;
+            }
+
+            throw new Error(data?.detail || `Request failed with status ${response.status}`);
+        } catch (err) {
             if (err instanceof TypeError && err.message.includes("fetch")) {
                 setError("Network error. Please check your connection and try again.");
             } else {
@@ -134,25 +130,14 @@ export default function SaveToTrackingButton({
             }
         } finally {
             setIsLoading(false);
-            console.log("=== End Debug ===");
         }
     };
 
     if (isSaved) {
         return (
             <div className="flex items-center gap-2 px-6 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
-                <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                    />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="font-medium">Saved! Redirecting to dashboard...</span>
             </div>
@@ -164,31 +149,17 @@ export default function SaveToTrackingButton({
             <button
                 onClick={handleSaveScholarship}
                 disabled={isLoading}
-                className={`
-          w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+                className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg
           font-medium transition-all duration-200
           ${isLoading
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-                    }
-        `}
+                    }`}
             >
                 {isLoading ? (
                     <>
-                        <svg
-                            className="animate-spin h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            ></circle>
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path
                                 className="opacity-75"
                                 fill="currentColor"
@@ -199,12 +170,7 @@ export default function SaveToTrackingButton({
                     </>
                 ) : (
                     <>
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
