@@ -18,6 +18,7 @@ import {
     Trash2,
     ExternalLink,
     MapPin,
+    Calendar,
 } from 'lucide-react';
 import { CollegeApplication, ApplicationStatus } from '@/types/college-tracking';
 
@@ -33,6 +34,7 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
     const [isUpdating, setIsUpdating] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
 
     const { institution, status } = application;
 
@@ -358,6 +360,7 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
             setError(err instanceof Error ? err.message : 'Failed to delete');
         } finally {
             setIsUpdating(false);
+            setShowMenu(false);
         }
     };
 
@@ -376,58 +379,74 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
 
     const handleViewCollege = () => {
         if (institution) {
-            router.push(`/institution/${institution.ipeds_id}`);
+            router.push(`/institution/${institution.id}`);
         }
     };
 
+    const daysUntilDeadline = application.deadline
+        ? Math.ceil(
+            (new Date(application.deadline).getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+        : null;
+
     return (
-        <div className={`bg-white border-2 ${currentStatus.borderColor} rounded-lg p-4 hover:shadow-md transition-all relative`}>
-            {/* College Header */}
-            <div className="flex items-start gap-3 mb-3">
-                {/* College Image */}
-                {institution?.primary_image_url && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+            {/* LARGER College Image - increased from h-16 to h-48 */}
+            <div className="relative h-48 bg-gray-200 cursor-pointer" onClick={handleViewCollege}>
+                {institution?.primary_image_url && !imageError ? (
                     <img
                         src={institution.primary_image_url}
-                        alt={institution.name}
-                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        alt={institution.name || 'College'}
+                        className="w-full h-full object-cover"
+                        onError={() => setImageError(true)}
                     />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
+                        <GraduationCap className="h-16 w-16 text-gray-500" />
+                    </div>
                 )}
 
-                {/* College Info */}
-                <div className="flex-1 min-w-0">
-                    <h3
-                        className="font-bold text-gray-900 text-lg mb-1 cursor-pointer hover:text-indigo-600 transition-colors truncate"
-                        onClick={handleViewCollege}
-                    >
-                        {institution?.name || 'Unknown College'}
-                    </h3>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <MapPin className="h-3 w-3" />
-                        <span>{institution?.city}, {institution?.state}</span>
+                {/* Status Badge - Overlay on Image */}
+                <div className="absolute top-3 left-3">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${currentStatus.bgColor} ${currentStatus.color} shadow-md border border-white border-opacity-50`}>
+                        <StatusIcon className="h-4 w-4" />
+                        {currentStatus.label}
                     </div>
                 </div>
 
-                {/* Menu Button */}
-                <div className="relative">
+                {/* Three-Dot Menu - Overlay on Image */}
+                <div className="absolute top-3 right-3">
                     <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(!showMenu);
+                        }}
+                        className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                     >
-                        <MoreVertical className="h-5 w-5 text-gray-400" />
+                        <MoreVertical className="h-4 w-4 text-gray-600" />
                     </button>
 
+                    {/* Dropdown Menu */}
                     {showMenu && (
-                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                             <button
-                                onClick={handleViewCollege}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 rounded-t-lg"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewCollege();
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 rounded-t-lg"
                             >
                                 <ExternalLink className="h-4 w-4" />
                                 View College Details
                             </button>
+                            <div className="border-t border-gray-200"></div>
                             <button
-                                onClick={deleteApplication}
-                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteApplication();
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 rounded-b-lg"
                                 disabled={isUpdating}
                             >
                                 <Trash2 className="h-4 w-4" />
@@ -438,65 +457,95 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
                 </div>
             </div>
 
-            {/* Status Badge */}
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${currentStatus.bgColor} ${currentStatus.color} mb-3`}>
-                <StatusIcon className="h-4 w-4" />
-                {currentStatus.label}
+            {/* College Details */}
+            <div className="p-4">
+                <h3
+                    className="font-bold text-gray-900 text-lg mb-2 cursor-pointer hover:text-indigo-600 transition-colors line-clamp-2"
+                    onClick={handleViewCollege}
+                >
+                    {institution?.name || 'Unknown College'}
+                </h3>
+
+                <div className="space-y-2 text-sm text-gray-600 mb-3">
+                    <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span>
+                            {institution?.city}, {institution?.state}
+                        </span>
+                    </div>
+
+                    {application.deadline && (
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            <div className="flex items-center gap-2">
+                                <span>{formatDate(application.deadline)}</span>
+                                {daysUntilDeadline !== null && daysUntilDeadline >= 0 && (
+                                    <span
+                                        className={
+                                            daysUntilDeadline <= 7
+                                                ? 'text-xs font-medium text-red-600'
+                                                : daysUntilDeadline <= 30
+                                                    ? 'text-xs font-medium text-orange-600'
+                                                    : 'text-xs font-medium text-gray-500'
+                                        }
+                                    >
+                                        ({daysUntilDeadline} day{daysUntilDeadline !== 1 ? 's' : ''} left)
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Application Type Badge */}
+                    {application.application_type && (
+                        <div>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                {application.application_type === 'early_decision' && 'Early Decision'}
+                                {application.application_type === 'early_action' && 'Early Action'}
+                                {application.application_type === 'regular_decision' && 'Regular Decision'}
+                                {application.application_type === 'rolling' && 'Rolling'}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Notes */}
+                {application.notes && (
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2 bg-gray-50 rounded-lg p-2">
+                        {application.notes}
+                    </p>
+                )}
+
+                {/* Error Display */}
+                {error && (
+                    <div className="mb-3 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
+                        {error}
+                    </div>
+                )}
+
+                {/* 🎉 CONFETTI ACTION BUTTONS */}
+                {mainActions.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {mainActions.map((action) => (
+                            <button
+                                key={action.newStatus}
+                                onClick={() => handleActionClick(action)}
+                                disabled={isUpdating}
+                                className={`
+                                    px-4 py-2 rounded-lg font-medium text-sm text-white
+                                    ${action.config.buttonBg} ${action.config.buttonHover}
+                                    transition-all duration-200 
+                                    disabled:opacity-50 disabled:cursor-not-allowed
+                                    flex items-center gap-2 shadow-sm
+                                `}
+                            >
+                                <action.config.icon className="h-4 w-4" />
+                                {action.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
-
-            {/* Application Type Badge */}
-            {application.application_type && (
-                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                    {application.application_type === 'early_decision' && 'ED'}
-                    {application.application_type === 'early_action' && 'EA'}
-                    {application.application_type === 'regular_decision' && 'RD'}
-                    {application.application_type === 'rolling' && 'Rolling'}
-                </span>
-            )}
-
-            {/* Deadline */}
-            {application.deadline && (
-                <div className="text-sm text-gray-600 mb-3">
-                    <strong>Deadline:</strong> {formatDate(application.deadline)}
-                </div>
-            )}
-
-            {/* Notes */}
-            {application.notes && (
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {application.notes}
-                </p>
-            )}
-
-            {/* Error Display */}
-            {error && (
-                <div className="mb-3 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
-                    {error}
-                </div>
-            )}
-
-            {/* Action Buttons */}
-            {mainActions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                    {mainActions.map((action) => (
-                        <button
-                            key={action.newStatus}
-                            onClick={() => handleActionClick(action)}
-                            disabled={isUpdating}
-                            className={`
-                                px-4 py-2 rounded-lg font-medium text-sm text-white
-                                ${action.config.buttonBg} ${action.config.buttonHover}
-                                transition-all duration-200 
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                                flex items-center gap-2
-                            `}
-                        >
-                            <action.config.icon className="h-4 w-4" />
-                            {action.label}
-                        </button>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }

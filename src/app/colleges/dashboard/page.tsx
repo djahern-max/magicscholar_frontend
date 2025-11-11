@@ -118,8 +118,8 @@ export default function CollegeDashboardPage() {
                     >
                         ← Back to Dashboard
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">College Application Tracker</h1>
-                    <p className="text-gray-600">Track your college applications and celebrate your wins! 🎓</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Application Tracker</h1>
+                    <p className="text-gray-600">Track your pplications and celebrate your wins!</p>
                 </div>
 
                 {/* Summary Stats */}
@@ -191,13 +191,13 @@ export default function CollegeDashboardPage() {
                     </div>
                 )}
 
-                {/* Status Filters */}
+                {/* Status Filters - NOW CENTERED */}
                 <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center justify-center gap-2 mb-3">
                         <Filter className="h-5 w-5 text-gray-400" />
                         <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap justify-center gap-2">
                         {statusFilters.map((filter) => {
                             const Icon = filter.icon;
                             const isActive = filterStatus === filter.value;
