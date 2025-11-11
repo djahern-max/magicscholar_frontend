@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import ClientLayout from './client-layout'
@@ -42,7 +43,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-50">
+      {/* 👇 This is the line you change */}
+      <body className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50 to-purple-50">
         <ClientLayout>
           {children}
         </ClientLayout>

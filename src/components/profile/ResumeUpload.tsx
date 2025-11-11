@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Sparkles, Brain } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface ResumeUploadProps {
     onUploadSuccess: (data: any) => void;
@@ -17,25 +18,20 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setDragActive(true);
-        } else if (e.type === 'dragleave') {
-            setDragActive(false);
-        }
+        if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+        else if (e.type === 'dragleave') setDragActive(false);
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             handleFileSelect(e.dataTransfer.files[0]);
         }
     };
 
     const handleFileSelect = (selectedFile: File) => {
-        // Validate file type
         const validTypes = ['.pdf', '.doc', '.docx'];
         const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
 
@@ -43,14 +39,29 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
             onUploadError('Invalid file type. Please upload a PDF or Word document.');
             return;
         }
-
-        // Validate file size (10MB)
         if (selectedFile.size > 10 * 1024 * 1024) {
             onUploadError('File too large. Maximum size is 10MB.');
             return;
         }
-
         setFile(selectedFile);
+    };
+
+    // 🎉 Confetti when AI finishes parsing/creating the profile
+    const celebrateAnalysisComplete = () => {
+        const count = 120;
+        const defaults = {
+            origin: { y: 0.7 },
+            zIndex: 9999,
+        };
+        const colors = ['#22c55e', '#60a5fa', '#a78bfa']; // green/blue/purple to match your AI theme
+
+        function burst(ratio: number, opts: any) {
+            confetti({ ...defaults, ...opts, particleCount: Math.floor(count * ratio) });
+        }
+
+        burst(0.25, { spread: 26, startVelocity: 45, colors });
+        burst(0.2, { spread: 60, colors });
+        burst(0.35, { spread: 100, decay: 0.92, scalar: 0.9, colors });
     };
 
     const handleUpload = async () => {
@@ -68,6 +79,10 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
         try {
             const { profileService } = await import('@/lib/profileService');
             const result = await profileService.uploadResume(token, file);
+
+            // ✅ Confetti celebrates completion of AI analysis
+            celebrateAnalysisComplete();
+
             onUploadSuccess(result);
         } catch (error: any) {
             console.error('Upload error:', error);
@@ -97,9 +112,7 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
                         <p className="text-lg font-medium text-gray-700 mb-2">
                             Drop your resume here, or click to browse
                         </p>
-                        <p className="text-sm text-gray-500 mb-4">
-                            PDF or Word document (max 10MB)
-                        </p>
+                        <p className="text-sm text-gray-500 mb-4">PDF or Word document (max 10MB)</p>
                         <input
                             type="file"
                             accept=".pdf,.doc,.docx"
@@ -143,22 +156,17 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
             w-full py-4 px-6 rounded-lg font-medium transition-all duration-200
             ${uploading
                             ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white cursor-not-allowed animate-gradient'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-[1.02]'
-                        }
+                            : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-[1.02]'}
           `}
                 >
                     {uploading ? (
                         <span className="flex items-center justify-center gap-3">
-                            {/* Animated AI Brain Icon */}
                             <div className="relative">
                                 <Brain className="h-6 w-6 animate-pulse" />
                                 <Sparkles className="h-4 w-4 absolute -top-1 -right-1 animate-ping" />
                             </div>
-
                             <span className="flex flex-col items-start text-left">
-                                <span className="text-lg font-bold text-white">
-                                    ✨ Analyzing with Claude AI...
-                                </span>
+                                <span className="text-lg font-bold text-white">✨ Analyzing with Claude AI...</span>
                                 <span className="text-sm font-medium text-white/90">
                                     Extracting your achievements and qualifications
                                 </span>
@@ -183,9 +191,7 @@ export default function ResumeUpload({ onUploadSuccess, onUploadError }: ResumeU
                         </div>
                     </div>
                     <div className="text-sm">
-                        <p className="font-bold text-blue-900 mb-2 text-base">
-                            🚀 Powered by Claude AI
-                        </p>
+                        <p className="font-bold text-blue-900 mb-2 text-base">🚀 Powered by Claude AI</p>
                         <ul className="space-y-1.5 text-blue-800">
                             <li className="flex items-start">
                                 <span className="text-green-600 font-bold mr-2">✓</span>
