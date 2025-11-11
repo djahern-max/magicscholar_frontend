@@ -9,14 +9,13 @@ import {
     CheckCircle,
     Clock,
     Send,
-    XCircle,
+    Search,
     AlertTriangle,
-    MapPin,
     TrendingUp,
     Filter,
     Plus,
 } from 'lucide-react';
-import axios from 'axios';
+import CollegeApplicationCard from '@/components/institutions/CollegeApplicationCard';
 import {
     CollegeDashboard,
     CollegeApplication,
@@ -43,48 +42,26 @@ export default function CollegeDashboardPage() {
         }
 
         try {
-            const response = await axios.get<CollegeDashboard>(
+            setLoading(true);
+            const response = await fetch(
                 `${API_BASE_URL}/api/v1/college-tracking/dashboard`,
-                { headers: { Authorization: `Bearer ${token}` } }
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
-            setDashboard(response.data);
+
+            if (!response.ok) {
+                throw new Error('Failed to load dashboard');
+            }
+
+            const data = await response.json();
+            setDashboard(data);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleStatusUpdate = async (applicationId: number, newStatus: ApplicationStatus) => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        try {
-            await axios.patch(
-                `${API_BASE_URL}/api/v1/college-tracking/applications/${applicationId}`,
-                { status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            loadDashboard();
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    };
-
-    const handleDelete = async (applicationId: number) => {
-        if (!confirm('Are you sure you want to remove this college from your tracking?')) return;
-
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        try {
-            await axios.delete(
-                `${API_BASE_URL}/api/v1/college-tracking/applications/${applicationId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            loadDashboard();
-        } catch (error) {
-            console.error('Error deleting application:', error);
         }
     };
 
@@ -93,7 +70,7 @@ export default function CollegeDashboardPage() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading your applications...</p>
+                    <p className="mt-4 text-gray-600">Loading your college applications...</p>
                 </div>
             </div>
         );
@@ -104,6 +81,12 @@ export default function CollegeDashboardPage() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-gray-600">Failed to load dashboard</p>
+                    <button
+                        onClick={loadDashboard}
+                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                        Try Again
+                    </button>
                 </div>
             </div>
         );
@@ -113,373 +96,179 @@ export default function CollegeDashboardPage() {
         ? dashboard.applications
         : dashboard.applications.filter(app => app.status === filterStatus);
 
+    const statusFilters: Array<{ value: ApplicationStatus | 'all'; label: string; icon: any }> = [
+        { value: 'all', label: 'All', icon: GraduationCap },
+        { value: 'researching', label: 'Researching', icon: Search },
+        { value: 'planning', label: 'Planning', icon: Calendar },
+        { value: 'in_progress', label: 'In Progress', icon: Clock },
+        { value: 'submitted', label: 'Submitted', icon: Send },
+        { value: 'accepted', label: 'Accepted', icon: CheckCircle },
+        { value: 'waitlisted', label: 'Waitlisted', icon: AlertTriangle },
+        { value: 'enrolled', label: 'Enrolled', icon: GraduationCap },
+    ];
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4">
+            <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
                 <div className="mb-8">
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="text-indigo-600 hover:text-indigo-700 mb-4 flex items-center gap-2 font-medium"
+                        className="text-indigo-600 hover:text-indigo-700 mb-4 flex items-center gap-2"
                     >
                         ← Back to Dashboard
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">College Applications</h1>
-                    <p className="text-gray-600">Track your journey to your dream schools</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">College Application Tracker</h1>
+                    <p className="text-gray-600">Track your college applications and celebrate your wins! 🎓</p>
                 </div>
 
-                {/* Application Progress Section */}
-                <div className="mb-6">
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <div className="flex items-center mb-4">
-                            <TrendingUp className="h-6 w-6 text-indigo-500 mr-2" />
-                            <h2 className="text-xl font-bold text-gray-900">Application Progress</h2>
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">Total Apps</span>
+                            <GraduationCap className="h-5 w-5 text-indigo-600" />
                         </div>
+                        <p className="text-2xl font-bold text-gray-900">{dashboard.summary.total_applications}</p>
+                    </div>
 
-                        <p className="text-gray-600 mb-4">
-                            Monitor your college application journey
-                        </p>
-
-                        <div className="space-y-3">
-                            {/* Total Tracked */}
-                            <div className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center">
-                                            <GraduationCap className="h-5 w-5 text-indigo-500 mr-2" />
-                                            <h3 className="font-medium text-gray-900">Total Tracked</h3>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            Colleges you're considering
-                                        </p>
-                                    </div>
-                                    <div className="text-right ml-4">
-                                        <p className="text-2xl font-bold text-indigo-600">
-                                            {dashboard.summary.total_applications}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* In Progress */}
-                            <div className="border border-gray-200 rounded-lg p-4 hover:border-cyan-300 hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center">
-                                            <Clock className="h-5 w-5 text-cyan-500 mr-2" />
-                                            <h3 className="font-medium text-gray-900">In Progress</h3>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            Applications being completed
-                                        </p>
-                                    </div>
-                                    <div className="text-right ml-4">
-                                        <p className="text-2xl font-bold text-cyan-600">
-                                            {dashboard.summary.in_progress}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Submitted */}
-                            <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center">
-                                            <Send className="h-5 w-5 text-purple-500 mr-2" />
-                                            <h3 className="font-medium text-gray-900">Submitted</h3>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            Awaiting admission decisions
-                                        </p>
-                                    </div>
-                                    <div className="text-right ml-4">
-                                        <p className="text-2xl font-bold text-purple-600">
-                                            {dashboard.summary.submitted}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Accepted */}
-                            <div className="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center">
-                                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                                            <h3 className="font-medium text-gray-900">Accepted</h3>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            Admission offers received
-                                        </p>
-                                    </div>
-                                    <div className="text-right ml-4">
-                                        <p className="text-2xl font-bold text-green-600">
-                                            {dashboard.summary.accepted}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Waitlisted */}
-                            {dashboard.summary.waitlisted > 0 && (
-                                <div className="border border-gray-200 rounded-lg p-4 hover:border-yellow-300 hover:shadow-md transition-all">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <div className="flex items-center">
-                                                <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
-                                                <h3 className="font-medium text-gray-900">Waitlisted</h3>
-                                            </div>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                On the waiting list
-                                            </p>
-                                        </div>
-                                        <div className="text-right ml-4">
-                                            <p className="text-2xl font-bold text-yellow-600">
-                                                {dashboard.summary.waitlisted}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Rejected */}
-                            {dashboard.summary.rejected > 0 && (
-                                <div className="border border-gray-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <div className="flex items-center">
-                                                <XCircle className="h-5 w-5 text-red-500 mr-2" />
-                                                <h3 className="font-medium text-gray-900">Rejected</h3>
-                                            </div>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                Decisions not in your favor
-                                            </p>
-                                        </div>
-                                        <div className="text-right ml-4">
-                                            <p className="text-2xl font-bold text-red-600">
-                                                {dashboard.summary.rejected}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">In Progress</span>
+                            <Clock className="h-5 w-5 text-cyan-600" />
                         </div>
+                        <p className="text-2xl font-bold text-gray-900">{dashboard.summary.in_progress}</p>
+                    </div>
 
-                        <div className="flex gap-2 mt-4">
-                            <button
-                                onClick={() => router.push('/institutions')}
-                                className="flex-1 py-2 text-indigo-600 font-medium hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200"
-                            >
-                                Explore Colleges
-                            </button>
+                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">Submitted</span>
+                            <Send className="h-5 w-5 text-purple-600" />
                         </div>
+                        <p className="text-2xl font-bold text-gray-900">{dashboard.summary.submitted}</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">Accepted</span>
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{dashboard.summary.accepted}</p>
                     </div>
                 </div>
 
-                {/* Upcoming Deadlines Section */}
+                {/* Upcoming Deadlines Alert */}
                 {dashboard.upcoming_deadlines.length > 0 && (
-                    <div className="mb-6">
-                        <div className="bg-white rounded-lg shadow-lg p-6">
-                            <div className="flex items-center mb-4">
-                                <Calendar className="h-6 w-6 text-indigo-500 mr-2" />
-                                <h2 className="text-xl font-bold text-gray-900">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                            <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                            <div>
+                                <h3 className="font-semibold text-blue-900 mb-1">
                                     Upcoming Deadlines ({dashboard.upcoming_deadlines.length})
-                                </h2>
-                            </div>
-
-                            <p className="text-gray-600 mb-4">
-                                Applications with approaching deadlines
-                            </p>
-
-                            <div className="space-y-3">
-                                {dashboard.upcoming_deadlines.map(app => {
-                                    const daysUntilDeadline = app.deadline
-                                        ? Math.ceil((new Date(app.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                                        : null;
-
-                                    return (
-                                        <div
-                                            key={app.id}
-                                            className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer bg-gray-50"
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium text-gray-900 hover:text-indigo-600 transition-colors">
-                                                        {app.institution?.name}
-                                                    </h3>
-                                                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                                                        <MapPin className="h-3 w-3" />
-                                                        <span>{app.institution?.city}, {app.institution?.state}</span>
-                                                    </div>
-                                                    {daysUntilDeadline !== null && (
-                                                        <p className="text-xs text-indigo-600 font-medium mt-2">
-                                                            {daysUntilDeadline >= 0
-                                                                ? `${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''} left`
-                                                                : 'Overdue'}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="text-right ml-4">
-                                                    {app.deadline && (
-                                                        <p className="text-xs text-gray-500">
-                                                            Due: {new Date(app.deadline).toLocaleDateString()}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Overdue Section */}
-                {dashboard.overdue.length > 0 && (
-                    <div className="mb-6">
-                        <div className="bg-white rounded-lg shadow-lg p-6">
-                            <div className="flex items-center mb-4">
-                                <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
-                                <h2 className="text-xl font-bold text-gray-900">
-                                    Overdue Applications ({dashboard.overdue.length})
-                                </h2>
-                            </div>
-
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                <p className="text-red-800 font-medium">
-                                    You have {dashboard.overdue.length} overdue application{dashboard.overdue.length !== 1 ? 's' : ''}.
-                                    Update the status or extend the deadline!
+                                </h3>
+                                <p className="text-sm text-blue-700">
+                                    You have deadlines in the next 30 days. Stay on track!
                                 </p>
                             </div>
+                        </div>
+                    </div>
+                )}
 
-                            <div className="space-y-3">
-                                {dashboard.overdue.map(app => (
-                                    <div
-                                        key={app.id}
-                                        className="border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all bg-red-50"
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="font-medium text-gray-900">
-                                                    {app.institution?.name}
-                                                </h3>
-                                                <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                                                    <MapPin className="h-3 w-3" />
-                                                    <span>{app.institution?.city}, {app.institution?.state}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right ml-4">
-                                                <span className="inline-block px-2 py-1 bg-red-200 text-red-800 text-xs font-bold rounded">
-                                                    OVERDUE
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                {/* Overdue Alert */}
+                {dashboard.overdue.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                            <div>
+                                <h3 className="font-semibold text-red-900 mb-1">
+                                    Overdue Applications ({dashboard.overdue.length})
+                                </h3>
+                                <p className="text-sm text-red-700">
+                                    Some deadlines have passed. Update their status or remove them.
+                                </p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* All Applications Section */}
+                {/* Status Filters */}
                 <div className="mb-6">
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                                <GraduationCap className="h-6 w-6 text-indigo-500 mr-2" />
-                                <h2 className="text-xl font-bold text-gray-900">
-                                    All Applications ({filteredApplications.length})
-                                </h2>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Filter className="h-4 w-4 text-gray-500" />
-                                <select
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value as ApplicationStatus | 'all')}
-                                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                >
-                                    <option value="all">All</option>
-                                    <option value="researching">Researching</option>
-                                    <option value="planning">Planning</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="submitted">Submitted</option>
-                                    <option value="accepted">Accepted</option>
-                                    <option value="waitlisted">Waitlisted</option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {filteredApplications.length === 0 ? (
-                            <div className="text-center py-8">
-                                <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                <p className="text-gray-600 mb-4">No applications found</p>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Filter className="h-5 w-5 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {statusFilters.map((filter) => {
+                            const Icon = filter.icon;
+                            const isActive = filterStatus === filter.value;
+                            return (
                                 <button
-                                    onClick={() => router.push('/institutions')}
-                                    className="px-6 py-2 bg-indigo-600 text-white font-medium hover:bg-indigo-700 rounded-lg transition-colors"
+                                    key={filter.value}
+                                    onClick={() => setFilterStatus(filter.value)}
+                                    className={`
+                                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                                        flex items-center gap-2
+                                        ${isActive
+                                            ? 'bg-indigo-600 text-white shadow-md'
+                                            : 'bg-white text-gray-700 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                                        }
+                                    `}
                                 >
-                                    Browse Colleges
+                                    <Icon className="h-4 w-4" />
+                                    {filter.label}
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {filteredApplications.map(app => {
-                                    const statusConfig = {
-                                        researching: { label: 'Researching', color: 'text-gray-600' },
-                                        planning: { label: 'Planning', color: 'text-blue-600' },
-                                        in_progress: { label: 'In Progress', color: 'text-red-600' },
-                                        submitted: { label: 'Submitted', color: 'text-blue-600' },
-                                        accepted: { label: 'Accepted', color: 'text-green-600' },
-                                        waitlisted: { label: 'Waitlisted', color: 'text-yellow-600' },
-                                        rejected: { label: 'Rejected', color: 'text-red-600' },
-                                        declined: { label: 'Declined', color: 'text-gray-600' },
-                                        enrolled: { label: 'Enrolled', color: 'text-indigo-600' },
-                                    };
-
-                                    const status = statusConfig[app.status];
-
-                                    return (
-                                        <div
-                                            key={app.id}
-                                            className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium text-gray-900 hover:text-indigo-600 transition-colors">
-                                                        {app.institution?.name}
-                                                    </h3>
-                                                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                                                        <MapPin className="h-3 w-3" />
-                                                        <span>{app.institution?.city}, {app.institution?.state}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 mt-2">
-                                                        <p className={`text-xs font-medium ${status.color}`}>
-                                                            {status.label}
-                                                        </p>
-                                                        {app.application_type && (
-                                                            <p className="text-xs text-gray-500">
-                                                                {app.application_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="text-right ml-4">
-                                                    {app.deadline && (
-                                                        <p className="text-xs text-gray-500">
-                                                            Due: {new Date(app.deadline).toLocaleDateString()}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                            );
+                        })}
                     </div>
                 </div>
+
+                {/* Applications Grid */}
+                {filteredApplications.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-200">
+                        <GraduationCap className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                            {filterStatus === 'all'
+                                ? 'No Colleges Tracked Yet'
+                                : `No ${statusFilters.find(f => f.value === filterStatus)?.label} Applications`
+                            }
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            {filterStatus === 'all'
+                                ? 'Start exploring colleges and track your applications here!'
+                                : 'Try selecting a different status filter.'}
+                        </p>
+                        <button
+                            onClick={() => router.push('/institutions')}
+                            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium inline-flex items-center gap-2"
+                        >
+                            <Plus className="h-5 w-5" />
+                            Browse Colleges
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {filteredApplications.map((application) => (
+                            <CollegeApplicationCard
+                                key={application.id}
+                                application={application}
+                                onUpdate={loadDashboard}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Browse More Colleges Button */}
+                {dashboard.applications.length > 0 && (
+                    <div className="mt-8 text-center">
+                        <button
+                            onClick={() => router.push('/institutions')}
+                            className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium inline-flex items-center gap-2"
+                        >
+                            <Plus className="h-5 w-5" />
+                            Add More Colleges
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

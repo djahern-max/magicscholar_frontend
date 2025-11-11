@@ -60,18 +60,18 @@ export default function InstitutionHeader({ institution }: InstitutionHeaderProp
             <div className="p-6">
                 <div className="flex flex-col lg:flex-row items-start gap-6">
                     {/* Institution Image */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 w-full lg:w-auto">
                         {institution.primary_image_url || institution.display_image_url ? (
                             <div className="relative">
                                 <img
                                     src={institution.display_image_url || institution.primary_image_url}
                                     alt={`${institution.name} campus`}
-                                    className="w-64 h-48 object-cover rounded-xl"
+                                    className="w-full lg:w-64 h-48 object-cover rounded-xl"
                                     onError={() => setImageError(true)}
                                     style={{ display: imageError ? 'none' : 'block' }}
                                 />
                                 {imageError && (
-                                    <div className="w-64 h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                                    <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
                                         <div className="text-center text-gray-400">
                                             <GraduationCap className="w-12 h-12 mx-auto mb-2" />
                                             <p className="text-sm">No image available</p>
@@ -80,7 +80,7 @@ export default function InstitutionHeader({ institution }: InstitutionHeaderProp
                                 )}
                             </div>
                         ) : (
-                            <div className="w-64 h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                            <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
                                 <div className="text-center text-gray-400">
                                     <GraduationCap className="w-12 h-12 mx-auto mb-2" />
                                     <p className="text-sm">No image available</p>
@@ -90,35 +90,37 @@ export default function InstitutionHeader({ institution }: InstitutionHeaderProp
                     </div>
 
                     {/* Institution Details */}
-                    <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                {institution.name}
-                            </h1>
+                    <div className="flex-1 w-full">
+                        {/* Title and Button Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                            <div className="flex-1">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                                    {institution.name}
+                                </h1>
 
-                            {/* Track This College Button */}
-                            <div className="flex-shrink-0">
+                                <div className="flex items-center text-gray-600 mb-3">
+                                    <MapPin className="w-4 h-4 mr-2" />
+                                    <span>{institution.city}, {institution.state}</span>
+                                </div>
+                            </div>
+
+                            {/* Track Button - Better positioned */}
+                            <div className="flex-shrink-0 sm:ml-4">
                                 <AddToTrackingButton
                                     institutionId={institution.id}
                                     institutionName={institution.name}
                                     variant="button"
                                     onSuccess={() => {
-                                        const goToDashboard = confirm(
-                                            'Added to your college dashboard! Would you like to view your applications now?'
-                                        );
-                                        if (goToDashboard) {
+                                        // Success - confetti already shown
+                                        setTimeout(() => {
                                             router.push('/colleges/dashboard');
-                                        }
+                                        }, 1500);
                                     }}
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center text-gray-600 mb-4">
-                            <MapPin className="w-4 h-4 mr-2" />
-                            <span>{institution.city}, {institution.state}</span>
-                        </div>
-
+                        {/* Institution Stats */}
                         <div className="flex flex-wrap gap-4 mb-4">
                             <div className="flex items-center text-sm text-gray-600">
                                 <Users className="w-4 h-4 mr-2 text-gray-400" />
@@ -130,12 +132,13 @@ export default function InstitutionHeader({ institution }: InstitutionHeaderProp
                             </div>
                         </div>
 
+                        {/* Website Link */}
                         {institution.website && (
                             <a
                                 href={institution.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                                className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium transition-colors text-sm"
                             >
                                 <ExternalLink className="w-4 h-4 mr-1" />
                                 Visit Website

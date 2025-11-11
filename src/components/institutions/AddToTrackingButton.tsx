@@ -1,17 +1,17 @@
 // src/components/institutions/AddToTrackingButton.tsx
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti';
 import { Plus, Check, Loader2 } from 'lucide-react';
-import axios from 'axios';
-import { ApplicationType } from '@/types/college-tracking';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface AddToTrackingButtonProps {
     institutionId: number;
     institutionName: string;
-    variant?: 'button' | 'card';
+    variant?: 'button' | 'compact';
     onSuccess?: () => void;
 }
 
@@ -21,82 +21,75 @@ export default function AddToTrackingButton({
     variant = 'button',
     onSuccess,
 }: AddToTrackingButtonProps) {
-    const [isTracking, setIsTracking] = useState(false);
-    const [showModal, setShowModal] = useState(false);
+    const router = useRouter();
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
-
-    // Form state
-    const [applicationType, setApplicationType] = useState<ApplicationType | ''>('');
-    const [deadline, setDeadline] = useState('');
-    const [notes, setNotes] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const handleQuickTrack = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Please log in to track colleges');
-            return;
-        }
-
         setSaving(true);
-        setError('');
+        setError(null);
 
         try {
-            await axios.post(
-                `${API_BASE_URL}/api/v1/college-tracking/applications`,
-                {
-                    institution_id: institutionId,
-                    status: 'researching',
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setSuccess(true);
-            setTimeout(() => {
-                if (onSuccess) onSuccess();
-            }, 1500);
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.detail || 'Failed to track college';
-            if (errorMessage.includes('already in your tracking')) {
-                setError('Already tracking this college');
-            } else {
-                setError(errorMessage);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                router.push('/');
+                return;
             }
-        } finally {
-            setSaving(false);
-        }
-    };
 
-    const handleDetailedTrack = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Please log in to track colleges');
-            return;
-        }
-
-        setSaving(true);
-        setError('');
-
-        try {
-            await axios.post(
+            const response = await fetch(
                 `${API_BASE_URL}/api/v1/college-tracking/applications`,
                 {
-                    institution_id: institutionId,
-                    status: 'researching',
-                    application_type: applicationType || undefined,
-                    deadline: deadline || undefined,
-                    notes: notes || undefined,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        institution_id: institutionId,
+                        status: 'researching',
+                        // Optional fields can be added later from dashboard
+                    }),
+                }
             );
 
-            setSuccess(true);
-            setShowModal(false);
-            setTimeout(() => {
-                if (onSuccess) onSuccess();
-            }, 1500);
+            if (response.status === 201) {
+                // Success! 🎉 Celebrate with confetti
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#3b82f6', '#60a5fa', '#93c5fd'],
+                });
+
+                setSuccess(true);
+
+                // Brief success message, then offer to view dashboard
+                setTimeout(() => {
+                    if (onSuccess) {
+                        onSuccess();
+                    } else {
+                        // Default: redirect to college dashboard
+                        router.push('/colleges/dashboard');
+                    }
+                }, 1500);
+            } else if (response.status === 400) {
+                // Already tracked
+                const data = await response.json();
+                if (data.detail?.includes('already')) {
+                    setError('Already tracking this college!');
+                    // Redirect to dashboard after brief delay
+                    setTimeout(() => {
+                        router.push('/colleges/dashboard');
+                    }, 2000);
+                } else {
+                    setError(data.detail || 'Failed to track college');
+                }
+            } else {
+                throw new Error('Failed to track college');
+            }
         } catch (err: any) {
+            console.error('Error tracking college:', err);
             const errorMessage = err.response?.data?.detail || 'Failed to track college';
             setError(errorMessage);
         } finally {
@@ -113,22 +106,22 @@ export default function AddToTrackingButton({
                         ? 'px-6 py-3 text-base'
                         : 'px-4 py-2 text-sm'
                     }
-                    bg-green-600 text-white rounded-lg font-medium flex items-center gap-2
+                    bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 shadow-md
                 `}
             >
                 <Check className="h-5 w-5" />
-                Tracking!
+                Tracking! Redirecting...
             </button>
         );
     }
 
     return (
-        <>
+        <div className="space-y-2">
             {variant === 'button' ? (
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={handleQuickTrack}
                     disabled={saving}
-                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2 shadow-md disabled:opacity-50"
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {saving ? (
                         <>
@@ -146,7 +139,7 @@ export default function AddToTrackingButton({
                 <button
                     onClick={handleQuickTrack}
                     disabled={saving}
-                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {saving ? (
                         <>
@@ -156,107 +149,17 @@ export default function AddToTrackingButton({
                     ) : (
                         <>
                             <Plus className="h-4 w-4" />
-                            Track
+                            Track College
                         </>
                     )}
                 </button>
             )}
 
             {error && (
-                <p className="text-sm text-red-600 mt-2">{error}</p>
-            )}
-
-            {/* Modal for Detailed Tracking */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">
-                            Track {institutionName}
-                        </h3>
-
-                        {error && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="space-y-4 mb-6">
-                            {/* Application Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Application Type
-                                </label>
-                                <select
-                                    value={applicationType}
-                                    onChange={(e) => setApplicationType(e.target.value as ApplicationType)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                >
-                                    <option value="">Select type...</option>
-                                    <option value="early_decision">Early Decision (ED)</option>
-                                    <option value="early_action">Early Action (EA)</option>
-                                    <option value="regular_decision">Regular Decision (RD)</option>
-                                    <option value="rolling">Rolling Admissions</option>
-                                </select>
-                            </div>
-
-                            {/* Deadline */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Application Deadline
-                                </label>
-                                <input
-                                    type="date"
-                                    value={deadline}
-                                    onChange={(e) => setDeadline(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                            </div>
-
-                            {/* Notes */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Notes (Optional)
-                                </label>
-                                <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    rows={3}
-                                    placeholder="Add any notes about this application..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowModal(false);
-                                    setError('');
-                                }}
-                                disabled={saving}
-                                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDetailedTrack}
-                                disabled={saving}
-                                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {saving ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Start Tracking'
-                                )}
-                            </button>
-                        </div>
-                    </div>
+                <div className="px-4 py-3 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm">
+                    {error}
                 </div>
             )}
-        </>
+        </div>
     );
 }
