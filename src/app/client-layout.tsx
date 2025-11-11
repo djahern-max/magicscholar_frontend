@@ -1,4 +1,4 @@
-// src/app/client-layout.tsx - Fixed version
+// src/app/client-layout.tsx
 'use client';
 
 import { ReactNode } from 'react';
@@ -9,12 +9,10 @@ interface ClientLayoutProps {
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
-  // Remove the login/register handlers since Header now handles auth internally
-
   return (
     <>
       <Header />
-      <main>{children}</main>
+      <main className="min-h-screen">{children}</main>
     </>
   );
 }

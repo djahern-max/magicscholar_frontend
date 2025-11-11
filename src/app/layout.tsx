@@ -43,8 +43,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* 👇 This is the line you change */}
-      <body className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50 to-purple-50">
+      <body className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100">
         <ClientLayout>
           {children}
         </ClientLayout>
