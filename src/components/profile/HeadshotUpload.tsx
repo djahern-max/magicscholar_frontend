@@ -19,16 +19,27 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
         const file = e.target.files?.[0];
         if (!file) return;
 
+        console.log('📁 File selected:', {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            sizeInMB: (file.size / (1024 * 1024)).toFixed(2)
+        });
+
         // Validate file type
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!validTypes.includes(file.type)) {
-            setError('Please upload a JPG, PNG, or WEBP image');
+            const errorMsg = `Please upload a JPG, PNG, or WEBP image. You uploaded: ${file.type}`;
+            console.error('❌ Invalid file type:', errorMsg);
+            setError(errorMsg);
             return;
         }
 
         // Validate file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            setError('Image too large. Maximum size is 5MB');
+            const errorMsg = `Image too large. Size: ${(file.size / (1024 * 1024)).toFixed(2)}MB, Maximum: 5MB`;
+            console.error('❌ File too large:', errorMsg);
+            setError(errorMsg);
             return;
         }
 
@@ -38,6 +49,10 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreview(reader.result as string);
+            console.log('✅ Preview loaded');
+        };
+        reader.onerror = () => {
+            console.error('❌ Error reading file for preview');
         };
         reader.readAsDataURL(file);
 
@@ -46,21 +61,49 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
         const token = localStorage.getItem('token');
 
         if (!token) {
-            setError('Please log in to upload your photo');
+            const errorMsg = 'Please log in to upload your photo';
+            console.error('❌ No auth token found');
+            setError(errorMsg);
             setUploading(false);
             return;
         }
 
+        console.log('🚀 Starting upload to API...');
+
         try {
             const result = await profileService.uploadProfileImage(token, file);
+            console.log('✅ Upload successful:', result);
             onUploadSuccess(result.profile_image_url);
             setError('');
         } catch (err: any) {
-            console.error('Upload error:', err);
-            setError(err.response?.data?.detail || 'Failed to upload image');
+            console.error('❌ Upload error:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                fullError: err
+            });
+
+            // Detailed error message
+            let errorMsg = 'Failed to upload image';
+
+            if (err.response?.data?.detail) {
+                errorMsg = err.response.data.detail;
+            } else if (err.response?.status === 413) {
+                errorMsg = 'File too large for server';
+            } else if (err.response?.status === 401) {
+                errorMsg = 'Not authenticated. Please log in again';
+            } else if (err.response?.status === 500) {
+                errorMsg = 'Server error. Please try again';
+            } else if (err.message) {
+                errorMsg = err.message;
+            }
+
+            setError(errorMsg);
             setPreview(currentImageUrl || null);
         } finally {
             setUploading(false);
+            console.log('🏁 Upload process complete');
         }
     };
 
@@ -99,9 +142,14 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                     </p>
 
                     {error && (
-                        <div className="mb-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                            <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-                            <p className="text-xs sm:text-sm text-red-800">{error}</p>
+                        <div className="mb-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="flex items-start">
+                                <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+                                <div className="flex-1">
+                                    <p className="text-xs sm:text-sm text-red-800 font-medium">{error}</p>
+                                    <p className="text-xs text-red-600 mt-1">Check browser console (F12) for details</p>
+                                </div>
+                            </div>
                         </div>
                     )}
 
