@@ -109,6 +109,7 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                         <input
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,image/webp"
+                            capture="user"
                             onChange={handleFileSelect}
                             disabled={uploading}
                             className="hidden"
@@ -130,7 +131,7 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                     </div>
 
                     <p className="text-xs text-gray-500 mt-2 text-center sm:text-left">
-                        JPG, PNG, or WEBP • Max 5MB
+                        Take a photo or choose from gallery • Max 5MB
                     </p>
                 </div>
             </div>
