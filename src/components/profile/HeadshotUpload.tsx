@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Camera, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { Camera, User, AlertCircle } from 'lucide-react';
 import { profileService } from '@/lib/profileService';
 
 interface HeadshotUploadProps {
@@ -65,13 +65,15 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h3>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                Profile Photo
+            </h3>
 
-            <div className="flex items-start gap-6">
-                {/* Photo Preview */}
-                <div className="relative">
-                    <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-4 border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                {/* Photo Preview - Centered on mobile */}
+                <div className="relative w-full sm:w-auto flex justify-center sm:justify-start">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-4 border-gray-200 flex-shrink-0">
                         {preview ? (
                             <img
                                 src={preview}
@@ -79,7 +81,7 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <User className="h-16 w-16 text-gray-400" />
+                            <User className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
                         )}
                     </div>
 
@@ -91,19 +93,19 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                 </div>
 
                 {/* Upload Section */}
-                <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-3">
+                <div className="flex-1 w-full">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3 text-center sm:text-left">
                         Upload a professional headshot to personalize your profile
                     </p>
 
                     {error && (
-                        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
+                        <div className="mb-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
                             <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-                            <p className="text-sm text-red-800">{error}</p>
+                            <p className="text-xs sm:text-sm text-red-800">{error}</p>
                         </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -115,19 +117,19 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                         <label
                             htmlFor="headshot-upload"
                             className={`
-                inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer
-                ${uploading
+                                w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer text-sm sm:text-base
+                                ${uploading
                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     : 'bg-blue-600 text-white hover:bg-blue-700'
                                 }
-              `}
+                            `}
                         >
-                            <Camera className="h-4 w-4" />
-                            {uploading ? 'Uploading...' : preview ? 'Change Photo' : 'Upload Photo'}
+                            <Camera className="h-4 w-4 flex-shrink-0" />
+                            <span>{uploading ? 'Uploading...' : preview ? 'Change Photo' : 'Upload Photo'}</span>
                         </label>
                     </div>
 
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 mt-2 text-center sm:text-left">
                         JPG, PNG, or WEBP • Max 5MB
                     </p>
                 </div>

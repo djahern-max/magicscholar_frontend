@@ -104,7 +104,7 @@ export default function ProfilePage() {
     if (!profile) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
+                <div className="text-center px-4">
                     <p className="text-gray-600 mb-4">No profile found</p>
                     <button
                         onClick={() => router.push('/profile/setup')}
@@ -118,28 +118,35 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
             <div className="max-w-4xl mx-auto px-4">
-                {/* Header with Actions */}
-                <div className="mb-8 flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
-                        <p className="text-gray-600">View and manage your profile information</p>
+                {/* Header with Actions - Mobile Optimized */}
+                <div className="mb-6 sm:mb-8">
+                    {/* Title Section */}
+                    <div className="mb-4">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                            My Profile
+                        </h1>
+                        <p className="text-sm sm:text-base text-gray-600">
+                            View and manage your profile information
+                        </p>
                     </div>
-                    <div className="flex gap-3">
+
+                    {/* Action Buttons - Stack on mobile, row on tablet+ */}
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                             onClick={() => router.push('/dashboard')}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm sm:text-base font-medium"
                         >
-                            <LayoutDashboard className="h-4 w-4" />
-                            My Dashboard
+                            <LayoutDashboard className="h-4 w-4 flex-shrink-0" />
+                            <span>My Dashboard</span>
                         </button>
                         <button
                             onClick={() => router.push('/profile/setup')}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm sm:text-base font-medium"
                         >
-                            <Upload className="h-4 w-4" />
-                            {profile.resume_url ? 'Update Resume' : 'Upload Resume'}
+                            <Upload className="h-4 w-4 flex-shrink-0" />
+                            <span>{profile.resume_url ? 'Update Resume' : 'Upload Resume'}</span>
                         </button>
                     </div>
                 </div>
@@ -151,7 +158,7 @@ export default function ProfilePage() {
                 />
 
                 {/* Profile Summary */}
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                     <ProfileSummary
                         profile={profile}
                         onEdit={() => router.push('/profile/edit')}
@@ -160,24 +167,24 @@ export default function ProfilePage() {
 
                 {/* Scholarship Matches */}
                 {profile.gpa && (
-                    <div className="mt-6">
+                    <div className="mt-4 sm:mt-6">
                         {loadingScholarships ? (
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center justify-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                    <p className="ml-3 text-gray-600">Finding scholarships...</p>
+                                    <p className="ml-3 text-gray-600 text-sm sm:text-base">Finding scholarships...</p>
                                 </div>
                             </div>
                         ) : scholarships.length > 0 ? (
-                            <div className="bg-white rounded-lg shadow-lg p-6">
-                                <div className="flex items-center mb-4">
-                                    <Award className="h-6 w-6 text-yellow-500 mr-2" />
-                                    <h2 className="text-xl font-bold text-gray-900">
+                            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                                <div className="flex items-center mb-3 sm:mb-4">
+                                    <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 mr-2 flex-shrink-0" />
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                                         Scholarship Matches ({scholarships.length})
                                     </h2>
                                 </div>
 
-                                <p className="text-gray-600 mb-4">
+                                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                                     Based on your GPA of {profile.gpa}, here are scholarships you may qualify for:
                                 </p>
 
@@ -185,27 +192,29 @@ export default function ProfilePage() {
                                     {scholarships.map((scholarship) => (
                                         <div
                                             key={scholarship.id}
-                                            className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                                            className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
                                             onClick={() => router.push(`/scholarship/${scholarship.id}`)}
                                         >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                            <div className="flex justify-between items-start gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-sm sm:text-base truncate">
                                                         {scholarship.title}
                                                     </h3>
-                                                    <p className="text-sm text-gray-600 mt-1">{scholarship.organization}</p>
+                                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 truncate">
+                                                        {scholarship.organization}
+                                                    </p>
                                                     {scholarship.min_gpa && (
                                                         <p className="text-xs text-gray-500 mt-1">
                                                             Min GPA: {scholarship.min_gpa}
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="text-right ml-4">
-                                                    <p className="font-bold text-green-600">
+                                                <div className="text-right flex-shrink-0">
+                                                    <p className="font-bold text-green-600 text-sm sm:text-base">
                                                         ${scholarship.amount_max.toLocaleString()}
                                                     </p>
                                                     {scholarship.deadline && (
-                                                        <p className="text-xs text-gray-500 mt-1">
+                                                        <p className="text-xs text-gray-500 mt-1 whitespace-nowrap">
                                                             Due: {new Date(scholarship.deadline).toLocaleDateString()}
                                                         </p>
                                                     )}
@@ -215,30 +224,30 @@ export default function ProfilePage() {
                                     ))}
                                 </div>
 
-                                <div className="flex gap-2 mt-4">
+                                <div className="flex flex-col sm:flex-row gap-2 mt-4">
                                     <button
                                         onClick={() => router.push('/scholarships')}
-                                        className="flex-1 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                                        className="flex-1 py-2.5 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-200 text-sm sm:text-base"
                                     >
                                         Browse More Scholarships
                                     </button>
                                     <button
                                         onClick={() => router.push('/dashboard')}
-                                        className="flex-1 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors"
+                                        className="flex-1 py-2.5 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors text-sm sm:text-base"
                                     >
                                         Go to Dashboard
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
                                 <div className="flex items-center">
-                                    <Award className="h-5 w-5 text-blue-600 mr-3" />
+                                    <Award className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0" />
                                     <div>
-                                        <h3 className="font-semibold text-gray-900 mb-1">
+                                        <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
                                             Looking for Scholarships
                                         </h3>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-xs sm:text-sm text-gray-600">
                                             We're constantly adding new scholarships. Check back soon!
                                         </p>
                                     </div>
@@ -249,7 +258,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* School Matches */}
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6 mb-6">
                     <SchoolMatches
                         locationPreference={profile.location_preference}
                         showPrompt={true}
