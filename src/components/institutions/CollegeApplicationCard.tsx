@@ -88,11 +88,11 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
         waitlisted: {
             label: 'Waitlisted',
             icon: AlertCircle,
-            color: 'text-yellow-600',
-            bgColor: 'bg-yellow-50',
-            borderColor: 'border-yellow-200',
-            buttonBg: 'bg-yellow-500',
-            buttonHover: 'hover:bg-yellow-600',
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-50',
+            borderColor: 'border-orange-200',
+            buttonBg: 'bg-orange-500',
+            buttonHover: 'hover:bg-orange-600',
         },
         rejected: {
             label: 'Not Accepted',
@@ -195,7 +195,7 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
             particleCount: 50,
             spread: 50,
             origin: { y: 0.6 },
-            colors: ['#eab308', '#facc15', '#fde047'],
+            colors: ['#f97316', '#fb923c', '#fdba74'],
         });
     };
 
@@ -392,7 +392,7 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-            {/* LARGER College Image - increased from h-16 to h-48 */}
+            {/* College Image */}
             <div className="relative h-48 bg-gray-200 cursor-pointer" onClick={handleViewCollege}>
                 {institution?.primary_image_url && !imageError ? (
                     <img
@@ -466,7 +466,7 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
                     {institution?.name || 'Unknown College'}
                 </h3>
 
-                <div className="space-y-2 text-sm text-gray-600 mb-3">
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
                     <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
                         <span>
@@ -511,32 +511,32 @@ export default function CollegeApplicationCard({ application, onUpdate }: Props)
 
                 {/* Notes */}
                 {application.notes && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2 bg-gray-50 rounded-lg p-2">
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 bg-gray-50 rounded-lg p-2">
                         {application.notes}
                     </p>
                 )}
 
                 {/* Error Display */}
                 {error && (
-                    <div className="mb-3 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
+                    <div className="mb-4 px-3 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
                         {error}
                     </div>
                 )}
 
-                {/* 🎉 CONFETTI ACTION BUTTONS */}
+                {/* 🎉 CONFETTI ACTION BUTTONS - Mobile Optimized */}
                 {mainActions.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                         {mainActions.map((action) => (
                             <button
                                 key={action.newStatus}
                                 onClick={() => handleActionClick(action)}
                                 disabled={isUpdating}
                                 className={`
-                                    px-4 py-2 rounded-lg font-medium text-sm text-white
+                                    w-full px-4 py-3 rounded-lg font-medium text-sm text-white
                                     ${action.config.buttonBg} ${action.config.buttonHover}
                                     transition-all duration-200 
                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                    flex items-center gap-2 shadow-sm
+                                    flex items-center justify-center gap-2 shadow-sm
                                 `}
                             >
                                 <action.config.icon className="h-4 w-4" />
