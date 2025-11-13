@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import confetti from "canvas-confetti"; // ✅ add this
+import { triggerConfetti } from "@/lib/confettiHelper"; // ✅ use the helper that respects settings
 
 interface SaveToTrackingButtonProps {
     scholarshipId: number;
@@ -34,7 +34,7 @@ export default function SaveToTrackingButton({
         };
 
         (function frame() {
-            confetti({ ...defaults, particleCount: 28 });
+            triggerConfetti({ ...defaults, particleCount: 28 }); // Use helper instead of direct confetti
             if (Date.now() < end) requestAnimationFrame(frame);
         })();
     };
@@ -46,7 +46,14 @@ export default function SaveToTrackingButton({
         try {
             const token = localStorage.getItem("token");
             if (!token) {
-                router.push("/");
+                // Show error message first
+                setError("Please log in to save scholarships to your dashboard");
+                setIsLoading(false);
+
+                // Redirect to login after showing message
+                setTimeout(() => {
+                    router.push("/");
+                }, 2000);
                 return;
             }
 

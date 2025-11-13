@@ -1,7 +1,7 @@
 // src/lib/profileService.ts
 
 import axios from 'axios';
-import { UserProfile, ProfileUpdateData, ResumeUploadResponse } from '@/types/profile';
+import { UserProfile, ProfileUpdateData, ResumeUploadResponse, UserSettings } from '@/types/profile';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -53,6 +53,29 @@ export const profileService = {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',
                 },
+            }
+        );
+        return response.data;
+    },
+
+    // Get user settings
+    async getSettings(token: string): Promise<UserSettings> {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/profiles/me/settings`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return response.data;
+    },
+
+    // Update user settings
+    async updateSettings(
+        token: string,
+        settings: Partial<UserSettings>
+    ): Promise<{ message: string; settings: UserSettings }> {
+        const response = await axios.patch(
+            `${API_BASE_URL}/api/v1/profiles/me/settings`,
+            settings,
+            {
+                headers: { Authorization: `Bearer ${token}` },
             }
         );
         return response.data;

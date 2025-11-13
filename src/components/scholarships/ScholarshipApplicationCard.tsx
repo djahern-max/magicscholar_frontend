@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti';
+import { triggerConfetti as confetti } from '@/lib/confettiHelper';
 import {
     Lightbulb,
     ClipboardList,

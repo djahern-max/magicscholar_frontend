@@ -14,6 +14,10 @@ export interface WorkExperience {
     description?: string;
 }
 
+export interface UserSettings {
+    confetti_enabled: boolean;
+}
+
 export interface UserProfile {
     id: number;
     user_id: number;
@@ -50,6 +54,9 @@ export interface UserProfile {
     // Timestamps
     created_at: string;
     updated_at?: string;
+
+    // Settings
+    settings: UserSettings;
 }
 
 export interface ProfileUpdateData {

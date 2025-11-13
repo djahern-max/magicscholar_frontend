@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Sparkles, Brain } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { triggerConfetti as confetti } from '@/lib/confettiHelper';
 
 interface ResumeUploadProps {
     onUploadSuccess: (data: any) => void;

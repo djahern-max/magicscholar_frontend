@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti';
+import { triggerConfetti } from '@/lib/confettiHelper';
 import { Plus, Check, Loader2 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -33,7 +33,14 @@ export default function AddToTrackingButton({
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                router.push('/');
+                // Show error message first
+                setError('Please log in to track colleges');
+                setSaving(false);
+
+                // Redirect to login after showing message
+                setTimeout(() => {
+                    router.push('/');
+                }, 2000);
                 return;
             }
 
@@ -55,7 +62,7 @@ export default function AddToTrackingButton({
 
             if (response.status === 201) {
                 // Success! 🎉 Celebrate with confetti
-                confetti({
+                triggerConfetti({
                     particleCount: 60,
                     spread: 70,
                     origin: { y: 0.6 },
@@ -85,6 +92,12 @@ export default function AddToTrackingButton({
                 } else {
                     setError(data.detail || 'Failed to track college');
                 }
+            } else if (response.status === 401) {
+                setError('Your session has expired. Please log in again.');
+                setTimeout(() => {
+                    localStorage.removeItem('token');
+                    router.push('/');
+                }, 2000);
             } else {
                 throw new Error('Failed to track college');
             }

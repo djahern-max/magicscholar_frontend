@@ -1,9 +1,13 @@
 // src/components/profile/HeadshotUpload.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { Camera, User, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, User, AlertCircle, Sparkles } from 'lucide-react';
 import { profileService } from '@/lib/profileService';
+import { setConfettiEnabled } from '@/lib/confettiHelper';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface HeadshotUploadProps {
     currentImageUrl?: string;
@@ -14,6 +18,66 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
+    const [confettiEnabled, setConfettiEnabledState] = useState(true);
+    const [savingSettings, setSavingSettings] = useState(false);
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/api/v1/profiles/me/settings`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            const enabled = response.data.confetti_enabled ?? true;
+            setConfettiEnabledState(enabled);
+            setConfettiEnabled(enabled);
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+            setConfettiEnabledState(true);
+            setConfettiEnabled(true);
+        }
+    };
+
+    const toggleConfetti = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const newValue = !confettiEnabled;
+
+        // Optimistically update UI
+        setConfettiEnabledState(newValue);
+        setConfettiEnabled(newValue);
+        setSavingSettings(true);
+
+        try {
+            await axios.patch(
+                `${API_BASE_URL}/api/v1/profiles/me/settings`,
+                { confetti_enabled: newValue },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Failed to update settings:', error);
+            // Revert on error
+            setConfettiEnabledState(!newValue);
+            setConfettiEnabled(!newValue);
+        } finally {
+            setSavingSettings(false);
+        }
+    };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -110,7 +174,7 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
     return (
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-                Profile Photo
+                Profile Photo & Preferences
             </h3>
 
             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
@@ -181,6 +245,45 @@ export default function HeadshotUpload({ currentImageUrl, onUploadSuccess }: Hea
                     <p className="text-xs text-gray-500 mt-2 text-center sm:text-left">
                         Take a photo or choose from gallery • Max 5MB
                     </p>
+
+                    {/* Divider */}
+                    <div className="my-4 border-t border-gray-200"></div>
+
+                    {/* Confetti Toggle */}
+                    <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <Sparkles className="h-5 w-5 text-purple-500 flex-shrink-0" />
+                            <div>
+                                <p className="font-medium text-gray-900 text-sm sm:text-base">
+                                    Celebration Confetti
+                                </p>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                    Show confetti when you achieve milestones
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Toggle Switch */}
+                        <button
+                            onClick={toggleConfetti}
+                            disabled={savingSettings}
+                            className={`
+                                relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0
+                                transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                ${savingSettings ? 'opacity-50 cursor-not-allowed' : ''}
+                                ${confettiEnabled ? 'bg-blue-600' : 'bg-gray-300'}
+                            `}
+                            role="switch"
+                            aria-checked={confettiEnabled}
+                        >
+                            <span
+                                className={`
+                                    inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                    ${confettiEnabled ? 'translate-x-6' : 'translate-x-1'}
+                                `}
+                            />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
