@@ -35,25 +35,38 @@ export default function Header() {
 
   useEffect(() => {
     if (!mounted) return;
+
     const token = localStorage.getItem('token');
-    if (token) {
-      // Fetch user data
-      fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data: UserData | null) => {
-          if (data) {
-            setUser(data);
-            // Fetch profile data to get headshot
-            fetchProfile(token);
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        });
+
+    // Early return if no token - don't make any API calls
+    if (!token) {
+      return;
     }
+
+    // Token exists - fetch user data
+    fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
+    })
+      .then((res) => {
+        if (!res.ok) {
+          // Invalid token - remove it
+          throw new Error('Invalid token');
+        }
+        return res.json();
+      })
+      .then((data: UserData) => {
+        setUser(data);
+        // Fetch profile data to get headshot
+        fetchProfile(token);
+      })
+      .catch((error) => {
+        console.error('Auth error:', error);
+        // Clean up invalid token
+        localStorage.removeItem('token');
+        setUser(null);
+        setProfile(null);
+      });
   }, [mounted]);
 
   const fetchProfile = async (token: string) => {
@@ -64,6 +77,9 @@ export default function Header() {
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
+      } else {
+        // Profile fetch failed - not critical, just log it
+        console.warn('Failed to fetch profile');
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
