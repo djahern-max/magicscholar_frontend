@@ -1,0 +1,18 @@
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Don't index user dashboards or auth pages
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /callback
+Disallow: /error
+
+# Allow institution and scholarship pages for SEO
+Allow: /institutions
+Allow: /institution/*
+Allow: /scholarships
+Allow: /scholarship/*
+
+# Sitemap location
+Sitemap: https://app.magicscholar.com/sitemap.xml

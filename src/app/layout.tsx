@@ -1,12 +1,32 @@
-// src/app/layout.tsx
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import ClientLayout from './client-layout'
 
 export const metadata: Metadata = {
-  title: 'MagicScholar',
-  description: 'Find your perfect college and scholarships',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL('https://app.magicscholar.com'),
+  title: {
+    default: 'MagicScholar - Track College Applications & Find Scholarships',
+    template: '%s | MagicScholar'
+  },
+  description: 'Free tools to organize college applications, discover scholarships, and manage your college journey. AI-assisted profile building and deadline tracking.',
+  keywords: [
+    'college applications',
+    'scholarship search',
+    'college planning',
+    'financial aid',
+    'college tracker',
+    'application deadlines',
+    'college advisor',
+    'student planning'
+  ],
+  authors: [{ name: 'MagicScholar' }],
+  creator: 'MagicScholar',
+  publisher: 'MagicScholar',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -14,26 +34,62 @@ export const metadata: Metadata = {
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
     ],
     apple: '/apple-touch-icon.png',
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/safari-pinned-tab.svg',
+      },
+    ],
   },
+  manifest: '/site.webmanifest',
   openGraph: {
-    title: 'MagicScholar',
-    description: 'Find your perfect college and scholarships',
-    url: '/',
-    siteName: 'MagicScholar',
-    locale: 'en_US',
     type: 'website',
+    locale: 'en_US',
+    url: 'https://app.magicscholar.com',
+    siteName: 'MagicScholar',
+    title: 'MagicScholar - Track College Applications & Find Scholarships',
+    description: 'Free tools to organize college applications, discover scholarships, and manage your college journey.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'MagicScholar - College Application Tracking',
+      }
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MagicScholar',
-    description: 'Find your perfect college and scholarships',
+    title: 'MagicScholar - Track College Applications & Find Scholarships',
+    description: 'Free tools to organize college applications, discover scholarships, and manage your college journey.',
+    images: ['/og-image.png'],
+    creator: '@magicscholar', // If you have a Twitter
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    // Add these when you set them up
+    google: 'your-google-verification-code',
+    // yandex: 'your-yandex-verification-code',
+    // bing: 'your-bing-verification-code',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1f2937',
+  themeColor: '#3b82f6',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function RootLayout({
@@ -43,6 +99,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="canonical" href="https://app.magicscholar.com" />
+      </head>
       <body className="min-h-screen bg-white">
         <ClientLayout>
           {children}
