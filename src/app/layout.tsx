@@ -1,3 +1,4 @@
+// src/app/layout.tsx MagiscScholar App (app.magicscholar.com)
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import ClientLayout from './client-layout'
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     description: 'Free tools to organize college applications, discover scholarships, and manage your college journey.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image.png',  // ← This is the key change
         width: 1200,
         height: 630,
         alt: 'MagicScholar - College Application Tracking',
