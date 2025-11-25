@@ -1,13 +1,15 @@
-// src/app/institution/[id]/page.tsx (SIMPLIFIED VERSION)
+// src/app/institution/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import InstitutionHeader from '@/components/institutions/institution-header';
+import InstitutionGallery from '@/components/institutions/institution-gallery';
 import QuickFactsSection from '@/components/institutions/quick-facts-section';
 import AdmissionsSection from '@/components/institutions/admissions-section';
 import CostSection from '@/components/institutions/cost-section';
+import { EntityImage } from '@/types/gallery';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -66,6 +68,8 @@ export default function InstitutionDetail() {
     const [institution, setInstitution] = useState<Institution | null>(null);
     const [costData, setCostData] = useState<CostData | null>(null);
     const [admissionsData, setAdmissionsData] = useState<AdmissionsData | null>(null);
+    const [galleryImages, setGalleryImages] = useState<EntityImage[]>([]);
+    const [featuredImage, setFeaturedImage] = useState<EntityImage | null>(null);
     const [loading, setLoading] = useState(true);
 
     const returnPage = searchParams.get('page') || '1';
@@ -100,8 +104,34 @@ export default function InstitutionDetail() {
                     const institutionData = await institutionResponse.json();
                     setInstitution(institutionData);
 
-                    // Fetch cost data
                     if (institutionData.ipeds_id) {
+                        // Fetch gallery images
+                        try {
+                            const galleryResponse = await fetch(
+                                `${API_BASE_URL}/api/v1/public-gallery/institutions/ipeds/${institutionData.ipeds_id}/images`
+                            );
+                            if (galleryResponse.ok) {
+                                const galleryData = await galleryResponse.json();
+                                setGalleryImages(galleryData);
+                            }
+                        } catch (galleryError) {
+                            console.log('Could not fetch gallery data:', galleryError);
+                        }
+
+                        // Fetch featured image
+                        try {
+                            const featuredResponse = await fetch(
+                                `${API_BASE_URL}/api/v1/public-gallery/institutions/ipeds/${institutionData.ipeds_id}/featured`
+                            );
+                            if (featuredResponse.ok) {
+                                const featuredData = await featuredResponse.json();
+                                setFeaturedImage(featuredData);
+                            }
+                        } catch (featuredError) {
+                            console.log('Could not fetch featured image:', featuredError);
+                        }
+
+                        // Fetch cost data
                         try {
                             const costsResponse = await fetch(`${API_BASE_URL}/api/v1/costs/institution/${institutionData.ipeds_id}`);
                             if (costsResponse.ok) {
@@ -156,6 +186,12 @@ export default function InstitutionDetail() {
         );
     }
 
+    // Use featured image if available, fallback to primary_image_url
+    const institutionWithImage = {
+        ...institution,
+        display_image_url: featuredImage?.cdn_url || institution.primary_image_url || institution.display_image_url
+    };
+
     return (
         <div className="min-h-screen bg-page-bg">
             {/* Back Button */}
@@ -173,8 +209,18 @@ export default function InstitutionDetail() {
 
             {/* Header */}
             <div className="max-w-4xl mx-auto px-4 py-8">
-                <InstitutionHeader institution={institution} />
+                <InstitutionHeader institution={institutionWithImage} />
             </div>
+
+            {/* Gallery */}
+            {galleryImages.length > 0 && (
+                <div className="max-w-4xl mx-auto px-4 pb-8">
+                    <InstitutionGallery 
+                        images={galleryImages} 
+                        institutionName={institution.name} 
+                    />
+                </div>
+            )}
 
             {/* Quick Facts */}
             <div className="max-w-4xl mx-auto px-4 pb-6">
