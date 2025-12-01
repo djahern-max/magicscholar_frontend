@@ -1,388 +1,277 @@
 // src/components/search/StateFilteredSearch.tsx
-import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Loader2, Users, GraduationCap, ExternalLink } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, X, MapPin } from 'lucide-react';
+import InstitutionCard from '@/components/institutions/institution-card';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Your available states with icons (using abbreviations)
-const AVAILABLE_STATES = [
-    { code: 'ALL', name: 'All', icon: '🌟' },
-    { code: 'AL', name: 'AL', icon: '🏈' },
-    { code: 'AR', name: 'AR', icon: '💎' },
-    { code: 'AK', name: 'AK', icon: '🏔️' },
-    { code: 'AZ', name: 'AZ', icon: '🌵' },
-    { code: 'CA', name: 'CA', icon: '🌴' },
-    { code: 'CO', name: 'CO', icon: '⛰️' },
-    { code: 'CT', name: 'CT', icon: '🌳' },
-    { code: 'DC', name: 'DC', icon: '🏛️' },
-    { code: 'DE', name: 'DE', icon: '🦅' },
-    { code: 'FL', name: 'FL', icon: '🌊' },
-    { code: 'GA', name: 'GA', icon: '🍑' },
-    { code: 'HI', name: 'HI', icon: '🌺' },
-    { code: 'IA', name: 'IA', icon: '🌽' },
-    { code: 'ID', name: 'ID', icon: '🥔' },
-    { code: 'IL', name: 'IL', icon: '🌆' },
-    { code: 'IN', name: 'IN', icon: '🏎️' },
-    { code: 'KS', name: 'KS', icon: '🌾' },
-    { code: 'KY', name: 'KY', icon: '🐴' },
-    { code: 'LA', name: 'LA', icon: '🎷' },
-    { code: 'MA', name: 'MA', icon: '🎓' },
-    { code: 'MD', name: 'MD', icon: '🦀' },
-    { code: 'ME', name: 'ME', icon: '🦞' },
-    { code: 'MI', name: 'MI', icon: '🚗' },
-    { code: 'MN', name: 'MN', icon: '❄️' },
-    { code: 'MO', name: 'MO', icon: '🎸' },
-    { code: 'MS', name: 'MS', icon: '🎵' },
-    { code: 'MT', name: 'MT', icon: '🦌' },
-    { code: 'NC', name: 'NC', icon: '🏀' },
-    { code: 'ND', name: 'ND', icon: '🌾' },
-    { code: 'NE', name: 'NE', icon: '🌽' },
-    { code: 'NH', name: 'NH', icon: '🏔️' },
-    { code: 'NJ', name: 'NJ', icon: '🏖️' },
-    { code: 'NM', name: 'NM', icon: '🌶️' },
-    { code: 'NV', name: 'NV', icon: '🎰' },
-    { code: 'NY', name: 'NY', icon: '🗽' },
-    { code: 'OH', name: 'OH', icon: '🌰' },
-    { code: 'OK', name: 'OK', icon: '🤠' },
-    { code: 'OR', name: 'OR', icon: '🌲' },
-    { code: 'PA', name: 'PA', icon: '🔔' },
-    { code: 'RI', name: 'RI', icon: '⚓' },
-    { code: 'SC', name: 'SC', icon: '🌴' },
-    { code: 'SD', name: 'SD', icon: '🗻' },
-    { code: 'TN', name: 'TN', icon: '🎸' },
-    { code: 'TX', name: 'TX', icon: '⭐' },
-    { code: 'UT', name: 'UT', icon: '🏔️' },
-    { code: 'VA', name: 'VA', icon: '🏛️' },
-    { code: 'VT', name: 'VT', icon: '🍁' },
-    { code: 'WA', name: 'WA', icon: '🌲' },
-    { code: 'WI', name: 'WI', icon: '🧀' },
-    { code: 'WV', name: 'WV', icon: '⛰️' },
-    { code: 'WY', name: 'WY', icon: '🦬' },
+// US States with icons - matching scholarships page style
+const US_STATES = [
+    { code: 'ALL', name: 'All States', icon: '🌎' },
+    { code: 'NH', name: 'New Hampshire', icon: '🏔️' },
+    { code: 'MA', name: 'Massachusetts', icon: '📚' },
+    { code: 'VT', name: 'Vermont', icon: '🍁' },
+    { code: 'NY', name: 'New York', icon: '🗽' },
+    { code: 'FL', name: 'Florida', icon: '🌴' },
+    { code: 'CA', name: 'California', icon: '☀️' },
+    { code: 'TX', name: 'Texas', icon: '🤠' },
+    { code: 'PA', name: 'Pennsylvania', icon: '🔔' },
+    { code: 'IL', name: 'Illinois', icon: '🌆' },
+    { code: 'OH', name: 'Ohio', icon: '🌰' },
+    { code: 'NC', name: 'North Carolina', icon: '🏖️' },
+    { code: 'GA', name: 'Georgia', icon: '🍑' },
+    { code: 'MI', name: 'Michigan', icon: '🚗' },
+    { code: 'NJ', name: 'New Jersey', icon: '🏖️' },
+    { code: 'VA', name: 'Virginia', icon: '⛰️' },
+    { code: 'WA', name: 'Washington', icon: '🌲' },
+    { code: 'AZ', name: 'Arizona', icon: '🌵' },
+    { code: 'MD', name: 'Maryland', icon: '🦀' },
+    { code: 'CO', name: 'Colorado', icon: '⛷️' },
+    { code: 'MN', name: 'Minnesota', icon: '🏒' },
 ];
-
-// Dynamic items per page based on selection
-const ITEMS_PER_PAGE_ALL = 48;
-const ITEMS_PER_PAGE_STATE = 12;
 
 interface Institution {
     id: number;
+    ipeds_id: number;
     name: string;
     city: string;
     state: string;
-    display_name: string;
     control_type: string;
-    size_category: string; // sometimes numeric like "5189.0"
-    display_image_url?: string;
-    primary_image_url?: string;
     website?: string;
+    primary_image_url?: string;
+    is_featured: boolean;
+    tuition_in_state?: number;
+    tuition_out_of_state?: number;
+    room_and_board?: number;
+    acceptance_rate?: number;
+    data_completeness_score: number;
 }
 
-interface StateFilterSearchProps {
-    onInstitutionClick?: (institutionId: number) => void;
+interface InstitutionsResponse {
+    items: Institution[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    has_more: boolean;
+}
+
+interface StateFilteredSearchProps {
     initialState?: string;
 }
 
-const StateFilterSearch: React.FC<StateFilterSearchProps> = ({
-    onInstitutionClick,
-    initialState
-}) => {
-    const router = useRouter();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedState, setSelectedState] = useState(initialState || 'ALL');
+export default function StateFilteredSearch({ initialState }: StateFilteredSearchProps) {
     const [institutions, setInstitutions] = useState<Institution[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [totalResults, setTotalResults] = useState(0);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedState, setSelectedState] = useState(initialState || 'ALL');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
 
-    // Search institutions
-    const searchInstitutions = async (page: number = 1, append: boolean = false) => {
-        if (append) {
-            setLoadingMore(true);
-        } else {
-            setLoading(true);
-        }
-
+    const fetchInstitutions = useCallback(async () => {
+        setLoading(true);
         try {
-            const itemsPerPage = selectedState === 'ALL' ? ITEMS_PER_PAGE_ALL : ITEMS_PER_PAGE_STATE;
-            let url = `${API_BASE_URL}/api/v1/institutions/?page=${page}&limit=${itemsPerPage}`;
-
-            if (searchQuery.trim()) {
-                url = `${API_BASE_URL}/api/v1/institutions/search?query=${encodeURIComponent(searchQuery)}&page=${page}&limit=${itemsPerPage}`;
-            }
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: '48',
+            });
 
             if (selectedState !== 'ALL') {
-                const separator = url.includes('?') ? '&' : '?';
-                url += `${separator}state=${selectedState}`;
+                params.append('state', selectedState);
             }
 
-            const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
+            const response = await fetch(`${API_BASE_URL}/api/v1/institutions/?${params}`);
 
-                const institutionsArray = data.institutions || data;
-                const total = data.total || institutionsArray.length;
-
-                if (append) {
-                    setInstitutions(prev => [...prev, ...institutionsArray]);
-                } else {
-                    setInstitutions(Array.isArray(institutionsArray) ? institutionsArray : []);
-                }
-
-                setTotalResults(total);
-                setCurrentPage(page);
-
-                const loadedCount = append ? institutions.length + institutionsArray.length : institutionsArray.length;
-                setHasMore(loadedCount < total);
-            } else {
-                if (!append) {
-                    setInstitutions([]);
-                    setTotalResults(0);
-                }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } catch (error) {
-            if (!append) {
-                setInstitutions([]);
-                setTotalResults(0);
-            }
+
+            const data: InstitutionsResponse = await response.json();
+
+            setInstitutions(data.items || []);
+            setTotal(data.total || 0);
+            setTotalPages(data.total_pages || 1);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching institutions:', err);
+            setError('Failed to load institutions. Please try again later.');
+            setInstitutions([]);
         } finally {
             setLoading(false);
-            setLoadingMore(false);
         }
-    };
+    }, [page, selectedState]);
 
     useEffect(() => {
-        const delayedSearch = setTimeout(() => {
-            searchInstitutions(1, false);
-        }, 300);
+        fetchInstitutions();
+    }, [fetchInstitutions]);
 
-        return () => clearTimeout(delayedSearch);
-    }, [searchQuery, selectedState]);
-
-    const handleLoadMore = () => {
-        searchInstitutions(currentPage + 1, true);
+    const clearSearch = () => {
+        setSearchTerm('');
+        setPage(1);
     };
 
     const handleStateClick = (stateCode: string) => {
         setSelectedState(stateCode);
+        setPage(1);
     };
 
-    const handleInstitutionClick = (institutionId: number) => {
-        if (onInstitutionClick) {
-            onInstitutionClick(institutionId);
-        } else {
-            const params = new URLSearchParams();
-            if (searchQuery) params.append('query', searchQuery);
-            if (selectedState !== 'ALL') params.append('state', selectedState);
-
-            const url = `/institution/${institutionId}${params.toString() ? `?${params.toString()}` : ''}`;
-            router.push(url);
-        }
-    };
-
-    const getControlTypeDisplay = (controlType: string) => {
-        const types = {
-            public: 'Public',
-            private: 'Private',
-            private_nonprofit: 'Private Non-Profit',
-            private_for_profit: 'Private For-Profit'
-        };
-        return types[controlType.toLowerCase() as keyof typeof types] || controlType;
-    };
-
-    const getSizeCategoryDisplay = (sizeCategory: string) => {
-        const sizes = {
-            very_small: 'Very Small (<1,000)',
-            small: 'Small (1,000-2,999)',
-            medium: 'Medium (3,000-9,999)',
-            large: 'Large (10,000-19,999)',
-            very_large: 'Very Large (20,000+)'
-        };
-        return sizes[sizeCategory as keyof typeof sizes] || sizeCategory;
-    };
-
-    // NEW: format numeric strings like "5189.0" -> "5,189"; else show category label.
-    function formatSizeCategory(value: string) {
-        const n = Number(value);
-        return Number.isFinite(n) ? Math.round(n).toLocaleString() : getSizeCategoryDisplay(value);
-    }
+    // Filter institutions by search term on the client side
+    const filteredInstitutions = searchTerm
+        ? institutions.filter(inst =>
+            inst.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.city.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : institutions;
 
     return (
-        <div className="w-full">
-            {/* Search Header */}
-            <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold mb-3">
-                    <span>Discover Schools</span>
-                </h1>
-                <p className="text-gray-700 mb-8">
-                    or <a href="/scholarships" className="text-blue-600 hover:text-blue-700 font-medium underline">scholarships</a>
-                </p>
-
-                {/* Search Bar */}
-                <div className="max-w-2xl mx-auto mb-6">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search universities, cities, or programs..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300 shadow-sm transition-colors"
-                        />
+        <div className="min-h-screen bg-gray-50">
+            {/* Header - Matching scholarships page style */}
+            <div className="bg-gray-50 border-b-2 border-gray-300">
+                <div className="max-w-6xl mx-auto px-4 py-8">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold mb-3">
+                            <span>Discover</span>{' '}
+                            <span>Schools</span>
+                        </h1>
+                        <p className="text-gray-700">
+                            or <a href="/scholarships" className="text-blue-600 hover:text-blue-700 font-medium underline">scholarships</a>
+                        </p>
                     </div>
-                </div>
 
-                {/* State Filter Buttons */}
-                <div className="overflow-x-auto pb-4 -mx-4 px-4">
-                    <div className="flex flex-wrap justify-center gap-2 min-w-max">
-                        {AVAILABLE_STATES.map((state) => (
-                            <button
-                                key={state.code}
-                                onClick={() => handleStateClick(state.code)}
-                                className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
+                    {/* Search Bar */}
+                    <div className="max-w-2xl mx-auto mb-6">
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search for schools"
+                                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300 shadow-sm transition-colors"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={clearSearch}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <span className="text-2xl">×</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* State Filter Buttons */}
+                    <div className="overflow-x-auto pb-4 -mx-4 px-4">
+                        <div className="flex flex-wrap justify-center gap-2 min-w-max">
+                            {US_STATES.map((state) => (
+                                <button
+                                    key={state.code}
+                                    onClick={() => handleStateClick(state.code)}
+                                    className={`px-4 py-2 text-sm font-medium transition-colors border-2 rounded-full whitespace-nowrap ${selectedState === state.code
                                         ? 'bg-gray-400 text-white border-gray-400'
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span className="mr-2">{state.icon}</span>
-                                {state.name}
-                            </button>
-                        ))}
+                                        }`}
+                                >
+                                    <span className="mr-2">{state.icon}</span>
+                                    {state.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
-
-                {/* Results Count */}
-                <div className="mt-6 text-sm text-gray-600">
-                    {loading ? (
-                        <span className="flex items-center justify-center">
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Searching...
-                        </span>
-                    ) : (
-                        <span>
-                            Showing {institutions.length} of {totalResults} {totalResults === 1 ? 'university' : 'universities'}
-                            {selectedState !== 'ALL' && ` in ${AVAILABLE_STATES.find(s => s.code === selectedState)?.name}`}
-                        </span>
-                    )}
                 </div>
             </div>
 
-            {/* Results */}
-            <div className="w-full">
-                {loading ? (
-                    <div className="text-center py-12">
-                        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-                        <p className="mt-4 text-gray-600">Loading universities...</p>
+            {/* Error Message */}
+            {error && (
+                <div className="max-w-6xl mx-auto px-4 py-4">
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                        <p className="text-red-800">{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="mt-2 text-red-600 hover:text-red-800 underline text-sm"
+                        >
+                            Try Again
+                        </button>
                     </div>
-                ) : institutions.length > 0 ? (
+                </div>
+            )}
+
+            {/* Results */}
+            <div className="max-w-6xl mx-auto px-4 py-8">
+                {loading ? (
+                    <div className="text-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-4 text-gray-600">Loading schools...</p>
+                    </div>
+                ) : filteredInstitutions.length === 0 ? (
+                    <div className="text-center py-20">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <MapPin className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No schools found</h3>
+                        <p className="text-gray-600 mb-6">
+                            {searchTerm
+                                ? "Try adjusting your search terms to find more schools."
+                                : "We couldn't load any schools."}
+                        </p>
+                        <button
+                            onClick={() => {
+                                clearSearch();
+                                setSelectedState('ALL');
+                            }}
+                            className="bg-gray-900 text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors font-medium"
+                        >
+                            Show All Schools
+                        </button>
+                    </div>
+                ) : (
                     <>
+                        <div className="mb-6 text-sm text-gray-600">
+                            <span>
+                                {filteredInstitutions.length} of {total} {total === 1 ? 'school' : 'schools'}
+                                {selectedState !== 'ALL' && ` in ${US_STATES.find(s => s.code === selectedState)?.name}`}
+                                {searchTerm && ` matching "${searchTerm}"`}
+                            </span>
+                        </div>
+
+                        {/* Institutions Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {institutions.map((institution) => (
-                                <div
-                                    key={institution.id}
-                                    className="group bg-white border border-gray-2 00 rounded-2xl overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer"
-                                    onClick={() => handleInstitutionClick(institution.id)}
-                                >
-                                    <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                                        {institution.display_image_url || institution.primary_image_url ? (
-                                            <img
-                                                src={institution.display_image_url || institution.primary_image_url}
-                                                alt={institution.display_name || institution.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <GraduationCap className="w-16 h-16 text-gray-300" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="p-5">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                                            {institution.display_name || institution.name}
-                                        </h3>
-
-                                        <div className="space-y-2 text-sm text-gray-600 mb-4">
-                                            <div className="flex items-center">
-                                                <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
-                                                <span>{institution.city}, {institution.state}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <Users className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
-                                                {/* HERE: show whole number with comma when numeric */}
-                                                <span className="text-xs">{formatSizeCategory(institution.size_category)}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <GraduationCap className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400" />
-                                                <span className="text-xs">{getControlTypeDisplay(institution.control_type)}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                            <span className="text-sm font-medium text-gray-900">
-                                                View details
-                                            </span>
-
-                                            {institution.website && (
-                                                <a
-                                                    href={institution.website}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-gray-400 hover:text-blue-600 transition-colors"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <ExternalLink className="w-4 h-4" />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                            {filteredInstitutions.map((institution) => (
+                                <InstitutionCard key={institution.id} institution={institution} />
                             ))}
                         </div>
 
-                        {hasMore && (
-                            <div className="mt-12 text-center">
+                        {/* Pagination */}
+                        {totalPages > 1 && !searchTerm && (
+                            <div className="flex items-center justify-center space-x-2 mt-8">
                                 <button
-                                    onClick={handleLoadMore}
-                                    disabled={loadingMore}
-                                    className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md hover:shadow-lg"
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page === 1}
+                                    className="px-4 py-2 border-2 border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    {loadingMore ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            <span>Loading more...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>Load More Schools</span>
-                                            <span className="text-sm opacity-90">
-                                                ({institutions.length} of {totalResults})
-                                            </span>
-                                        </>
-                                    )}
+                                    Previous
+                                </button>
+
+                                <span className="px-4 py-2 text-sm text-gray-700">
+                                    Page {page} of {totalPages}
+                                </span>
+
+                                <button
+                                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                                    disabled={page === totalPages}
+                                    className="px-4 py-2 border-2 border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next
                                 </button>
                             </div>
                         )}
                     </>
-                ) : !loading && (
-                    <div className="text-center py-20">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Search className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No universities found</h3>
-                        <p className="text-gray-600">
-                            Try adjusting your search terms or selecting a different state
-                        </p>
-                    </div>
                 )}
             </div>
         </div>
     );
-};
-
-export default StateFilterSearch;
+}
