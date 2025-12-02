@@ -1,5 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    // 👇 Add this line
+    darkMode: 'class',
     content: [
         './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
         './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -57,7 +59,7 @@ module.exports = {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: 0 },
                 },
-                // 🎨 NEW: Gradient animation for resume upload
+                // 🎨 Gradient animation for resume upload
                 gradient: {
                     '0%, 100%': {
                         backgroundPosition: '0% 50%'
@@ -70,25 +72,20 @@ module.exports = {
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
-                // 🎨 NEW: Gradient animation
                 gradient: 'gradient 3s ease infinite',
             },
         },
     },
     plugins: [
-        // Add this plugin to create the scrollbar-hide utility
         function ({ addUtilities }) {
             addUtilities({
                 '.scrollbar-hide': {
-                    /* Hide scrollbar for IE, Edge and Firefox */
                     '-ms-overflow-style': 'none',
                     'scrollbar-width': 'none',
-                    /* Hide scrollbar for Chrome, Safari and Opera */
                     '&::-webkit-scrollbar': {
                         display: 'none',
                     },
                 },
-                // 🎨 NEW: Utility for animated gradient backgrounds
                 '.bg-gradient-animated': {
                     'background-size': '200% 200%',
                 },
