@@ -215,9 +215,9 @@ export default function InstitutionDetail() {
             {/* Gallery */}
             {galleryImages.length > 0 && (
                 <div className="max-w-4xl mx-auto px-4 pb-8">
-                    <InstitutionGallery 
-                        images={galleryImages} 
-                        institutionName={institution.name} 
+                    <InstitutionGallery
+                        images={galleryImages}
+                        institutionName={institution.name}
                     />
                 </div>
             )}

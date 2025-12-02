@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, MapPin } from 'lucide-react';
 import InstitutionCard from '@/components/institutions/institution-card';
+import { Institution, InstitutionListResponse } from '@/types/institution';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -31,32 +32,6 @@ const US_STATES = [
     { code: 'CO', name: 'Colorado', icon: '⛷️' },
     { code: 'MN', name: 'Minnesota', icon: '🏒' },
 ];
-
-interface Institution {
-    id: number;
-    ipeds_id: number;
-    name: string;
-    city: string;
-    state: string;
-    control_type: string;
-    website?: string;
-    primary_image_url?: string;
-    is_featured: boolean;
-    tuition_in_state?: number;
-    tuition_out_of_state?: number;
-    room_and_board?: number;
-    acceptance_rate?: number;
-    data_completeness_score: number;
-}
-
-interface InstitutionsResponse {
-    items: Institution[];
-    total: number;
-    page: number;
-    limit: number;
-    total_pages: number;
-    has_more: boolean;
-}
 
 interface StateFilteredSearchProps {
     initialState?: string;
@@ -90,9 +65,11 @@ export default function StateFilteredSearch({ initialState }: StateFilteredSearc
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data: InstitutionsResponse = await response.json();
+            // ✅ FIXED: Use InstitutionListResponse type from types file
+            const data: InstitutionListResponse = await response.json();
 
-            setInstitutions(data.items || []);
+            // ✅ FIXED: Backend returns "institutions", not "items"
+            setInstitutions(data.institutions || []);
             setTotal(data.total || 0);
             setTotalPages(data.total_pages || 1);
             setError(null);
