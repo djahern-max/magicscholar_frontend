@@ -1,7 +1,11 @@
+// src/app/dashboard/page.tsx
+// src/app/dashboard/page.tsx
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { useProfile } from '@/lib/contexts/ProfileContext';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
@@ -9,10 +13,11 @@ type Theme = 'light' | 'dark';
 
 function DashboardContent() {
     const { user, logout } = useAuth();
+    const { profile, loading: profileLoading } = useProfile();
     const router = useRouter();
     const [theme, setTheme] = useState<Theme>('light');
 
-    // On mount: read stored theme or system preference
+    // Theme management
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -29,7 +34,6 @@ function DashboardContent() {
         document.documentElement.classList.toggle('dark', initialTheme === 'dark');
     }, []);
 
-    // Whenever theme changes, update <html> and localStorage
     useEffect(() => {
         if (typeof window === 'undefined') return;
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -45,22 +49,41 @@ function DashboardContent() {
         setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
     };
 
+    // Calculate profile completion percentage
+    const getProfileCompletion = () => {
+        if (!profile) return 0;
+
+        const fields = [
+            profile.high_school_name,
+            profile.graduation_year,
+            profile.gpa,
+            profile.sat_score || profile.act_score,
+            profile.intended_major,
+            profile.city && profile.state,
+            profile.extracurriculars && profile.extracurriculars.length > 0,
+            profile.work_experience && profile.work_experience.length > 0,
+            profile.honors_awards && profile.honors_awards.length > 0,
+            profile.skills && profile.skills.length > 0,
+        ];
+
+        const completed = fields.filter(Boolean).length;
+        return Math.round((completed / fields.length) * 100);
+    };
+
+    const completion = getProfileCompletion();
+    const isProfileEmpty = completion === 0;
+
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-50">
+        <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
             {/* Top nav */}
             <nav className="border-b border-slate-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/80">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-2">
-                        <span className="text-lg">✨</span>
                         <span className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
                             MagicScholar
                         </span>
-                        <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:inline-block">
-                            Dashboard
-                        </span>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* Theme toggle */}
                         <button
                             type="button"
                             onClick={toggleTheme}
@@ -77,7 +100,7 @@ function DashboardContent() {
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950 transition"
+                            className="rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition"
                         >
                             Logout
                         </button>
@@ -87,127 +110,186 @@ function DashboardContent() {
 
             {/* Main content */}
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                {/* Welcome + summary */}
+                {/* Welcome */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">
+                        Welcome back, {user?.first_name}.
+                    </h1>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                        Here&apos;s where your college planning stands today.
+                    </p>
+                </div>
 
-
-                <section className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(0,1.3fr)]">
-                    <div className="rounded-3xl border border-slate-200 bg-white/90 backdrop-blur p-6 shadow-lg shadow-slate-300/40
-                  dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                            Welcome back
-                        </p>
-                        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                            {user?.first_name
-                                ? `Hey ${user.first_name}, let’s plan your next step.`
-                                : 'Welcome to your MagicScholar dashboard.'}
-                        </h1>
-                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300 max-w-xl">
-                            This is where you’ll keep track of your college list, scholarship deadlines,
-                            and all the little tasks that move you closer to your acceptance letters.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm
-                    dark:border-white/10 dark:bg-slate-900/80">
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                Application status
-                            </p>
-                            <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-                                Getting started
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Add colleges to your list to see your progress here.
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm
-                    dark:border-white/10 dark:bg-slate-900/80">
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                Scholarships saved
-                            </p>
-                            <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-                                0
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Start by bookmarking scholarships that fit your profile.
-                            </p>
-                        </div>
-                    </div>
-                </section>
-
-
-                {/* Cards grid */}
-                <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-md dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                            Colleges you&apos;re exploring
-                        </h2>
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                            Once you start saving colleges, they&apos;ll show up here with quick stats
-                            like acceptance rate, tuition, and deadlines.
-                        </p>
-                        <button className="mt-4 inline-flex items-center justify-center rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition">
-                            Add your first college
-                        </button>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-md dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                            Scholarship planner
-                        </h2>
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                            Keep track of scholarship amounts, eligibility, and due dates in one place.
-                        </p>
-                        <ul className="mt-3 space-y-2 text-xs text-slate-700 dark:text-slate-300">
-                            <li>• Add scholarships you find online or through your school.</li>
-                            <li>• Tag them by priority or category.</li>
-                            <li>• See upcoming deadlines at a glance.</li>
-                        </ul>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-md md:col-span-2 xl:col-span-1 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                            Next steps checklist
-                        </h2>
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                            You can wire real data into this later. For now, here&apos;s a starter flow:
-                        </p>
-                        <ol className="mt-3 space-y-2 text-xs text-slate-700 dark:text-slate-300 list-decimal list-inside">
-                            <li>Create or update your profile.</li>
-                            <li>Save 3–5 colleges you&apos;re interested in.</li>
-                            <li>Bookmark at least 2 scholarships that fit you.</li>
-                            <li>Plan your next application milestone.</li>
-                        </ol>
-                    </div>
-                </section>
-
-                {/* Account details */}
-                <section className="mt-8">
-                    <div className="max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-md dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40">
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                            Your account
-                        </h2>
-                        <dl className="mt-3 space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                            <div className="flex justify-between">
-                                <dt className="text-slate-500 dark:text-slate-400">Name</dt>
-                                <dd>
-                                    {user?.first_name} {user?.last_name}
-                                </dd>
+                {/* Profile Status Card */}
+                {!profileLoading && profile && (
+                    <section className="mb-8">
+                        {isProfileEmpty ? (
+                            // Empty profile - show upload resume prompt
+                            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-8 dark:border-indigo-800 dark:bg-slate-900/80">
+                                <div className="flex flex-col lg:flex-row items-center gap-6">
+                                    <div className="flex-1 text-center lg:text-left">
+                                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                                            Get started with your profile
+                                        </h2>
+                                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">
+                                            Upload your resume and we&apos;ll use it to fill in your profile. You can review and edit
+                                            everything later.
+                                        </p>
+                                        <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                                            <button
+                                                onClick={() => router.push('/profile/onboarding')}
+                                                className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 shadow-sm transition"
+                                            >
+                                                Upload resume
+                                            </button>
+                                            <button
+                                                onClick={() => router.push('/profile/edit')}
+                                                className="rounded-full border border-indigo-300 bg-white px-6 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:border-indigo-700 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-slate-800 transition"
+                                            >
+                                                Fill out profile manually
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <dt className="text-slate-500 dark:text-slate-400">Email</dt>
-                                <dd>{user?.email}</dd>
+                        ) : (
+                            // Profile has data
+                            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900/80">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        {profile.profile_image_url ? (
+                                            <img
+                                                src={profile.profile_image_url}
+                                                alt="Profile"
+                                                className="h-16 w-16 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
+                                                <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-300">
+                                                    {user?.first_name?.charAt(0)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                                                Your profile
+                                            </h2>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                {profile.high_school_name || 'Add more information to complete your profile.'}
+                                            </p>
+                                            {profile.city && profile.state && (
+                                                <p className="text-xs text-slate-500 dark:text-slate-500">
+                                                    {profile.city}, {profile.state}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => router.push('/profile')}
+                                        className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition"
+                                    >
+                                        View profile
+                                    </button>
+                                </div>
+
+                                {/* Profile Completion */}
+                                <div className="mt-6">
+                                    <div className="mb-2 flex items-center justify-between text-sm">
+                                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                                            Profile completion
+                                        </span>
+                                        <span className="text-slate-600 dark:text-slate-400">
+                                            {completion}%
+                                        </span>
+                                    </div>
+                                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                                        <div
+                                            className="h-2 rounded-full bg-indigo-600 transition-all duration-500"
+                                            style={{ width: `${completion}%` }}
+                                        />
+                                    </div>
+                                    {completion < 100 && (
+                                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                            Add more details to get better scholarship and college matches.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Quick Stats */}
+                                <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                    <div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">GPA</p>
+                                        <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                                            {profile.gpa ? `${profile.gpa}` : '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">SAT</p>
+                                        <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                                            {profile.sat_score || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Intended major</p>
+                                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
+                                            {profile.intended_major || '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Graduation year</p>
+                                        <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                                            {profile.graduation_year || '—'}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <dt className="text-slate-500 dark:text-slate-400">Username</dt>
-                                <dd>{user?.username}</dd>
-                            </div>
-                            <div className="flex justify-between">
-                                <dt className="text-slate-500 dark:text-slate-400">Status</dt>
-                                <dd>{user?.is_active ? 'Active' : 'Inactive'}</dd>
-                            </div>
-                        </dl>
-                    </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Quick Actions */}
+                <section className="grid gap-6 md:grid-cols-3">
+                    <button
+                        onClick={() => router.push('/colleges')}
+                        className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:shadow-md transition dark:border-white/10 dark:bg-slate-900/80"
+                    >
+                        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                            Browse colleges
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {profile?.location_preference
+                                ? `Explore colleges in ${profile.location_preference}.`
+                                : 'Set a location preference on your profile to see more relevant colleges.'}
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/scholarships')}
+                        className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:shadow-md transition dark:border-white/10 dark:bg-slate-900/80"
+                    >
+                        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                            Find scholarships
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Look for scholarships that match your background and goals.
+                        </p>
+                    </button>
+
+                    <button
+                        onClick={() =>
+                            isProfileEmpty ? router.push('/profile/onboarding') : router.push('/profile')
+                        }
+                        className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:shadow-md transition dark:border-white/10 dark:bg-slate-900/80"
+                    >
+                        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                            {isProfileEmpty ? 'Set up your profile' : 'Update your profile'}
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {isProfileEmpty
+                                ? 'Upload your resume or enter your details to create your profile.'
+                                : 'Keep your information current so your matches stay accurate.'}
+                        </p>
+                    </button>
                 </section>
             </main>
         </div>
